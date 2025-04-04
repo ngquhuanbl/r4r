@@ -1,0 +1,607 @@
+Authentication with Supabase
+
+  // app/utils/supabase/server.js
+  import { createServerClient } from '@supabase/ssr'
+  import { cookies } from 'next/headers'
+  import { redirect } from 'next/navigation'
+
+  export function createClient() {
+    const cookieStore = cookies()
+
+    return createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          get(name) {
+            return cookieStore.get(name)?.value
+          },
+          set(name, value, options) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name, options) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
+  }
+
+  export async function getUserOrRedirect() {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      redirect('/login')
+    }
+
+    return session.user
+  }
+
+  Dashboard Page (App Router)
+
+  // app/dashboard/page.js
+  import { getUserOrRedirect } from "@/utils/supabase/server";
+  import DashboardTabs from "@/components/dashboard/DashboardTabs";
+  import { EmptyState } from "@/components/ui/empty-state";
+  import { getInvitationsForUser, getPendingReviews } from "./_actions";
+
+  export default async function DashboardPage() {
+    const user = await getUserOrRedirect();
+
+    // Fetch data using server actions
+    const invitations = await getInvitationsForUser(user.id);
+    const pendingReviews = await getPendingReviews(user.id);
+
+    const hasBusinesses = await hasUserBusinesses(user.id);
+
+    return (
+      <div className="container max-w-6xl mx-auto py-8">
+        <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+
+        <DashboardTabs invitations={invitations} pendingReviews={pendingReviews} />
+
+        {!hasBusinesses && <AddBusinessCTA />}
+      </div>
+    );
+  }
+
+  Dashboard Actions
+
+  // app/dashboard/_actions.js
+  "use server"
+
+  import { createClient } from "@/utils/supabase/server";
+  import { revalidatePath } from "next/cache";
+
+  export async function getInvitationsForUser(userId) {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from('invitations_summary')
+      .select('*')
+      .eq('user_id', userId)
+      .order('platform_id');
+
+    if (error) throw new Error(error.message);
+
+    return data;
+  }
+
+  export async function getPendingReviews(userId) {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from('invitations_summary')
+      .select('*')
+      .eq('counter_party_user_id', userId)
+      .eq('status_id', 100);
+
+    if (error) throw new Error(error.message);
+
+    return data;
+  }
+
+  export async function acceptInvitation(invitationId) {
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('invitations')
+      .update({ is_accepted: true })
+      .eq('id', invitationId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath('/dashboard');
+    return { success: true };
+  }
+
+  export async function rejectInvitation(invitationId) {
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('invitations')
+      .update({ is_accepted: false })
+      .eq('id', invitationId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath('/dashboard');
+    return { success: true };
+  }
+
+  Dashboard Components
+
+  // components/dashboard/DashboardTabs.jsx
+  "use client"
+
+  import { useState } from "react";
+  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  import { InvitationCard } from "./InvitationCard";
+  import { ReviewCard } from "./ReviewCard";
+  import { Badge } from "@/components/ui/badge";
+  import { EmptyState } from "@/components/ui/empty-state";
+
+  export default function DashboardTabs({ invitations, pendingReviews }) {
+    const openInvitations = invitations.filter(inv => inv.status_id === 0);
+    const acceptedInvitations = invitations.filter(inv => inv.status_id === 10);
+    const submittedInvitations = invitations.filter(inv => inv.status_id === 100);
+
+    return (
+      <Tabs defaultValue="invitations" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="invitations" className="relative">
+            Invitations
+            <Badge variant="outline" className="ml-2">{openInvitations.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="accepted" className="relative">
+            Accepted
+            <Badge variant="outline" className="ml-2">{acceptedInvitations.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="reviews" className="relative">
+            Reviews Left For You
+            <Badge variant="outline" className="ml-2">{pendingReviews.length}</Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="invitations">
+          {openInvitations.length === 0 ? (
+            <EmptyState 
+              title="No New Invitations" 
+              description="Check back later for new invitations." 
+            />
+          ) : (
+            <div className="space-y-4">
+              {openInvitations.map(invitation => (
+                <InvitationCard key={invitation.invitation_id} invitation={invitation} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="accepted">
+          {acceptedInvitations.length === 0 && submittedInvitations.length === 0 ? (
+            <EmptyState 
+              title="You haven't accepted any invitations" 
+              description="Accept an invitation, leave a review, then submit your review here
+   for verification." 
+            />
+          ) : (
+            <div className="space-y-4">
+              {[...acceptedInvitations, ...submittedInvitations].map(invitation => (
+                <InvitationCard key={invitation.invitation_id} invitation={invitation} 
+  accepted />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="reviews">
+          {pendingReviews.length === 0 ? (
+            <EmptyState 
+              title="No New Reviews" 
+              description="To get more reviews, accept invitations and leave reviews." 
+            />
+          ) : (
+            <div className="space-y-4">
+              {pendingReviews.map(review => (
+                <ReviewCard key={review.invitation_id} review={review} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    );
+  }
+
+  Invitation Card Component
+
+  // components/dashboard/InvitationCard.jsx
+  "use client"
+
+  import { Card, CardContent, CardFooter } from "@/components/ui/card";
+  import { Button } from "@/components/ui/button";
+  import { Badge } from "@/components/ui/badge";
+  import { acceptInvitation, rejectInvitation } from "@/app/dashboard/_actions";
+  import { SubmitReviewButton } from "./SubmitReviewButton";
+
+  const platformStyles = {
+    1: "bg-green-100 text-green-800",
+    2: "bg-blue-100 text-blue-800",
+    3: "bg-pink-100 text-pink-800",
+    4: "bg-gray-100 text-gray-800",
+    5: "bg-yellow-100 text-yellow-800",
+    6: "bg-red-100 text-red-800",
+    7: "bg-purple-100 text-purple-800",
+  };
+
+  export function InvitationCard({ invitation, accepted = false }) {
+    async function handleAccept() {
+      await acceptInvitation(invitation.invitation_id);
+    }
+
+    async function handleReject() {
+      await rejectInvitation(invitation.invitation_id);
+    }
+
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-semibold flex items-center">
+                {invitation.business_name}
+                <Badge className={`ml-2 ${platformStyles[invitation.platform_id]}`}>
+                  {invitation.platform_name}
+                </Badge>
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {invitation.address}, {invitation.city}, {invitation.state}
+  {invitation.zip_code}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex justify-end space-x-2">
+          {!accepted ? (
+            <>
+              <Button variant="outline" onClick={handleReject}>Reject</Button>
+              <Button onClick={handleAccept}>Accept Invitation</Button>
+            </>
+          ) : (
+            <SubmitReviewButton invitation={invitation} />
+          )}
+        </CardFooter>
+      </Card>
+    );
+  }
+
+  Business Form Component
+
+  // components/forms/CreateBusinessForm.jsx
+  "use client"
+
+  import { useForm } from "react-hook-form";
+  import { Card, CardContent, CardFooter, CardHeader, CardTitle } from
+  "@/components/ui/card";
+  import { Button } from "@/components/ui/button";
+  import { Input } from "@/components/ui/input";
+  import { Label } from "@/components/ui/label";
+  import { createBusiness } from "@/app/account/_actions";
+  import { toast } from "@/components/ui/use-toast";
+
+  export function CreateBusinessForm({ onCancel }) {
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm();
+
+    async function onSubmit(data) {
+      try {
+        await createBusiness({
+          business_name: data.businessName,
+          address: data.streetAddress,
+          city: data.city,
+          state: data.state,
+          zip_code: data.postalCode
+        });
+
+        toast({
+          title: "Business created",
+          description: "Your business has been successfully registered.",
+        });
+
+        if (onCancel) onCancel();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to create business. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Register Business</CardTitle>
+        </CardHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="businessName">Business name</Label>
+              <Input 
+                id="businessName"
+                {...register("businessName", { required: "Business name is required" })}
+              />
+              {errors.businessName && (
+                <p className="text-sm text-red-500">{errors.businessName.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="streetAddress">Street address</Label>
+              <Input 
+                id="streetAddress"
+                {...register("streetAddress", { required: "Street address is required" })}
+              />
+              {errors.streetAddress && (
+                <p className="text-sm text-red-500">{errors.streetAddress.message}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input 
+                  id="city"
+                  {...register("city", { required: "City is required" })}
+                />
+                {errors.city && (
+                  <p className="text-sm text-red-500">{errors.city.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="state">State</Label>
+                <Input 
+                  id="state"
+                  {...register("state", { required: "State is required" })}
+                />
+                {errors.state && (
+                  <p className="text-sm text-red-500">{errors.state.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="postalCode">ZIP</Label>
+                <Input 
+                  id="postalCode"
+                  {...register("postalCode", { required: "ZIP code is required" })}
+                />
+                {errors.postalCode && (
+                  <p className="text-sm text-red-500">{errors.postalCode.message}</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    );
+  }
+
+  Account Actions
+
+  // app/account/_actions.js
+  "use server"
+
+  import { createClient, getUserOrRedirect } from "@/utils/supabase/server";
+  import { revalidatePath } from "next/cache";
+
+  export async function createBusiness(businessData) {
+    const user = await getUserOrRedirect();
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('businesses')
+      .insert({
+        ...businessData,
+        user_id: user.id
+      });
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath('/account');
+    revalidatePath('/dashboard');
+    return { success: true };
+  }
+
+  export async function updateBusiness(businessId, businessData) {
+    const user = await getUserOrRedirect();
+    const supabase = createClient();
+
+    // Verify ownership
+    const { data: business } = await supabase
+      .from('businesses')
+      .select('user_id')
+      .eq('id', businessId)
+      .single();
+
+    if (business?.user_id !== user.id) {
+      throw new Error("Unauthorized");
+    }
+
+    const { error } = await supabase
+      .from('businesses')
+      .update(businessData)
+      .eq('id', businessId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath('/account');
+    return { success: true };
+  }
+
+  export async function getUserBusinesses() {
+    const user = await getUserOrRedirect();
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from('businesses')
+      .select(`
+        id,
+        business_name,
+        phone,
+        address,
+        city,
+        zip_code,
+        state,
+        platform_urls:business_platform_urls(platform_id, url)
+      `)
+      .eq('user_id', user.id)
+      .order('business_name');
+
+    if (error) throw new Error(error.message);
+
+    return data;
+  }
+
+  Login Page Implementation
+
+  // app/login/page.js
+  import { redirect } from "next/navigation";
+  import { createClient } from "@/utils/supabase/server";
+  import { LoginForm } from "@/components/forms/LoginForm";
+
+  export default async function LoginPage() {
+    const supabase = createClient();
+
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session) {
+      redirect("/dashboard");
+    }
+
+    return (
+      <div className="container flex items-center justify-center min-h-screen py-12">
+        <div className="mx-auto max-w-md w-full">
+          <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
+          <LoginForm />
+        </div>
+      </div>
+    );
+  }
+
+  Login Form Component
+
+  // components/forms/LoginForm.jsx
+  "use client"
+
+  import { useState } from "react";
+  import { useRouter } from "next/navigation";
+  import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+  import { Card, CardContent, CardFooter, CardHeader, CardTitle } from
+  "@/components/ui/card";
+  import { Button } from "@/components/ui/button";
+  import { Input } from "@/components/ui/input";
+  import { Label } from "@/components/ui/label";
+  import Link from "next/link";
+
+  export function LoginForm() {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
+    const supabase = createClientComponentClient();
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) throw error;
+
+        router.refresh();
+        router.push("/dashboard");
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Sign in to your account</CardTitle>
+        </CardHeader>
+
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-100 text-red-800 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link href="/forgot-password" className="text-sm text-primary 
+  hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex flex-col">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Signing in..." : "Sign in"}
+            </Button>
+
+            <p className="mt-4 text-center text-sm">
+              Don't have an account?{" "}
+              <Link href="/register" className="text-primary hover:underline">
+                Sign up
+              </Link>
+            </p>
+          </CardFooter>
+        </form>
+      </Card>
+    );
+  }
+
