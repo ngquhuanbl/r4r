@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Submit } from '@/components/shared/submit';
 import Link from 'next/link';
+import ErrorPage from "./error";
 
 // Separate server action that won't try to use client components
 async function handleCreateBusiness(platformIds, userId, formData) {
@@ -32,14 +33,16 @@ async function handleCreateBusiness(platformIds, userId, formData) {
   } else {
     // In a real app, you'd handle this error better
     console.error('Failed to create business:', result.error);
-		// TODO: Error page
-    // redirect('/businesses/new?error=failed');
+    redirect('/businesses/new?error=failed');
   }
 }
 
-export default async function NewBusinessPage() {
+export default async function NewBusinessPage({ searchParams }) {
   const user = await getUserOrRedirect();
   const supabase = createClient();
+	const hasError = !!searchParams.error;
+
+  if (hasError) return <ErrorPage />;
   
   // Fetch platforms from the database
   const { data: platforms, error } = await supabase
