@@ -9,7 +9,6 @@ export default async function Page() {
   const user = await getUserOrRedirect();
 
   // Security check - only allow admin access
-	debugger;
   if (user.id !== adminId) {
     return (
       <div className="container mx-auto py-6">

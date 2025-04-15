@@ -26,6 +26,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { toast } from "sonner";
 
 export function ShareIcon() {
   return (
@@ -70,9 +71,14 @@ export default function InvitationAccepted({
         setTimeout(() => {
           window.location.reload();
         }, 500);
+				
+				toast.success(`Submit review successfully`);
       }
     } catch (error) {
       console.error("Error submitting review:", error);
+			toast.error(`Failed to submit review`, {
+				description: `Error: ${error}`
+			});
     }
 
     setIsLoading(false);
@@ -144,18 +150,18 @@ export default function InvitationAccepted({
   return (
     <Container key={invitation.id}>
       <div>
-        <h1 className="flex items-center text-xl font-semibold text-gray-900">
+        <h1 className="flex items-center text-xl font-semibold text-gray-900 dark:text-white">
           {invitation.business?.business_name || "Unknown Business"}
           <Badge className={`ml-2 ${platformData.color}`}>
             {platformData.name}
           </Badge>
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-300">
           {invitation.business?.address}, {invitation.business?.city},{" "}
           {invitation.business?.state} {invitation.business?.zip_code}
         </p>
         {invitation.message && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-md">
+          <div className="mt-3 p-3 bg-gray-50 dark:bg-black rounded-md">
             <p className="text-sm font-medium mb-1">
               Message from business owner:
             </p>
@@ -170,24 +176,24 @@ export default function InvitationAccepted({
               {(isReviewSubmitted || isLocalReviewSubmitted) && (
                 <>
                   <Badge className="bg-amber-500">Review Submitted</Badge>
-                  <p className="text-sm ml-2 text-gray-500">Waiting for business owner approval</p>
+                  <p className="text-sm ml-2 text-gray-500 dark:text-gray-300">Waiting for business owner approval</p>
                 </>
               )}
               {isReviewVerified && (
                 <>
                   <Badge className="bg-green-500">Review Verified</Badge>
-                  <p className="text-sm ml-2 text-gray-500">Approved by business owner</p>
+                  <p className="text-sm ml-2 text-gray-500 dark:text-gray-300">Approved by business owner</p>
                 </>
               )}
               {isReviewRejected && (
                 <>
                   <Badge className="bg-red-500">Review Rejected</Badge>
-                  <p className="text-sm ml-2 text-gray-500">Contact the business owner for details</p>
+                  <p className="text-sm ml-2 text-gray-500 dark:text-gray-300">Contact the business owner for details</p>
                 </>
               )}
             </div>
             {invitation.review?.content && (
-              <div className="bg-gray-50 p-3 rounded-md text-sm mt-2">
+              <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md text-sm mt-2">
                 <p className="font-medium mb-1">Your review:</p>
                 <p className="italic">{invitation.review.content}</p>
                 {invitation.review.url && (

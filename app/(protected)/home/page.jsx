@@ -15,6 +15,7 @@ export default async function Page() {
     
   if (error) {
     console.error('Error fetching platforms:', error);
+		throw error;
   }
   
   // Convert platforms to the format needed by components

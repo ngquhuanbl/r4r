@@ -1,27 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Container from '@/components/dashboard/Container';
 import { acceptInvitation, rejectInvitation } from '@/app/(protected)/home/actions';
+import { toast } from 'sonner';
 
 export default function Invitation({ invitation, platformStyles = {} }) {
-  const [isLoading, setIsLoading] = useState(false);
+	const [isAccepting, startAccepting] = useTransition();
+	const [isRejecting, startRejecting] = useTransition();
   
   const handleAccept = async () => {
-    setIsLoading(true);
-    await acceptInvitation(invitation.id);
-    setIsLoading(false);
+		startAccepting(async () => {
+			try {
+				const result = await acceptInvitation(invitation.id);
+				if (result.success) {
+					toast.success(`Accept invitation successfully`);
+				} else {
+					throw result.error;
+				}
+			} catch(e) {
+				toast.error('Failed to accept invitation', {
+					description: `Error: ${e}`
+				})
+			}
+		})
   };
   
   const handleReject = async () => {
-    setIsLoading(true);
-    await rejectInvitation(invitation.id);
-    setIsLoading(false);
+		startRejecting(async () => {
+			try {
+				const result = await rejectInvitation(invitation.id);
+				if (result.success) {
+					toast.success(`Reject invitation successfully`);
+				} else {
+					throw result.error;
+				}
+			} catch(e) {
+				toast.error('Failed to reject invitation', {
+					description: `Error: ${e}`
+				})
+			}
+			
+		})
   };
   
   const platformData = platformStyles[invitation.platform?.id] || { color: "bg-gray-500", name: "Unknown" };
+	
+	const disabled = isAccepting || isRejecting;
   
   return (
     <Container key={invitation.id}>
@@ -45,10 +72,10 @@ export default function Invitation({ invitation, platformStyles = {} }) {
         )}
       </div>
       <div className="flex space-x-2">
-        <Button variant="outline" onClick={handleReject} disabled={isLoading}>
+        <Button variant="outline" onClick={handleReject} disabled={disabled} loading={isRejecting}>
           Reject
         </Button>
-        <Button onClick={handleAccept} disabled={isLoading}>
+        <Button onClick={handleAccept} disabled={disabled} loading={isAccepting}>
           Accept Invitation
         </Button>
       </div>

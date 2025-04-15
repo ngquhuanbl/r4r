@@ -36,9 +36,14 @@ async function handleCreateBusiness(platformIds, userId, formData) {
   }
 }
 
-export default async function NewBusinessPage() {
+export default async function NewBusinessPage({ searchParams }) {
   const user = await getUserOrRedirect();
   const supabase = createClient();
+	const hasError = !!searchParams.error;
+
+  if (hasError) {
+		throw new Error('Error occurred!')
+	};
   
   // Fetch platforms from the database
   const { data: platforms, error } = await supabase
@@ -65,7 +70,7 @@ export default async function NewBusinessPage() {
         <h1 className="text-2xl font-bold">Add New Business</h1>
       </div>
       
-      <div className="bg-white shadow-sm rounded-lg p-6">
+      <div className="bg-white dark:bg-black dark:shadow-gray-600 shadow-sm rounded-lg p-6">
         <form action={createBusinessAction}>
           <div className="space-y-6">
             <div className="space-y-4">

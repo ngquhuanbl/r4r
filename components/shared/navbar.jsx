@@ -11,7 +11,7 @@ export async function Navbar() {
   const { data: { user } } = await supabase.auth.getUser();
   
   return (
-    <nav className="border-b border-gray-200 bg-white text-black">
+    <nav className="border-b border-gray-200 bg-white text-black dark:bg-black dark:text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 justify-between items-center">
           <div className="flex items-center">
@@ -27,9 +27,9 @@ export async function Navbar() {
                 <Link href="/businesses" className="text-sm font-medium hover:text-blue-500">
                   Businesses
                 </Link>
-                <Link href="/invitations/new" className="text-sm font-medium hover:text-blue-500">
+                {/* <Link href="/invitations/new" className="text-sm font-medium hover:text-blue-500">
                   New Invitation
-                </Link>
+                </Link> */}
                 {user.id === adminId && (
                   <Link 
                     href="/admin" 

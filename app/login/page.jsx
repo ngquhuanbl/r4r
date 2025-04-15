@@ -59,7 +59,7 @@ export default function Login({ searchParams }) {
             Email
           </label>
           <input
-            className="px-4 py-2 border border-gray-300 mb-6"
+            className="px-4 py-2 border border-gray-300 mb-6 text-black"
             name="email"
             placeholder="you@example.com"
             required
@@ -69,7 +69,7 @@ export default function Login({ searchParams }) {
             Password
           </label>
           <input
-            className="px-4 py-2 border border-gray-300 mb-6"
+            className="px-4 py-2 border border-gray-300 mb-6 text-black"
             type="password"
             name="password"
             placeholder="••••••••"
@@ -93,7 +93,7 @@ export default function Login({ searchParams }) {
           </Submit>
           
           {searchParams?.message && (
-            <p className="mt-4 p-4 bg-gray-100 text-center">
+            <p className="mt-4 p-4 bg-gray-100 dark:bg-gray-800  text-center">
               {searchParams.message}
             </p>
           )}

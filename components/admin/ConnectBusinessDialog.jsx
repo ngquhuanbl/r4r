@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { createBusinessConnection } from '@/app/(protected)/admin/actions';
+import { toast } from 'sonner';
 
 export default function ConnectBusinessDialog({ 
   businesses, 
@@ -56,9 +57,8 @@ export default function ConnectBusinessDialog({
       
       if (result.success) {
         // Close the dialog after 2 seconds if successful
-        setTimeout(() => {
-          onClose();
-        }, 2000);
+        onClose();
+				toast.success('Connect businesses successfully');
       } else {
         setLoading(false);
       }
