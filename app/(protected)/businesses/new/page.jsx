@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Submit } from '@/components/shared/submit';
 import Link from 'next/link';
-import ErrorPage from "./error";
 
 // Separate server action that won't try to use client components
 async function handleCreateBusiness(platformIds, userId, formData) {
@@ -42,7 +41,9 @@ export default async function NewBusinessPage({ searchParams }) {
   const supabase = createClient();
 	const hasError = !!searchParams.error;
 
-  if (hasError) return <ErrorPage />;
+  if (hasError) {
+		throw new Error('Error occurred!')
+	};
   
   // Fetch platforms from the database
   const { data: platforms, error } = await supabase

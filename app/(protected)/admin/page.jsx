@@ -7,7 +7,6 @@ const adminId = process.env.ADMIN_ID;
 
 export default async function Page() {
   const user = await getUserOrRedirect();
-	// TODO: Error page
 
   // Security check - only allow admin access
   if (user.id !== adminId) {

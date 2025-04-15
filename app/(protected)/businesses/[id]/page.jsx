@@ -6,14 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Submit } from "@/components/shared/submit";
 import Link from "next/link";
-import ErrorPage from "./error";
 
 export default async function BusinessPage({ params, searchParams }) {
   const user = await getUserOrRedirect();
   const businessId = params.id;
   const hasError = !!searchParams.error;
 
-  if (hasError) return <ErrorPage />;
+  if (hasError) {
+		throw new Error('Error occurred!')
+	};
 
   // Fetch the business data
   const business = await fetchBusinessById(businessId, user.id);
