@@ -47,7 +47,7 @@ export default function ReviewVerify({ review, platformStyles = {}, onReviewProc
       {/* Header section with business info and badge */}
       <div className="flex justify-between items-start w-full p-6 pb-4">
         <div>
-          <h1 className="flex items-center text-xl font-semibold text-gray-900">
+          <h1 className="flex items-center text-xl font-semibold text-gray-900 dark:text-white">
             {review.business?.business_name || "Unknown Business"}
             <Badge 
               className={`ml-2 ${platformData.color}`}
@@ -55,11 +55,11 @@ export default function ReviewVerify({ review, platformStyles = {}, onReviewProc
               {platformData.name}
             </Badge>
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
             {review.business?.address}, {review.business?.city}, {review.business?.state} {review.business?.zip_code}
           </p>
           {submittedDate && (
-            <p className="text-xs text-gray-500 mt-1">Submitted on {submittedDate}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-300 mt-1">Submitted on {submittedDate}</p>
           )}
         </div>
         
@@ -80,13 +80,13 @@ export default function ReviewVerify({ review, platformStyles = {}, onReviewProc
       </div>
       
       {/* Review content section with distinct background */}
-      <div className="w-full bg-gray-50 p-6 border-t border-b border-gray-200">
+      <div className="w-full bg-gray-50 dark:bg-gray-900 p-6 border-t border-b border-gray-200 dark:border-gray-800">
         <div className="mb-2 flex items-center">
-          <div className="bg-gray-600 h-6 w-1 rounded mr-2"></div>
-          <h2 className="font-medium text-gray-800">Review Content</h2>
+          <div className="bg-gray-600 dark:bg-gray-500 h-6 w-1 rounded mr-2"></div>
+          <h2 className="font-medium text-gray-800 dark:text-white">Review Content</h2>
         </div>
-        <div className="bg-white rounded-md p-4 shadow-sm border border-gray-100">
-          <p className="text-gray-700 italic whitespace-pre-line">{review.review_content}</p>
+        <div className="bg-white dark:bg-black rounded-md p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+          <p className="text-gray-700 dark:text-white italic whitespace-pre-line">{review.review_content}</p>
         </div>
       </div>
       
@@ -119,7 +119,7 @@ export default function ReviewVerify({ review, platformStyles = {}, onReviewProc
             <Button 
               onClick={handleApprove} 
               disabled={isLoading}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 dark:text-white"
             >
               Confirm Review
             </Button>

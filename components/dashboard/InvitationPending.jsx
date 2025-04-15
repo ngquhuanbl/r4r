@@ -25,7 +25,7 @@ export default function InvitationPending({ invitation, platformStyles = {} }) {
   return (
     <Container key={invitation.id}>
       <div>
-        <h1 className="flex items-center text-xl font-semibold text-gray-900">
+        <h1 className="flex items-center text-xl font-semibold text-gray-900 dark:text-white">
           {invitation.business?.business_name || "Unknown Business"}
          
           <Badge 

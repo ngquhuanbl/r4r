@@ -6,7 +6,7 @@ export default async function Layout({ children }) {
       <Navbar />
 
       {/* Page content */}
-      <main className="flex-1 bg-white">
+      <main className="flex-1">
         <div className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {children}

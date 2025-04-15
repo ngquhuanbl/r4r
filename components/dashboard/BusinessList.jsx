@@ -26,7 +26,7 @@ const defaultPlatforms = {
 
 const EmptyState = () => (
   <div className="text-center py-10 border border-dashed border-gray-300 rounded-lg">
-    <h3 className="text-lg font-medium text-gray-900">No businesses found</h3>
+    <h3 className="text-lg font-medium text-gray-900 dark:text-white">No businesses found</h3>
     <p className="mt-1 text-sm text-gray-500">Add your first business to get started.</p>
     <div className="mt-6">
       <Link href="/businesses/new">
@@ -53,18 +53,18 @@ const BusinessCard = ({ business, onDelete, platforms }) => {
   return (
     <Container key={business.id}>
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
           {business.business_name}
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-300">
           {business.address}, {business.city}, {business.state} {business.zip_code}
         </p>
         {business.phone && (
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">
             {business.phone}
           </p>
         )}
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-gray-400 dark:text-white mt-2">
           {platformCount === 0 
             ? "No platforms connected" 
             : `${platformCount} platform${platformCount === 1 ? '' : 's'} connected`}

@@ -65,7 +65,7 @@ export default async function NewBusinessPage() {
         <h1 className="text-2xl font-bold">Add New Business</h1>
       </div>
       
-      <div className="bg-white shadow-sm rounded-lg p-6">
+      <div className="bg-white dark:bg-black dark:shadow-gray-600 shadow-sm rounded-lg p-6">
         <form action={createBusinessAction}>
           <div className="space-y-6">
             <div className="space-y-4">

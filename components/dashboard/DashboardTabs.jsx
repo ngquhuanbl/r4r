@@ -45,7 +45,7 @@ export default function DashboardTabs({
       </TabsList>
       
       <TabsContent value="invitations" className="mt-4">
-        <p className="text-sm text-gray-500 mb-4">Businesses that would like you to leave a review on their platform.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-300 mb-4">Businesses that would like you to leave a review on their platform.</p>
         {invitations.length === 0 ? (
           <EmptyState 
             heading="No review requests" 
@@ -65,7 +65,7 @@ export default function DashboardTabs({
       </TabsContent>
       
       <TabsContent value="accepted" className="mt-4">
-        <p className="text-sm text-gray-500 mb-4">Requests you've accepted. Leave a review and submit the details here.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-300 mb-4">Requests you've accepted. Leave a review and submit the details here.</p>
         {acceptedInvitations.length === 0 ? (
           <EmptyState 
             heading="No pending reviews" 
@@ -85,7 +85,7 @@ export default function DashboardTabs({
       </TabsContent>
       
       <TabsContent value="reviews" className="mt-4">
-        <p className="text-sm text-gray-500 mb-4">Reviews others have left for your business that need your approval.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-300 mb-4">Reviews others have left for your business that need your approval.</p>
         {pendingReviews.length === 0 ? (
           <EmptyState 
             heading="No reviews to approve" 

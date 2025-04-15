@@ -17,11 +17,12 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  
   return (
     <html lang="en">
       <body className={cn("h-full font-sans antialiased", GeistSans.className)}>
-        <div className="flex flex-col min-h-screen">{children}</div>
+        <div className="flex flex-col min-h-screen text-black dark:text-white">
+          {children}
+        </div>
       </body>
     </html>
   );
