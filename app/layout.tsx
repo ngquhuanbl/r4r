@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={cn("h-full font-sans antialiased", GeistSans.className)}>
-        <div className="flex flex-col min-h-screen text-black dark:text-white">
+        <div className="flex flex-col min-h-screen text-black dark:text-white bg-white dark:bg-black">
 					<Toaster />
           {children}
         </div>

@@ -23,20 +23,20 @@ export default function DashboardTabs({
   
   return (
     <Tabs defaultValue="invitations" onValueChange={setActiveTab}>
-      <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="invitations">
+      <TabsList className="grid w-full grid-cols-3 dark:bg-gray-900">
+        <TabsTrigger value="invitations" className='dark:text-gray-400'> 
           Review Requests
           <Badge variant="outline" className="ml-2">
             {invitations.length}
           </Badge>
         </TabsTrigger>
-        <TabsTrigger value="accepted">
+        <TabsTrigger value="accepted" className='dark:text-gray-400'>
           Pending Reviews
-          <Badge variant="outline" className="ml-2">
+          <Badge variant="outline" className="ml-2 ">
             {acceptedInvitations.length}
           </Badge>
         </TabsTrigger>
-        <TabsTrigger value="reviews">
+        <TabsTrigger value="reviews" className='dark:text-gray-400'>
           Reviews to Approve
           <Badge variant="outline" className="ml-2">
             {pendingReviews.length}

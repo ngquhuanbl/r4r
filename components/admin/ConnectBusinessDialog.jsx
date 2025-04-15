@@ -85,7 +85,7 @@ export default function ConnectBusinessDialog({
         <div className="grid gap-4 py-4">
           <div>
             <Label className="text-xs font-medium text-gray-500">From:</Label>
-            <div className="p-2 border rounded-md bg-gray-50 mt-1">
+            <div className="p-2 border rounded-md bg-gray-50 dark:bg-slate-900 mt-1">
               <p className="font-medium">{sourceBusiness.business_name}</p>
               <p className="text-sm text-gray-500">
                 {sourceBusiness.address}, {sourceBusiness.city}, {sourceBusiness.state}
@@ -95,7 +95,7 @@ export default function ConnectBusinessDialog({
                   {sourceBusiness.platforms.map(platform => (
                     <Badge 
                       key={platform.id}
-                      className={platform.platforms?.color || 'bg-gray-500'}
+                      className={`${platform.platforms?.color || 'bg-gray-500'} dark:text-black`}
                       variant="outline"
                     >
                       {platform.platforms?.name || 'Unknown'}
