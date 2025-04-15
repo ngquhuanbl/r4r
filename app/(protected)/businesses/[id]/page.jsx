@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Submit } from '@/components/shared/submit';
 import Link from 'next/link';
-import { toast } from "sonner";
+import ErrorPage from './error';
 
 export default async function BusinessPage({ params }) {
   const user = await getUserOrRedirect();
@@ -35,9 +35,6 @@ export default async function BusinessPage({ params }) {
     
     if (!result.success) {
       console.error('Failed to update business:', result.error);
-			toast.error('Failed to update business', {
-				description: `Error: ${result.error}`
-			})
 			// TODO: This hasn't been implemented
       // redirect(`/businesses/${businessId}?error=failed`);  
       return;
@@ -93,6 +90,8 @@ export default async function BusinessPage({ params }) {
 
   // Get existing platform URLs
   const platformUrls = business.platform_urls || {};
+	
+	return <ErrorPage />;
 
   return (
     <div className="container mx-auto py-6 max-w-2xl">
