@@ -1,6 +1,6 @@
 import { getUserOrRedirect } from "@/lib/supabase/server";
 import { createClient } from "@/lib/supabase/server";
-import { fetchBusinesses } from './actions';
+import { fetchBusinesses } from '../actions';
 import BusinessList from '@/components/dashboard/BusinessList';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
