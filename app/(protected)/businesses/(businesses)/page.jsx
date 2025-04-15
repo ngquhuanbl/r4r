@@ -16,6 +16,7 @@ export default async function BusinessesPage() {
     .order('id');
     
   if (error) {
+		// TODO: Error page
     console.error('Error fetching platforms:', error);
   }
   
@@ -32,6 +33,7 @@ export default async function BusinessesPage() {
   
   // Fetch real data from Supabase
   const businesses = await fetchBusinesses(user.id);
+	// TODO: Error page
 
   return (
     <div className="container mx-auto py-6">

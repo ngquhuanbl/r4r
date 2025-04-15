@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Submit } from '@/components/shared/submit';
 import Link from 'next/link';
+import { toast } from "sonner";
 
 export default async function BusinessPage({ params }) {
   const user = await getUserOrRedirect();
@@ -13,6 +14,7 @@ export default async function BusinessPage({ params }) {
   
   // Fetch the business data
   const business = await fetchBusinessById(businessId, user.id);
+	// TODO: Error page
   
   // Fetch platforms from database
   const supabase = createClient();
@@ -33,7 +35,11 @@ export default async function BusinessPage({ params }) {
     
     if (!result.success) {
       console.error('Failed to update business:', result.error);
-      redirect(`/businesses/${businessId}?error=failed`);
+			toast.error('Failed to update business', {
+				description: `Error: ${result.error}`
+			})
+			// TODO: This hasn't been implemented
+      // redirect(`/businesses/${businessId}?error=failed`);  
       return;
     }
     

@@ -32,7 +32,8 @@ async function handleCreateBusiness(platformIds, userId, formData) {
   } else {
     // In a real app, you'd handle this error better
     console.error('Failed to create business:', result.error);
-    redirect('/businesses/new?error=failed');
+		// TODO: Error page
+    // redirect('/businesses/new?error=failed');
   }
 }
 

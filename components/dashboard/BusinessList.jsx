@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Container from '@/components/dashboard/Container';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
 import { deleteBusiness } from '@/app/(protected)/businesses/actions';
+import { toast } from 'sonner';
 
 // Default platform styling if none provided
 const defaultPlatforms = {
@@ -38,13 +39,24 @@ const EmptyState = () => (
 
 // Business card component
 const BusinessCard = ({ business, onDelete, platforms }) => {
-  const [isDeleting, setIsDeleting] = useState(false);
+	const [isDeleting, startDeleting] = useTransition();
   
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    await deleteBusiness(business.id);
-    setIsDeleting(false);
-    if (onDelete) onDelete(business.id);
+  const handleDelete = () => {
+		startDeleting(async () => {
+			try {
+				const result = await deleteBusiness(business.id);
+				if (result.success) {
+					toast.success('Delete business successfully');
+					if (onDelete) onDelete(business.id);
+				} else {
+					throw result.error;
+				}
+			} catch(e) {
+				toast.error('Failed to delete business', {
+					description: `Error: ${e}`
+				});
+			}
+		})
   };
   
   // Count how many platform URLs are set

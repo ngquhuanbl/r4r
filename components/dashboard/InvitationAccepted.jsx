@@ -26,6 +26,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { toast } from "sonner";
 
 export function ShareIcon() {
   return (
@@ -70,9 +71,14 @@ export default function InvitationAccepted({
         setTimeout(() => {
           window.location.reload();
         }, 500);
+				
+				toast.success(`Submit review successfully`);
       }
     } catch (error) {
       console.error("Error submitting review:", error);
+			toast.error(`Failed to submit review`, {
+				description: `Error: ${error}`
+			});
     }
 
     setIsLoading(false);

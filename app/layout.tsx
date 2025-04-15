@@ -1,5 +1,6 @@
 import { GeistSans } from "geist/font/sans";
 import { cn } from "@/lib/utils";
+import { Toaster } from 'sonner';
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={cn("h-full font-sans antialiased", GeistSans.className)}>
         <div className="flex flex-col min-h-screen text-black dark:text-white">
+					<Toaster />
           {children}
         </div>
       </body>

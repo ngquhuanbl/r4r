@@ -14,6 +14,7 @@ export default async function Page() {
     .order('id');
     
   if (error) {
+		// TODO: Error page
     console.error('Error fetching platforms:', error);
   }
   
