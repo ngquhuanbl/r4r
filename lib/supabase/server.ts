@@ -50,7 +50,7 @@ export async function getUser() {
   return user;
 }
 
-export async function getUserOrRedirect(redirectUrl = "/login") {
+export async function getUserOrRedirect(redirectUrl = "/sign-in") {
   const supabase = createClient();
 
   const {

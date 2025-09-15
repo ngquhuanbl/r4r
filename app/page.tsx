@@ -32,7 +32,7 @@ export default async function Index() {
                     <Button size="lg">Go to Dashboard</Button>
                   </Link>
                 ) : (
-                  <Link href="/login">
+                  <Link href="/sign-in">
                     <Button size="lg">Get Started</Button>
                   </Link>
                 )}
