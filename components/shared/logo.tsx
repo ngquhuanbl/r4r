@@ -1,8 +1,11 @@
+import { cn } from "@/lib/utils";
+
 interface LogoProps {
   style?: "colored" | "mono";
+  size?: "lg" | "md" | "sm";
 }
 
-export default function Logo({ style = "colored" }: LogoProps) {
+export default function Logo({ style = "colored", size = "md" }: LogoProps) {
   return (
     <div className="flex items-center justify-center flex-row gap-2 sm:gap-4">
       <svg
@@ -56,22 +59,24 @@ export default function Logo({ style = "colored" }: LogoProps) {
       </svg>
       <div className="flex flex-col text-start">
         <span
-          className={[
-            "font-inter font-semibold text-sm sm:text-lg leading-3 sm:leading-6 tracking-tight",
-            style === "colored" ? "text-black dark:text-white" : "text-white",
-          ]
-            .join("")
-            .trim()}
+          className={cn(
+            "font-inter font-semibold text-sm sm:text-base leading-3 sm:leading-6 tracking-tight",
+            {
+              "text-black dark:text-white": style === "colored",
+              "text-white": style !== "colored",
+            }
+          )}
         >
           Review4Review
         </span>
         <span
-          className={[
-            "font-inter font-light text-sm sm:text-lg leading-4 sm:leading-6 tracking-tight flex items-center",
-            style === "colored" ? "text-black dark:text-white" : "text-white",
-          ]
-            .join("")
-            .trim()}
+          className={cn(
+            "font-inter font-light text-sm sm:text-base leading-4 sm:leading-6 tracking-tight flex items-center",
+            {
+              "text-black dark:text-white": style === "colored",
+              "text-white": style !== "colored",
+            }
+          )}
         >
           A peer to peer review network
         </span>

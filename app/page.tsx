@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Navbar } from "@/components/shared/navbar";
+import { Header } from "@/components/shared/header";
 import { Footer } from "@/components/shared/footer";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -13,7 +13,7 @@ export default async function Index() {
 
   return (
     <>
-      <Navbar />
+      <Header email={user?.email} />
 
       <main className="flex flex-col flex-1 bg-white dark:bg-black">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">

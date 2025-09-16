@@ -53,3 +53,9 @@ export async function signUp(formData: FormData) {
       "Thanks for signing up! Please check your email for a confirmation link to complete your registration.",
   };
 }
+
+export const signOut = async () => {
+  const supabase = createClient();
+  await supabase.auth.signOut();
+  return redirect("/login");
+};
