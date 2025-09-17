@@ -52,6 +52,7 @@ export function HamburgerMenu() {
             "translate-x-0": isOpen,
           }
         )}
+				// @ts-ignore
         closedby="any"
       >
         <div className="flex flex-col">

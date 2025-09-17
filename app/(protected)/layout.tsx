@@ -1,7 +1,11 @@
 import { Footer } from "@/components/shared/footer";
 import { Header } from "@/components/shared/header";
 
-export default async function Layout({ children }) {
+interface LayoutProps {
+	children: React.ReactNode;
+}
+
+export default async function Layout({ children }: LayoutProps) {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
