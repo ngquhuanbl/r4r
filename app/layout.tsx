@@ -28,7 +28,7 @@ export default function RootLayout({
       >
         <div
           id="main-container"
-          className="flex flex-col h-full text-black dark:text-white bg-white dark:bg-black"
+          className="flex flex-col min-h-screen text-black dark:text-white bg-white dark:bg-black"
         >
           <Toaster />
           {children}

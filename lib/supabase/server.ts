@@ -1,11 +1,13 @@
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { Database } from "@/types/database";
+import { type CookieOptions, createServerClient } from "@supabase/ssr";
 
 export const createClient = () => {
   const cookieStore = cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -32,7 +34,7 @@ export const createClient = () => {
           }
         },
       },
-    },
+    }
   );
 };
 

@@ -21,8 +21,8 @@ interface HeaderProps {
 }
 export async function Header({ email }: HeaderProps) {
   return (
-    <header className="w-full px-5 md:px-8 py-2">
-      <nav className="hidden md:flex items-center justify-between max-w-7xl mx-auto w-full">
+    <header className="w-full px-5 md:px-8 py-2 max-w-7xl mx-auto">
+      <nav className="hidden md:flex items-center justify-between w-full">
         <Logo />
         <ul role="menu" className="flex items-center gap-10 text-sm">
           <li role="menuitem">
@@ -60,6 +60,7 @@ export async function Header({ email }: HeaderProps) {
       <div className="flex md:hidden items-center justify-between pt-2">
         {/* Hambuger btn */}
         <HamburgerMenu />
+				{/* TODO: Show screen title (e.g. DASHBOARD / BUSINESSES) */}
         <DropdownMenu>
           <DropdownMenuTrigger>
             <div className="w-6 h-6 rounded-full border-primary border sm:border-2 overflow-hidden">
