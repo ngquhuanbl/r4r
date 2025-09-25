@@ -63,13 +63,17 @@ export function RejectOutgoingReviewDialog({
             from you.
           </DialogDescription>
         </DialogHeader>
-        <p>
+        <p className="text-sm sm:text-base">
           Are you sure you want to reject giving a review for{" "}
           <span className="font-semibold">{business.business_name}</span>?
         </p>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" disabled={isRejecting}>
+            <Button
+              className="mt-3 sm:mt-0"
+              variant="outline"
+              disabled={isRejecting}
+            >
               Cancel
             </Button>
           </DialogClose>

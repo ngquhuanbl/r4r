@@ -12,6 +12,12 @@ import {
 import { Platform } from "@/components/dashboard/Platform";
 import { VerifyReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/VerifyReviewDialog";
 import { ViewReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/ViewReviewDialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -122,6 +128,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
         if (shouldIgnore) return;
         if (result.ok) {
           const { total_page, data } = result.data!;
+          console.log(data);
           setTotalPage(total_page);
           setData(data);
         } else {
@@ -248,32 +255,40 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
         const reviewStatusId = status.id;
         const reviewContent = content || "";
         const submittedDttm = created_at;
+
+        const actions =
+          reviewStatusName === IncomingReviewStatusNames.SUBMITTED ? (
+            <Button
+              className="mt-3 bg-teal-600 hover:bg-teal-900"
+              onClick={() => setSelectedVerifyingReview(item)}
+            >
+              Verify now
+            </Button>
+          ) : (
+            <Button
+              className="mt-3"
+              variant="outline"
+              onClick={() => setSelectedViewReview(item)}
+            >
+              View details
+            </Button>
+          );
         return (
-          <div key={id} className="p-5 grid grid-cols-[2fr_3fr_1fr_1fr]">
+          <div
+            key={id}
+            className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-0 sm:grid sm:grid-cols-[2fr_3fr_1fr_1fr]"
+          >
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-semibold">{businessName}</p>
+                <p className="font-semibold text-sm sm:text-base">
+                  {businessName}
+                </p>
                 <Platform name={invitation.platform.name} />
               </div>
               <p className="text-sm font-light">{businessAddress}</p>
-              {reviewStatusName === IncomingReviewStatusNames.SUBMITTED ? (
-                <Button
-                  className="mt-3 bg-teal-600 hover:bg-teal-900"
-                  onClick={() => setSelectedVerifyingReview(item)}
-                >
-                  Verify now
-                </Button>
-              ) : (
-                <Button
-                  className="mt-3"
-                  variant="outline"
-                  onClick={() => setSelectedViewReview(item)}
-                >
-                  View details
-                </Button>
-              )}
+              <div className="hidden sm:block">{actions}</div>
             </div>
-            <p className="italic">
+            <p className="italic text-sm sm:text-base">
               &quot;
               {reviewContent.length > REVIEW_CONTENT_LENGTH_LIMIT
                 ? reviewContent.slice(0, REVIEW_CONTENT_LENGTH_LIMIT) + "..."
@@ -281,17 +296,20 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
               &quot;
             </p>
             {/* TODO: Tooltip using Redux */}
-            <p>{statusNameMap.get(reviewStatusId) || "..."}</p>
-            <p className="text-sm font-medium">
+            <p className="text-sm sm:text-base">
+              {statusNameMap.get(reviewStatusId) || "..."}
+            </p>
+            <p className="text-xs sm:text-sm font-medium">
               {new Date(submittedDttm).toLocaleString()}
             </p>
+            <div className="block sm:hidden">{actions}</div>
           </div>
         );
       });
     } else {
       tableContent = (
         <div className="p-4">
-          <p className="mx-auto text-sm w-max">No result found</p>
+          <p className="mx-auto text-xs sm:text-sm w-max">No result found</p>
         </div>
       );
     }
@@ -303,63 +321,96 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
         id={INCOMING_REVIEWS_PANEL_ID}
         role="tabpanel"
         aria-labelledby={INCOMING_REVIEWS_TAB_ID}
-        className={cn("border border-zinc-200 divide-y divide-zinc-200", {
-          "animate-pulse": isLoading,
-        })}
-      >
-        {isFilterReady && (
-          <div className="flex items-center px-5 py-2 gap-10">
-            <p className="font-semibold">Filter:</p>
-            {businesses.length && (
-              <div className="flex items-center ml-auto">
-                <Label className="mr-4">By business:</Label>
-                <Select
-                  value={filteredBusiness}
-                  onValueChange={onFilteredByBusiness}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select business" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={BUSINESS_FILTER_ALL_OPTION.id}>
-                      {BUSINESS_FILTER_ALL_OPTION.name}
-                    </SelectItem>
-                    {businesses.map(({ id, business_name }) => (
-                      <SelectItem key={id} value={`${id}`}>
-                        {business_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            {reviewStatuses.length && (
-              <div className="flex items-center">
-                <Label className="mr-4">By status:</Label>
-                <Select
-                  value={filteredStatus}
-                  onValueChange={onFilteredByStatus}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      value={INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION.id}
-                    >
-                      {INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION.name}
-                    </SelectItem>
-                    {reviewStatuses.map(({ id, name }) => (
-                      <SelectItem key={id} value={`${id}`}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
+        className={cn(
+          "border border-zinc-200 border-t-0 divide-y divide-zinc-200",
+          {
+            "animate-pulse": isLoading,
+          }
         )}
+      >
+        {isFilterReady &&
+          (function () {
+            const content = (
+              <>
+                {businesses.length && (
+                  <div className="flex justify-between sm:justify-start items-center sm:ml-auto">
+                    <Label className="sm:mr-4 text-xs sm:text-base">
+                      By business:
+                    </Label>
+                    <Select
+                      value={filteredBusiness}
+                      onValueChange={onFilteredByBusiness}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select business" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={BUSINESS_FILTER_ALL_OPTION.id}>
+                          {BUSINESS_FILTER_ALL_OPTION.name}
+                        </SelectItem>
+                        {businesses.map(({ id, business_name }) => (
+                          <SelectItem key={id} value={`${id}`}>
+                            {business_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {reviewStatuses.length && (
+                  <div className="flex justify-between sm:justify-start items-center">
+                    <Label className="sm:mr-4 text-xs sm:text-base">
+                      By status:
+                    </Label>
+                    <Select
+                      value={filteredStatus}
+                      onValueChange={onFilteredByStatus}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem
+                          value={INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION.id}
+                        >
+                          {INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION.name}
+                        </SelectItem>
+                        {reviewStatuses.map(({ id, name }) => (
+                          <SelectItem key={id} value={`${id}`}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
+            );
+            return (
+              <div className="py-2 px-3 sm:px-5 sm:py-2">
+                <div className="hidden sm:flex flex-row items-center gap-10">
+                  <p className="font-semibold text-sm sm:text-base">Filter:</p>
+                  {content}
+                </div>
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="block sm:hidden"
+                >
+                  <AccordionItem value="filter">
+                    <AccordionTrigger>
+                      <p className="font-semibold text-sm sm:text-base">
+                        Filter:
+                      </p>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="flex flex-col gap-2">{content}</div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            );
+          })()}
         {tableContent}
       </div>
       {!isLoading && (

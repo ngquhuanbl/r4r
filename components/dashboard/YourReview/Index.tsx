@@ -1,4 +1,5 @@
 "use client";
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 
 import { IncomingReviewsPanel } from "@/components/dashboard/YourReview/IncomingReviewPanel/Index";
@@ -20,14 +21,14 @@ export function YourReview({ userId }: { userId: string }) {
   return (
     <div>
       <div
-        className="flex border border-zinc-200 border-b-0 w-max"
+        className="flex border border-zinc-200 border-b-0 w-full sm:w-max"
         role="tablist"
       >
         {/* INCOMING REVIEWS TAB */}
         <button
           id={INCOMING_REVIEWS_TAB_ID}
-          className={cn("py-2 px-4 pr-20 border-b-2", {
-            "border-b-2 border-teal-600": isIncomingReviewsTabSelected,
+          className={cn("py-1 sm:py-2 px-3 sm:px-4 sm:pr-20 border-b-2", {
+            "border-b-2 border-teal-600 grow": isIncomingReviewsTabSelected,
           })}
           role="tab"
           aria-selected={isIncomingReviewsTabSelected}
@@ -35,25 +36,22 @@ export function YourReview({ userId }: { userId: string }) {
           onClick={() => setSelectedTab(INCOMING_REVIEWS_TAB_ID)}
         >
           <div
-            className={cn("flex items-center gap-4", {
+            className={cn("flex items-center gap-2 sm:gap-4", {
               "opacity-20": !isIncomingReviewsTabSelected,
             })}
           >
-            <svg
-              width="17"
-              height="17"
-              viewBox="0 0 17 17"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+            <ArrowDownLeft className="w-4 h-4 sm:w-6 sm:h-6 text-teal-600" />
+            <div
+              className={cn("text-start", {
+                "hidden sm:block": !isIncomingReviewsTabSelected,
+              })}
             >
-              <path
-                d="M15 0.5L16.75 2.25L4.75 14.25H15.5V16.75H0.5V1.75H3V12.5L15 0.5Z"
-                fill="#00C7BE"
-              />
-            </svg>
-            <div className="text-start">
-              <p className="uppercase font-semibold">incoming reviews</p>
-              <p className="text-sm">Reviews from other businesses to you</p>
+              <p className="uppercase font-semibold text-sm sm:text-base">
+                incoming reviews
+              </p>
+              <p className="text-xs sm:text-sm">
+                Reviews from other businesses to you
+              </p>
             </div>
           </div>
         </button>
@@ -62,9 +60,10 @@ export function YourReview({ userId }: { userId: string }) {
         <button
           id={OUTGOING_REVIEWS_TAB_ID}
           className={cn(
-            "py-2 px-4 pr-20 border-b-2 border-l border-l-zinc-200",
+            "py-1 sm:py-2 px-3 sm:px-4 sm:pr-20 border-b-2 border-l border-l-zinc-200",
             {
-              "border-b-2 border-b-purple-700 ": isOutgoingReviewsTabSelected,
+              "border-b-2 border-b-purple-700 grow":
+                isOutgoingReviewsTabSelected,
             }
           )}
           role="tab"
@@ -73,25 +72,20 @@ export function YourReview({ userId }: { userId: string }) {
           onClick={() => setSelectedTab(OUTGOING_REVIEWS_TAB_ID)}
         >
           <div
-            className={cn("flex items-center gap-4", {
+            className={cn("flex items-center gap-2 sm:gap-4", {
               "opacity-20": !isOutgoingReviewsTabSelected,
             })}
           >
-            <svg
-              width="30"
-              height="30"
-              viewBox="0 0 30 30"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+            <ArrowUpRight className="w-4 h-4 sm:w-6 sm:h-6 text-purple-700" />
+            <div
+              className={cn("text-start", {
+                "hidden sm:block": !isOutgoingReviewsTabSelected,
+              })}
             >
-              <path
-                d="M8 22.5L6.25 20.75L18.25 8.75H7.5V6.25H22.5V21.25H20V10.5L8 22.5Z"
-                fill="#AF52DE"
-              />
-            </svg>
-            <div className="text-start">
-              <p className="uppercase font-semibold">OUTGOING REVIEWS</p>
-              <p className="text-sm">Reviews from you to others</p>
+              <p className="uppercase font-semibold text-sm sm:text-base">
+                OUTGOING REVIEWS
+              </p>
+              <p className="text-xs sm:text-sm">Reviews from you to others</p>
             </div>
           </div>
         </button>

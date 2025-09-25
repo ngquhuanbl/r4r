@@ -13,7 +13,7 @@ export const INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION = {
 
 export const BUSINESS_FILTER_ALL_OPTION = {
   id: "-1",
-  name: "All",
+  name: "ALL",
 };
 
 export const INCOMING_REVIEWS_PAGE_SIZE = 4;

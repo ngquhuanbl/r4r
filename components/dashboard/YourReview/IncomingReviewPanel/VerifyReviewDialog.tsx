@@ -109,36 +109,36 @@ export function VerifyReviewDialog({
         <table className="border border-zinc-300 border-collapse ">
           <tbody>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
                 Reviewer
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 {businessName}
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm">
                 Platform
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm">
                 {platformName}
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
                 Address
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 {businessAddress}
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
-                Review URL
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
+                URL
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 <Link
-                  className="underline text-primary"
+                  className="underline text-primary break-all"
                   href={reviewURL!}
                   target="_blank"
                   rel="noreferrer"
@@ -149,10 +149,10 @@ export function VerifyReviewDialog({
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
-                Message
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
+                Content
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 &quot;{reviewContent}&quot;
               </td>
             </tr>
@@ -160,7 +160,7 @@ export function VerifyReviewDialog({
         </table>
         <div>
           <p className="font-semibold">Actions</p>
-          <p className="text-sm">
+          <p className="text-xs sm:text-sm">
             <span>
               After reviewing the details and checking the review on{" "}
               {platformName} via{" "}

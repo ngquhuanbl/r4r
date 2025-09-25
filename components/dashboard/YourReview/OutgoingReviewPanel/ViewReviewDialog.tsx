@@ -1,3 +1,6 @@
+import { ExternalLink } from "lucide-react";
+import Link from "next/link";
+
 import {
   Dialog,
   DialogContent,
@@ -31,6 +34,7 @@ export function ViewOutgoingReviewDialog({
   const platformName = platformInfo.name;
 
   const reviewContent = review.length ? review[0].content! : "";
+  const reviewURL = review.length ? review[0].url! : "";
   const reviewStatusName = getOutgoingReviewStatus(data).name;
 
   return (
@@ -46,42 +50,63 @@ export function ViewOutgoingReviewDialog({
         <table className="border border-zinc-300 border-collapse ">
           <tbody>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
                 Receiver
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 {businessName}
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm">
                 Platform
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm">
                 {platformName}
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
                 Address
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 {businessAddress}
               </td>
             </tr>
+            {reviewContent.length ? (
+              <>
+                <tr>
+                  <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
+                    URL
+                  </th>
+                  <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
+                    <Link
+                      className="underline text-primary break-all"
+                      href={reviewURL!}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {reviewURL}&nbsp;
+                      <ExternalLink className="inline w-3 h-3 align-middle" />
+                    </Link>
+                  </td>
+                </tr>
+                <tr>
+                  <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
+                    Content
+                  </th>
+                  <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
+                    &quot;{reviewContent}&quot;
+                  </td>
+                </tr>
+              </>
+            ) : null}
+
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
-                Message
-              </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
-                {reviewContent.length ? <>&quot;{reviewContent}&quot;</> : null}
-              </td>
-            </tr>
-            <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
                 Status
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 {reviewStatusName}
               </td>
             </tr>

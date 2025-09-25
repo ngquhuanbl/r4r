@@ -46,39 +46,39 @@ export function ViewReviewDialog({
             <span className="font-semibold">{businessName}</span>).
           </DialogDescription>
         </DialogHeader>
-        <table className="border border-zinc-300 border-collapse ">
+        <table className="border border-zinc-300 border-collapse">
           <tbody>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm">
                 Reviewer
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 {businessName}
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm">
                 Platform
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm">
                 {platformName}
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
                 Address
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 {businessAddress}
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
-                Review URL
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
+                URL
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 <Link
-                  className="underline text-primary"
+                  className="underline text-primary break-all"
                   href={reviewURL!}
                   target="_blank"
                   rel="noreferrer"
@@ -89,18 +89,18 @@ export function ViewReviewDialog({
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
-                Message
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
+                Content
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 &quot;{reviewContent}&quot;
               </td>
             </tr>
             <tr>
-              <th className="border border-zinc-300 text-start p-2 text-sm ">
+              <th className="border border-zinc-300 text-start p-2 text-xs sm:text-sm ">
                 Status
               </th>
-              <td className="border border-zinc-300 p-2 text-start text-sm ">
+              <td className="border border-zinc-300 p-2 text-start text-xs sm:text-sm ">
                 {reviewStatusName}
               </td>
             </tr>

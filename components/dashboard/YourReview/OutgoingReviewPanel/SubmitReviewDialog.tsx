@@ -79,7 +79,7 @@ export function SubmitReviewDialog({
   const getInstructions = () => {
     if (platformName === "Google") {
       return (
-        <ol className="list-decimal pl-5 space-y-1 text-sm">
+        <ol className="list-decimal pl-5 space-y-1 text-xs sm:text-sm">
           <li>Google "{businessName}" and find it in the results</li>
           <li>
             Next to the stars, click where it says "{`<number>`} Google Reviews"
@@ -96,7 +96,7 @@ export function SubmitReviewDialog({
       );
     } else if (platformName === "Yelp") {
       return (
-        <ol className="list-decimal pl-5 space-y-1 text-sm">
+        <ol className="list-decimal pl-5 space-y-1 text-xs sm:text-sm">
           <li>Find your review on the Yelp page for {businessName}</li>
           <li>
             Look for three horizontal dots (⋯) on the top right of your review
@@ -107,7 +107,7 @@ export function SubmitReviewDialog({
       );
     } else if (platformName === "TripAdvisor") {
       return (
-        <ol className="list-decimal pl-5 space-y-1 text-sm">
+        <ol className="list-decimal pl-5 space-y-1 text-xs sm:text-sm">
           <li>Find your review on the TripAdvisor page for {businessName}</li>
           <li>Under your review, look for the "Share" button</li>
           <li>Select "Copy Link"</li>
@@ -116,7 +116,7 @@ export function SubmitReviewDialog({
       );
     }
     return (
-      <ol className="list-decimal pl-5 space-y-1 text-sm">
+      <ol className="list-decimal pl-5 space-y-1 text-xs sm:text-sm">
         <li>
           Visit {platformName} and leave your review for {businessName}
         </li>
@@ -140,84 +140,104 @@ export function SubmitReviewDialog({
             foster authenticity in our network.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-6">
-          <div>
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-5 h-5 rounded-full text-center bg-slate-300 text-primary font-semibold flex items-center justify-center text-sm">
+        <Accordion type="multiple" className="w-full">
+          <AccordionItem value="item-1">
+            <AccordionTrigger>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full text-center bg-slate-300 text-primary font-semibold flex items-center justify-center text-xs sm:text-sm">
                   1
                 </div>
-                <p className="font-semibold text-base">
+                <p className="font-semibold text-sm sm:text-base">
                   Visit <span>{businessName}</span> on {platformName}
                 </p>
               </div>
-              <p className="font-base text-sm">
+            </AccordionTrigger>
+            <AccordionContent className="flex flex-col gap-4 text-balance">
+              <p className="font-base text-xs sm:text-sm">
                 Leave your review for{" "}
                 <span className="font-medium">{businessName}</span> on{" "}
                 <span className="font-medium">{platformName}</span> first, then
                 move to the next steps
               </p>
-            </div>
-          </div>
-          <div>
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-5 h-5 rounded-full text-center bg-slate-300 text-primary font-semibold flex items-center justify-center text-sm">
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="item-2">
+            <AccordionTrigger>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full text-center bg-slate-300 text-primary font-semibold flex items-center justify-center text-xs sm:text-sm">
                   2
                 </div>
-                <p className="font-semibold text-base">
+                <p className="font-semibold text-sm sm:text-base">
                   Leave Your Honest Review
                 </p>
               </div>
-              <p className="text-sm">
+            </AccordionTrigger>
+            <AccordionContent className="flex flex-col gap-4 text-balance">
+              <p className="text-xs sm:text-sm">
                 Write a genuine, constructive review based on your experience or
                 knowledge of <span className="font-medium">{businessName}</span>
                 .
               </p>
-              <div className="px-3 py-2 border border-sky-400 bg-cyan-100 rounded-md mt-3">
-                <p className="italic text-sky-700 text-sm">
+              <div className="px-3 py-2 border border-sky-400 bg-cyan-100 rounded-md">
+                <p className="italic text-sky-700 text-xs sm:text-sm">
                   <span className="font-semibold">Tip:</span>&nbsp;Focus on
                   specific aspects, be professional, and ensure your review adds
                   value to future visitors.
                 </p>
               </div>
-            </div>
-          </div>
-          <div>
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-5 h-5 rounded-full text-center bg-slate-300 text-primary font-semibold flex items-center justify-center text-sm">
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="item-3">
+            <AccordionTrigger>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full text-center bg-slate-300 text-primary font-semibold flex items-center justify-center text-xs sm:text-sm">
                   3
                 </div>
-                <p className="font-semibold text-base">
+                <p className="font-semibold text-sm sm:text-base">
                   Confirm review completion
                 </p>
               </div>
-              <form action={onSubmit} className="flex flex-col gap-3">
+            </AccordionTrigger>
+            <AccordionContent className="flex flex-col gap-4 text-balance">
+              <form action={onSubmit} className="flex flex-col gap-2 sm:gap-3">
                 <div>
-                  <Label htmlFor="out-going-review-url">Your review URL:</Label>
-                  <Input
-                    id="out-going-review-url"
-                    name={REVIEW_URL_FIELD_NAME}
-                    placeholder="Enter the review URL"
-                    required
-                  />
+                  <div className="grid gap-1 sm:gap-2">
+                    <Label
+                      className="text-sm sm:text-base"
+                      htmlFor="out-going-review-url"
+                    >
+                      Your review URL:
+                    </Label>
+                    <Input
+                      id="out-going-review-url"
+                      name={REVIEW_URL_FIELD_NAME}
+                      placeholder="Enter the review URL"
+                      required
+                      className="text-sm sm:text-base"
+                    />
+                  </div>
                   <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="instructions">
-                      <AccordionTrigger className="text-sm text-sky-700">
+                      <AccordionTrigger className="text-xs sm:text-sm text-sky-700">
                         How to get your review URL
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="px-3 py-2 bg-cyan-100 rounded-md text-sm">
+                        <div className="px-3 py-2 bg-cyan-100 rounded-md text-xs sm:text-sm">
                           {getInstructions()}
                         </div>
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="review-content">Review Content</Label>
+                <div className="grid gap-1 sm:gap-2">
+                  <Label
+                    className="text-sm sm:text-base"
+                    htmlFor="review-content"
+                  >
+                    Your review content:
+                  </Label>
                   <Textarea
+                    className="text-sm sm:text-base"
                     id="review-content"
                     placeholder="Copy and paste your review content here"
                     rows={4}
@@ -225,14 +245,15 @@ export function SubmitReviewDialog({
                     name={REVIEW_CONTENT_FIELD_NAME}
                   />
                 </div>
-                <div className="mt-2 mb-4 px-3 py-2 border border-sky-400 bg-cyan-100 rounded-md text-sky-700 text-sm">
-                  <p className="text-sky-700 text-sm italic">
+                <div className="px-3 py-2 border border-sky-400 bg-cyan-100 rounded-md text-xs sm:text-sm">
+                  <p className="text-sky-700 text-xs sm:text-sm italic">
                     After submitting this form, the business owner will be
-                    notified and will verify your review. Only verified reviews
-                    will be counted.
+                    notified and will verify your review.
+                    <br />
+                    Only verified reviews will be counted.
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-row-reverse items-center gap-2 sm:gap-4">
                   <Button
                     type="submit"
                     className="bg-violet-600 hover:bg-violet-800"
@@ -256,9 +277,9 @@ export function SubmitReviewDialog({
                   </DialogClose>
                 </div>
               </form>
-            </div>
-          </div>
-        </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </DialogContent>
     </Dialog>
   );

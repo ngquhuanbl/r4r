@@ -40,8 +40,13 @@ import { InboxPagination } from "../Pagination";
 import { RejectOutgoingReviewDialog } from "./RejectReviewDialog";
 import { SubmitReviewDialog } from "./SubmitReviewDialog";
 import { ViewOutgoingReviewDialog } from "./ViewReviewDialog";
-
-// ALL, SUBMITTED, VERIFIED, REJECTED BY OTHERS / PENDING, ACCEPTED, REJECTED BY YOU
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { businesses } from "@/constants/mock-data/dashboard";
 
 interface OutgoingReviewsPanelProps {
   userId: string;
@@ -294,16 +299,21 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
             break;
         }
         return (
-          <div key={id} className="p-5 grid grid-cols-[2fr_3fr_1fr_1fr]">
+          <div
+            key={id}
+            className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-0 sm:grid sm:grid-cols-[2fr_3fr_1fr_1fr]"
+          >
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-semibold">{businessName}</p>
+                <p className="font-semibold text-sm sm:text-base">
+                  {businessName}
+                </p>
                 <Platform name={platform.name} />
               </div>
               <p className="text-sm font-light">{businessAddress}</p>
-              {actions}
+              <div className="hidden sm:block">{actions}</div>
             </div>
-            <p className="italic">
+            <p className="italic text-sm sm:text-base">
               {reviewContent.length ? (
                 <>
                   &quot;
@@ -316,10 +326,11 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
               ) : null}
             </p>
             {/* TODO: Tooltip using Redux */}
-            <p>{reviewStatusName}</p>
-            <p className="text-sm font-medium">
+            <p className="text-sm sm:text-base">{reviewStatusName}</p>
+            <p className="text-xs sm:text-sm font-medium">
               {new Date(submittedDttm).toLocaleString()}
             </p>
+            <div className="block sm:hidden">{actions}</div>
           </div>
         );
       });
@@ -342,36 +353,64 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
           "animate-pulse": isLoading,
         })}
       >
-        {isFilterReady && (
-          <div className="flex items-center px-5 py-2 gap-10">
-            <p className="font-semibold">Filter:</p>
-            {reviewStatuses.length && (
-              <div className="flex items-center ml-auto">
-                <Label className="mr-4">By status:</Label>
-                <Select
-                  value={filteredStatus}
-                  onValueChange={onFilteredByStatus}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      value={OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.id}
+        {isFilterReady &&
+          (function () {
+            const content = (
+              <>
+                {reviewStatuses.length && (
+                  <div className="flex justify-between sm:justify-start items-center sm:ml-auto">
+                    <Label className="sm:mr-4 text-xs sm:text-base">
+                      By status:
+                    </Label>
+                    <Select
+                      value={filteredStatus}
+                      onValueChange={onFilteredByStatus}
                     >
-                      {OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.name}
-                    </SelectItem>
-                    {reviewStatuses.map(({ id, name }) => (
-                      <SelectItem key={id} value={`${id}`}>
-                        {name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem
+                          value={OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.id}
+                        >
+                          {OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.name}
+                        </SelectItem>
+                        {reviewStatuses.map(({ id, name }) => (
+                          <SelectItem key={id} value={`${id}`}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
+            );
+            return (
+              <div className="py-2 px-3 sm:px-5 sm:py-2">
+                <div className="hidden sm:flex flex-row items-center gap-10">
+                  <p className="font-semibold text-sm sm:text-base">Filter:</p>
+                  {content}
+                </div>
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="block sm:hidden"
+                >
+                  <AccordionItem value="filter">
+                    <AccordionTrigger>
+                      <p className="font-semibold text-sm sm:text-base">
+                        Filter:
+                      </p>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="flex flex-col gap-2">{content}</div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
-            )}
-          </div>
-        )}
+            );
+          })()}
         {tableContent}
       </div>
       {!isLoading && (
