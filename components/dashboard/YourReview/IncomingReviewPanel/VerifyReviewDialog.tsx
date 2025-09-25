@@ -3,7 +3,10 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
-import { confirmReview, rejectReview } from "@/app/(protected)/home/actions";
+import {
+  confirmIncomingReview,
+  rejectIncomingReview,
+} from "@/app/(protected)/home/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,13 +16,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FetchedReview, UpdatedReviewStatus } from "@/types/dashboard";
+import { IncomingReview, UpdatedIncomingReviewStatus } from "@/types/dashboard";
 
 interface VerifyReviewDialogProps {
   open: boolean;
-  data: FetchedReview;
+  data: IncomingReview;
   onOpenChange: (open: boolean) => void;
-  onUpdatedReview: (updatedReview: UpdatedReviewStatus) => void;
+  onUpdatedReview: (updatedReview: UpdatedIncomingReviewStatus) => void;
 }
 export function VerifyReviewDialog({
   open,
@@ -49,7 +52,7 @@ export function VerifyReviewDialog({
   const onConfirm = () => {
     startConfirming(async () => {
       try {
-        const result = await confirmReview(id);
+        const result = await confirmIncomingReview(id);
         if (result.ok) {
           toast.success(`Confirm review successfully`);
           // setStatus("approved");
@@ -71,7 +74,7 @@ export function VerifyReviewDialog({
   const onReject = () => {
     startRejecting(async () => {
       try {
-        const result = await rejectReview(id);
+        const result = await rejectIncomingReview(id);
         if (result.ok) {
           toast.success(`Deny review successfully`);
           // setStatus("rejected");

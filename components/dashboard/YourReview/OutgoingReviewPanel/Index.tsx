@@ -5,13 +5,11 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
-  fetchBusinesses,
-  fetchIncomingReviews,
-  fetchIncomingReviewStatuses,
+  fetchBusinessesCount,
+  fetchOutgoingReviews,
+  fetchOutgoingReviewStatuses,
 } from "@/app/(protected)/home/actions";
 import { Platform } from "@/components/dashboard/Platform";
-import { VerifyReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/VerifyReviewDialog";
-import { ViewReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/ViewReviewDialog";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -21,48 +19,56 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  BUSINESS_FILTER_ALL_OPTION,
-  INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION,
-  INCOMING_REVIEWS_PAGE_SIZE,
-  INCOMING_REVIEWS_PANEL_ID,
-  INCOMING_REVIEWS_TAB_ID,
+  OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION,
+  OUTGOING_REVIEWS_PAGE_SIZE,
+  OUTGOING_REVIEWS_PANEL_ID,
+  OUTGOING_REVIEWS_TAB_ID,
   REVIEW_CONTENT_LENGTH_LIMIT,
 } from "@/constants/dashboard/ui";
-import { IncomingReviewStatusNames } from "@/constants/shared";
+import { OutgoingReviewStatusNames } from "@/constants/shared";
 import { cn } from "@/lib/utils";
-import { IncomingReview, UpdatedIncomingReviewStatus } from "@/types/dashboard";
+import {
+  OutgoingReview,
+  SubmitReviewResponse,
+  UpdatedOutgoingReviewStatus,
+} from "@/types/dashboard";
 import { Tables } from "@/types/database";
+import { getOutgoingReviewStatus } from "@/utils/outgoing-review";
 import { Label } from "@radix-ui/react-dropdown-menu";
 
 import { InboxPagination } from "../Pagination";
+import { RejectOutgoingReviewDialog } from "./RejectReviewDialog";
+import { SubmitReviewDialog } from "./SubmitReviewDialog";
+import { ViewOutgoingReviewDialog } from "./ViewReviewDialog";
 
-interface IncomingReviewsPanelProps {
+// ALL, SUBMITTED, VERIFIED, REJECTED BY OTHERS / PENDING, ACCEPTED, REJECTED BY YOU
+
+interface OutgoingReviewsPanelProps {
   userId: string;
 }
 
-export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
-  const [data, setData] = useState<IncomingReview[] | null>(null);
+export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
+  const [data, setData] = useState<OutgoingReview[] | null>(null);
   const [isLoadingData, startLoadingData] = useTransition();
-  const [selectedVerifyingReview, setSelectedVerifyingReview] =
-    useState<IncomingReview | null>(null);
+  const [selectedSubmitReview, setSelectedSubmitReview] =
+    useState<OutgoingReview | null>(null);
   const [selectedViewReview, setSelectedViewReview] =
-    useState<IncomingReview | null>(null);
+    useState<OutgoingReview | null>(null);
+  const [selectedRejectwReview, setSelectedRejectReview] =
+    useState<OutgoingReview | null>(null);
 
   const [page, setPage] = useState(1);
   const [totalPage, setTotalPage] = useState(0);
 
+  const [businessCount, setBusinessesCount] = useState<number | null>(null);
   const [reviewStatuses, setReviewStatuses] = useState<
-    Tables<"review_statuses">[] | null
+    Tables<"invitation_statuses">[] | null
   >(null);
-  const [businesses, setBusinesses] = useState<Tables<"businesses">[] | null>(
-    null
-  );
+
   const [isLoadingFilter, startLoadingFilter] = useTransition();
-  const [filteredBusiness, setFilteredBusiness] = useState(
-    BUSINESS_FILTER_ALL_OPTION.id
-  );
+
   const [filteredStatus, setFilteredStatus] = useState(
-    INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION.id
+    OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.id
   );
 
   useEffect(() => {
@@ -70,19 +76,18 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
     let shouldIgnore = false;
     startLoadingFilter(async () => {
       try {
-        const [reviewStatusesResult, businessesResult] = await Promise.all([
-          fetchIncomingReviewStatuses(),
-          fetchBusinesses(userId),
+        const [businessCountResult, reviewStatusesResult] = await Promise.all([
+          fetchBusinessesCount(userId),
+          fetchOutgoingReviewStatuses(),
         ]);
         if (shouldIgnore) return;
-
-        if (!reviewStatusesResult.ok || !businessesResult.ok) {
+        if (!businessCountResult.ok || !reviewStatusesResult.ok) {
           toastId = toast.error("Unexpected error", {
             description: "Please reload the page",
           });
         } else {
+          setBusinessesCount(businessCountResult.data);
           setReviewStatuses(reviewStatusesResult.data);
-          setBusinesses(businessesResult.data);
         }
       } catch (e) {
         toastId = toast.error("Unexpected error", {
@@ -92,7 +97,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
     });
     return () => {
       if (toastId !== null) {
-        toast.dismiss(toastId);
+        toastId = toast.dismiss(toastId);
       }
       shouldIgnore = true;
     };
@@ -107,14 +112,11 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
           position: "top-center",
         });
 
-        const result = await fetchIncomingReviews(
+        const result = await fetchOutgoingReviews(
           userId,
           page,
-          INCOMING_REVIEWS_PAGE_SIZE,
-          filteredBusiness !== BUSINESS_FILTER_ALL_OPTION.id
-            ? +filteredBusiness
-            : undefined,
-          filteredStatus !== INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION.id
+          OUTGOING_REVIEWS_PAGE_SIZE,
+          filteredStatus !== OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.id
             ? +filteredStatus
             : undefined
         );
@@ -126,20 +128,16 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
           setData(data);
         } else {
           const { error } = result as any;
-          toastId = toast.error("Failed to load incoming reviews", {
+          toastId = toast.error("Failed to load outgoing reviews", {
             description: error || "Unexpected error",
             position: "top-center",
           });
         }
       } catch (e: any) {
-        toastId = toast.error("Failed to load incoming reviews", {
+        toastId = toast.error("Failed to load outgoing reviews", {
           description: e.message || "Unexpected error",
           position: "top-center",
         });
-      } finally {
-        if (toastId !== null) {
-          toast.dismiss(toastId);
-        }
       }
     });
 
@@ -149,7 +147,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
       }
       shouldIgnore = true;
     };
-  }, [page, userId, filteredBusiness, filteredStatus]);
+  }, [page, userId, filteredStatus]);
 
   const onPageChange = useCallback((nextPage: number) => {
     setPage(nextPage);
@@ -157,7 +155,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
 
   const onOpenChangeVerifiedReview = useCallback((opened: boolean) => {
     if (!opened) {
-      setSelectedVerifyingReview(null);
+      setSelectedSubmitReview(null);
     }
   }, []);
 
@@ -167,8 +165,14 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
     }
   }, []);
 
+  const onOpenChangeRejectReview = useCallback((opened: boolean) => {
+    if (!opened) {
+      setSelectedRejectReview(null);
+    }
+  }, []);
+
   const onUpdatedReview = useCallback(
-    (updatedReview: UpdatedIncomingReviewStatus) => {
+    (updatedReview: UpdatedOutgoingReviewStatus) => {
       setData((prevState) =>
         prevState!.map((currItem) =>
           currItem.id === updatedReview.id
@@ -179,26 +183,40 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
             : currItem
         )
       );
-      setSelectedVerifyingReview(null);
+
+      setSelectedRejectReview(null);
     },
     []
   );
 
-  const onFilteredByBusiness = useCallback((value: string) => {
-    setFilteredBusiness(value);
-    setPage(1);
-  }, []);
+  const onSubmittedReview = useCallback(
+    (submittedReview: SubmitReviewResponse) => {
+      setData((prevState) =>
+        prevState!.map((currItem) =>
+          currItem.id === submittedReview.id
+            ? {
+                ...currItem,
+                status: { ...submittedReview.status },
+                review: [{ ...submittedReview.review }],
+              }
+            : currItem
+        )
+      );
+      setSelectedSubmitReview(null);
+    },
+    []
+  );
 
   const onFilteredByStatus = useCallback((value: string) => {
     setFilteredStatus(value);
     setPage(1);
   }, []);
 
-  const isFilterReady = reviewStatuses !== null && businesses !== null;
+  const isFilterReady = reviewStatuses !== null;
 
   const isLoading = isLoadingData || isLoadingFilter;
 
-  const hasNoBusiness = businesses !== null && businesses.length === 0;
+  const hasNoBusiness = businessCount === 0;
   if (hasNoBusiness) {
     const params = new URLSearchParams();
     params.append("show", "1");
@@ -224,19 +242,12 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
     );
   }
 
-  const statusNameMap = new Map();
-  if (reviewStatuses !== null) {
-    reviewStatuses.forEach(({ id, name }) => {
-      statusNameMap.set(id, name);
-    });
-  }
-
   let tableContent = null;
   if (data !== null) {
     if (data.length) {
       tableContent = data.map((item) => {
-        const { id, content, created_at, status, invitation } = item;
-        const businessInfo = invitation.business;
+        const { id, business, created_at, platform, review } = item;
+        const businessInfo = business;
         const businessName = businessInfo.business_name;
         const businessAddress = [
           businessInfo.address,
@@ -244,44 +255,68 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
           businessInfo.state,
         ].join(", ");
 
+        //@ts-ignore
+        const status = getOutgoingReviewStatus(item);
         const reviewStatusName = status.name;
-        const reviewStatusId = status.id;
-        const reviewContent = content || "";
+        const reviewContent = review.length ? review[0].content! : "";
         const submittedDttm = created_at;
+
+        let actions = null;
+        switch (reviewStatusName) {
+          case OutgoingReviewStatusNames.PENDING:
+            actions = (
+              <div className="flex gap-3 mt-3">
+                <Button
+                  className="bg-violet-600 hover:bg-violet-900"
+                  onClick={() => setSelectedSubmitReview(item)}
+                >
+                  Submit review
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setSelectedRejectReview(item)}
+                >
+                  Reject
+                </Button>
+              </div>
+            );
+            break;
+          default:
+            actions = (
+              <Button
+                className="mt-3"
+                variant="outline"
+                onClick={() => setSelectedViewReview(item)}
+              >
+                View details
+              </Button>
+            );
+            break;
+        }
         return (
           <div key={id} className="p-5 grid grid-cols-[2fr_3fr_1fr_1fr]">
             <div>
               <div className="flex items-center gap-2">
                 <p className="font-semibold">{businessName}</p>
-                <Platform name={invitation.platform.name} />
+                <Platform name={platform.name} />
               </div>
               <p className="text-sm font-light">{businessAddress}</p>
-              {reviewStatusName === IncomingReviewStatusNames.SUBMITTED ? (
-                <Button
-                  className="mt-3 bg-teal-600 hover:bg-teal-900"
-                  onClick={() => setSelectedVerifyingReview(item)}
-                >
-                  Verify now
-                </Button>
-              ) : (
-                <Button
-                  className="mt-3"
-                  variant="outline"
-                  onClick={() => setSelectedViewReview(item)}
-                >
-                  View details
-                </Button>
-              )}
+              {actions}
             </div>
             <p className="italic">
-              &quot;
-              {reviewContent.length > REVIEW_CONTENT_LENGTH_LIMIT
-                ? reviewContent.slice(0, REVIEW_CONTENT_LENGTH_LIMIT) + "..."
-                : reviewContent}
-              &quot;
+              {reviewContent.length ? (
+                <>
+                  &quot;
+                  {reviewContent.length > REVIEW_CONTENT_LENGTH_LIMIT
+                    ? reviewContent.slice(0, REVIEW_CONTENT_LENGTH_LIMIT) +
+                      "..."
+                    : reviewContent}
+                  &quot;
+                </>
+              ) : null}
             </p>
             {/* TODO: Tooltip using Redux */}
-            <p>{statusNameMap.get(reviewStatusId) || "..."}</p>
+            <p>{reviewStatusName}</p>
             <p className="text-sm font-medium">
               {new Date(submittedDttm).toLocaleString()}
             </p>
@@ -300,9 +335,9 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
   return (
     <div className="flex flex-col justify-between">
       <div
-        id={INCOMING_REVIEWS_PANEL_ID}
+        id={OUTGOING_REVIEWS_PANEL_ID}
         role="tabpanel"
-        aria-labelledby={INCOMING_REVIEWS_TAB_ID}
+        aria-labelledby={OUTGOING_REVIEWS_TAB_ID}
         className={cn("border border-zinc-200 divide-y divide-zinc-200", {
           "animate-pulse": isLoading,
         })}
@@ -310,31 +345,8 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
         {isFilterReady && (
           <div className="flex items-center px-5 py-2 gap-10">
             <p className="font-semibold">Filter:</p>
-            {businesses.length && (
-              <div className="flex items-center ml-auto">
-                <Label className="mr-4">By business:</Label>
-                <Select
-                  value={filteredBusiness}
-                  onValueChange={onFilteredByBusiness}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select business" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={BUSINESS_FILTER_ALL_OPTION.id}>
-                      {BUSINESS_FILTER_ALL_OPTION.name}
-                    </SelectItem>
-                    {businesses.map(({ id, business_name }) => (
-                      <SelectItem key={id} value={`${id}`}>
-                        {business_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
             {reviewStatuses.length && (
-              <div className="flex items-center">
+              <div className="flex items-center ml-auto">
                 <Label className="mr-4">By status:</Label>
                 <Select
                   value={filteredStatus}
@@ -345,9 +357,9 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem
-                      value={INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION.id}
+                      value={OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.id}
                     >
-                      {INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION.name}
+                      {OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.name}
                     </SelectItem>
                     {reviewStatuses.map(({ id, name }) => (
                       <SelectItem key={id} value={`${id}`}>
@@ -367,24 +379,32 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
           <InboxPagination
             page={page}
             totalPage={totalPage}
-            numVisiblePage={INCOMING_REVIEWS_PAGE_SIZE}
+            numVisiblePage={OUTGOING_REVIEWS_PAGE_SIZE}
             onPageChange={onPageChange}
           />
         </div>
       )}
-      {selectedVerifyingReview !== null && (
-        <VerifyReviewDialog
+      {selectedSubmitReview !== null && (
+        <SubmitReviewDialog
           open={true}
-          data={selectedVerifyingReview}
+          data={selectedSubmitReview}
           onOpenChange={onOpenChangeVerifiedReview}
-          onUpdatedReview={onUpdatedReview}
+          onUpdatedReview={onSubmittedReview}
         />
       )}
       {selectedViewReview !== null && (
-        <ViewReviewDialog
+        <ViewOutgoingReviewDialog
           open={true}
           data={selectedViewReview}
           onOpenChange={onOpenChangeViewReview}
+        />
+      )}
+      {selectedRejectwReview !== null && (
+        <RejectOutgoingReviewDialog
+          open={true}
+          data={selectedRejectwReview}
+          onOpenChange={onOpenChangeRejectReview}
+          onUpdatedReview={onUpdatedReview}
         />
       )}
     </div>

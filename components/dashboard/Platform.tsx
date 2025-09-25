@@ -1,15 +1,15 @@
 import Image from "next/image";
 
-import googleSrc from "@/public/dashboard/google.png";
-import tripAdvisorSrc from "@/public/dashboard/tripadvisor.png";
-import yelpSrc from "@/public/dashboard/yelp.svg";
-import { PlatformNames } from "@/constants/shared";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PlatformNames } from "@/constants/shared";
+import googleSrc from "@/public/dashboard/google.png";
+import tripAdvisorSrc from "@/public/dashboard/tripadvisor.png";
+import yelpSrc from "@/public/dashboard/yelp.svg";
 
 interface PlatformProps {
   name: string;
@@ -40,7 +40,7 @@ export function Platform({ name }: PlatformProps) {
     <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="p-1 bg-white rounded-full overflow-hidden">
+          <div className="rounded-full overflow-hidden">
             <Image
               src={src}
               alt={description}
