@@ -12,14 +12,37 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import userSrc from "@/public/shared/user.png";
+import { UserId } from "@/types/shared";
 
 import { HamburgerMenu } from "./hamburger-menu";
 import { LogOutBtn } from "./log-out-btn";
+import { Notifications } from "./notifications";
 
 interface HeaderProps {
+  userId: UserId;
   email?: string;
 }
-export async function Header({ email }: HeaderProps) {
+export async function Header({ userId, email }: HeaderProps) {
+  const profileMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full border-primary border sm:border-2 overflow-hidden">
+          <Image
+            src={userSrc}
+            width={64}
+            height={64}
+            className="w-6 h-6 md:w-8 md:h-8"
+            alt={""}
+          />
+        </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" side="bottom">
+        <DropdownMenuLabel>{email || "My account"}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <LogOutBtn onClick={signOut} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
   return (
     <header className="w-full px-5 md:px-8 py-2 max-w-7xl mx-auto">
       <nav className="hidden md:flex items-center justify-between w-full">
@@ -36,49 +59,20 @@ export async function Header({ email }: HeaderProps) {
             </Link>
           </li>
           <li>
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <div className="w-8 h-8 rounded-full border-primary border sm:border-2 overflow-hidden">
-                  <Image
-                    src={userSrc}
-                    width={64}
-                    height={64}
-                    className="w-8 h-8"
-                    alt={""}
-                  />
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="bottom">
-                <DropdownMenuLabel>{email || "My account"}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <LogOutBtn onClick={signOut} />
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Notifications userId={userId} />
           </li>
+          <li>{profileMenu}</li>
         </ul>
       </nav>
       <div className="flex md:hidden items-center justify-between pt-2">
         {/* Hambuger btn */}
         <HamburgerMenu />
-				{/* TODO: Show screen title (e.g. DASHBOARD / BUSINESSES) */}
-        <DropdownMenu>
-          <DropdownMenuTrigger>
-            <div className="w-6 h-6 rounded-full border-primary border sm:border-2 overflow-hidden">
-              <Image
-                src={userSrc}
-                width={64}
-                height={64}
-                className="w-6 h-6"
-                alt={""}
-              />
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="bottom">
-            <DropdownMenuLabel>{email || "My account"}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <LogOutBtn onClick={signOut} />
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* TODO: Show screen title (e.g. DASHBOARD / BUSINESSES) */}
+
+        <div className="ml-auto mr-3">
+          <Notifications userId={userId} />
+        </div>
+        {profileMenu}
       </div>
     </header>
   );

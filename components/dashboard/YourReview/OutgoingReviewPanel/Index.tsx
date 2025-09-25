@@ -10,6 +10,12 @@ import {
   fetchOutgoingReviewStatuses,
 } from "@/app/(protected)/home/actions";
 import { Platform } from "@/components/dashboard/Platform";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -34,19 +40,13 @@ import {
 } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { getOutgoingReviewStatus } from "@/utils/outgoing-review";
+import { getAddress } from "@/utils/shared";
 import { Label } from "@radix-ui/react-dropdown-menu";
 
 import { InboxPagination } from "../Pagination";
 import { RejectOutgoingReviewDialog } from "./RejectReviewDialog";
 import { SubmitReviewDialog } from "./SubmitReviewDialog";
 import { ViewOutgoingReviewDialog } from "./ViewReviewDialog";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { businesses } from "@/constants/mock-data/dashboard";
 
 interface OutgoingReviewsPanelProps {
   userId: string;
@@ -254,11 +254,7 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
         const { id, business, created_at, platform, review } = item;
         const businessInfo = business;
         const businessName = businessInfo.business_name;
-        const businessAddress = [
-          businessInfo.address,
-          businessInfo.city,
-          businessInfo.state,
-        ].join(", ");
+        const businessAddress = getAddress(businessInfo);
 
         //@ts-ignore
         const status = getOutgoingReviewStatus(item);

@@ -38,6 +38,7 @@ import { IncomingReviewStatusNames } from "@/constants/shared";
 import { cn } from "@/lib/utils";
 import { IncomingReview, UpdatedIncomingReviewStatus } from "@/types/dashboard";
 import { Tables } from "@/types/database";
+import { getAddress } from "@/utils/shared";
 import { Label } from "@radix-ui/react-dropdown-menu";
 
 import { InboxPagination } from "../Pagination";
@@ -245,11 +246,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
         const { id, content, created_at, status, invitation } = item;
         const businessInfo = invitation.business;
         const businessName = businessInfo.business_name;
-        const businessAddress = [
-          businessInfo.address,
-          businessInfo.city,
-          businessInfo.state,
-        ].join(", ");
+        const businessAddress = getAddress(businessInfo);
 
         const reviewStatusName = status.name;
         const reviewStatusId = status.id;

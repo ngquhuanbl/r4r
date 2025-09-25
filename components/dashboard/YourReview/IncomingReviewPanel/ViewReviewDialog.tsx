@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { IncomingReview } from "@/types/dashboard";
+import { getAddress } from "@/utils/shared";
 
 interface ViewReviewDialogProps {
   open: boolean;
@@ -23,11 +24,7 @@ export function ViewReviewDialog({
   const { url, content, status, invitation } = data;
   const businessInfo = invitation.business;
   const businessName = businessInfo.business_name;
-  const businessAddress = [
-    businessInfo.address,
-    businessInfo.city,
-    businessInfo.state,
-  ].join(", ");
+  const businessAddress = getAddress(businessInfo);
 
   const platformInfo = invitation.platform;
   const platformName = platformInfo.name;

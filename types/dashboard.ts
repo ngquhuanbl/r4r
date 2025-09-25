@@ -49,3 +49,18 @@ export type SubmitReviewResponse = {
   };
   status: Pick<Tables<"invitation_statuses">, "id" | "name">;
 };
+
+export type ReviewRequest = {
+  id: Tables<"review_invitations">["id"];
+  business: Pick<
+    Tables<"businesses">,
+    "id" | "business_name" | "address" | "city" | "state" | "zip_code" | "phone"
+  >;
+  platform: Pick<Tables<"platforms">, "id" | "name">;
+  status: Pick<Tables<"invitation_statuses">, "id" | "name">;
+};
+
+export type UpdatedReviewRequestsStatus = {
+  id: Tables<"review_invitations">["id"];
+  status: Pick<Tables<"invitation_statuses">, "id" | "name">;
+};

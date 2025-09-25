@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { OutgoingReview } from "@/types/dashboard";
 import { getOutgoingReviewStatus } from "@/utils/outgoing-review";
+import { getAddress } from "@/utils/shared";
 
 interface ViewOutgoingReviewDialogProps {
   open: boolean;
@@ -24,11 +25,7 @@ export function ViewOutgoingReviewDialog({
   const { message, review, business, platform } = data;
   const businessInfo = business;
   const businessName = businessInfo.business_name;
-  const businessAddress = [
-    businessInfo.address,
-    businessInfo.city,
-    businessInfo.state,
-  ].join(", ");
+  const businessAddress = getAddress(businessInfo);
 
   const platformInfo = platform;
   const platformName = platformInfo.name;

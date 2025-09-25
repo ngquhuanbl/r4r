@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { IncomingReview, UpdatedIncomingReviewStatus } from "@/types/dashboard";
+import { getAddress } from "@/utils/shared";
 
 interface VerifyReviewDialogProps {
   open: boolean;
@@ -33,11 +34,7 @@ export function VerifyReviewDialog({
   const { url, content, status, invitation, id } = data;
   const businessInfo = invitation.business;
   const businessName = businessInfo.business_name;
-  const businessAddress = [
-    businessInfo.address,
-    businessInfo.city,
-    businessInfo.state,
-  ].join(", ");
+  const businessAddress = getAddress(businessInfo);
 
   const platformInfo = invitation.platform;
   const platformName = platformInfo.name;

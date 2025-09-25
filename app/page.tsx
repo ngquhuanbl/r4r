@@ -13,7 +13,7 @@ export default async function Index() {
 
   return (
     <>
-      <Header email={user?.email} />
+      <Header email={user?.email} userId={user?.id!} />
 
       <main className="flex flex-col flex-1 bg-white dark:bg-black">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
