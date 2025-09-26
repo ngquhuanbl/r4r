@@ -8,13 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { OutgoingReview } from "@/types/dashboard";
-import { getOutgoingReviewStatus } from "@/utils/outgoing-review";
+import { Review } from "@/types/dashboard";
 import { getAddress } from "@/utils/shared";
 
 interface ViewOutgoingReviewDialogProps {
   open: boolean;
-  data: OutgoingReview;
+  data: Review;
   onOpenChange: (open: boolean) => void;
 }
 export function ViewOutgoingReviewDialog({
@@ -22,17 +21,17 @@ export function ViewOutgoingReviewDialog({
   data,
   onOpenChange,
 }: ViewOutgoingReviewDialogProps) {
-  const { message, review, business, platform } = data;
-  const businessInfo = business;
+  const { url, content, status, invitation } = data;
+  const businessInfo = invitation.business;
   const businessName = businessInfo.business_name;
   const businessAddress = getAddress(businessInfo);
 
-  const platformInfo = platform;
+  const platformInfo = invitation.platform;
   const platformName = platformInfo.name;
 
-  const reviewContent = review.length ? review[0].content! : "";
-  const reviewURL = review.length ? review[0].url! : "";
-  const reviewStatusName = getOutgoingReviewStatus(data).name;
+  const reviewURL = url;
+  const reviewContent = content || "";
+  const reviewStatusName = status.name;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -31,20 +31,14 @@ import {
   OUTGOING_REVIEWS_TAB_ID,
   REVIEW_CONTENT_LENGTH_LIMIT,
 } from "@/constants/dashboard/ui";
-import { OutgoingReviewStatusNames } from "@/constants/shared";
+import { ReviewStatusNames } from "@/constants/shared";
 import { cn } from "@/lib/utils";
-import {
-  OutgoingReview,
-  SubmitReviewResponse,
-  UpdatedOutgoingReviewStatus,
-} from "@/types/dashboard";
+import { Review, SubmitReviewResponse } from "@/types/dashboard";
 import { Tables } from "@/types/database";
-import { getOutgoingReviewStatus } from "@/utils/outgoing-review";
 import { getAddress } from "@/utils/shared";
 import { Label } from "@radix-ui/react-dropdown-menu";
 
 import { InboxPagination } from "../Pagination";
-import { RejectOutgoingReviewDialog } from "./RejectReviewDialog";
 import { SubmitReviewDialog } from "./SubmitReviewDialog";
 import { ViewOutgoingReviewDialog } from "./ViewReviewDialog";
 
@@ -53,14 +47,13 @@ interface OutgoingReviewsPanelProps {
 }
 
 export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
-  const [data, setData] = useState<OutgoingReview[] | null>(null);
+  const [data, setData] = useState<Review[] | null>(null);
   const [isLoadingData, startLoadingData] = useTransition();
   const [selectedSubmitReview, setSelectedSubmitReview] =
-    useState<OutgoingReview | null>(null);
-  const [selectedViewReview, setSelectedViewReview] =
-    useState<OutgoingReview | null>(null);
-  const [selectedRejectwReview, setSelectedRejectReview] =
-    useState<OutgoingReview | null>(null);
+    useState<Review | null>(null);
+  const [selectedViewReview, setSelectedViewReview] = useState<Review | null>(
+    null
+  );
 
   const [page, setPage] = useState(1);
   const [totalPage, setTotalPage] = useState(0);
@@ -170,30 +163,6 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
     }
   }, []);
 
-  const onOpenChangeRejectReview = useCallback((opened: boolean) => {
-    if (!opened) {
-      setSelectedRejectReview(null);
-    }
-  }, []);
-
-  const onUpdatedReview = useCallback(
-    (updatedReview: UpdatedOutgoingReviewStatus) => {
-      setData((prevState) =>
-        prevState!.map((currItem) =>
-          currItem.id === updatedReview.id
-            ? {
-                ...currItem,
-                status: { ...updatedReview.status },
-              }
-            : currItem
-        )
-      );
-
-      setSelectedRejectReview(null);
-    },
-    []
-  );
-
   const onSubmittedReview = useCallback(
     (submittedReview: SubmitReviewResponse) => {
       setData((prevState) =>
@@ -201,8 +170,7 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
           currItem.id === submittedReview.id
             ? {
                 ...currItem,
-                status: { ...submittedReview.status },
-                review: [{ ...submittedReview.review }],
+                ...submittedReview,
               }
             : currItem
         )
@@ -251,33 +219,27 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
   if (data !== null) {
     if (data.length) {
       tableContent = data.map((item) => {
-        const { id, business, created_at, platform, review } = item;
-        const businessInfo = business;
+        const { id, content, created_at, status, invitation } = item;
+        const businessInfo = invitation.business;
         const businessName = businessInfo.business_name;
         const businessAddress = getAddress(businessInfo);
 
-        //@ts-ignore
-        const status = getOutgoingReviewStatus(item);
         const reviewStatusName = status.name;
-        const reviewContent = review.length ? review[0].content! : "";
+        const reviewContent = content || "";
         const submittedDttm = created_at;
+
+        const platformName = invitation.platform.name;
 
         let actions = null;
         switch (reviewStatusName) {
-          case OutgoingReviewStatusNames.PENDING:
+          case ReviewStatusNames.DRAFT:
             actions = (
               <div className="flex gap-3 mt-3">
                 <Button
                   className="bg-violet-600 hover:bg-violet-900"
                   onClick={() => setSelectedSubmitReview(item)}
                 >
-                  Submit review
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => setSelectedRejectReview(item)}
-                >
-                  Reject
+                  Complete review
                 </Button>
               </div>
             );
@@ -304,7 +266,7 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
                 <p className="font-semibold text-sm sm:text-base">
                   {businessName}
                 </p>
-                <Platform name={platform.name} />
+                <Platform name={platformName} />
               </div>
               <p className="text-sm font-light">{businessAddress}</p>
               <div className="hidden sm:block">{actions}</div>
@@ -432,14 +394,6 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
           open={true}
           data={selectedViewReview}
           onOpenChange={onOpenChangeViewReview}
-        />
-      )}
-      {selectedRejectwReview !== null && (
-        <RejectOutgoingReviewDialog
-          open={true}
-          data={selectedRejectwReview}
-          onOpenChange={onOpenChangeRejectReview}
-          onUpdatedReview={onUpdatedReview}
         />
       )}
     </div>

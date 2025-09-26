@@ -21,14 +21,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { OutgoingReview, SubmitReviewResponse } from "@/types/dashboard";
+import { Review, SubmitReviewResponse } from "@/types/dashboard";
 
 const REVIEW_URL_FIELD_NAME = "url";
 const REVIEW_CONTENT_FIELD_NAME = "content";
 
 interface SubmitReviewDialogProps {
   open: boolean;
-  data: OutgoingReview;
+  data: Review;
   onOpenChange: (open: boolean) => void;
   onUpdatedReview: (updatedReview: SubmitReviewResponse) => void;
 }
@@ -38,11 +38,11 @@ export function SubmitReviewDialog({
   onOpenChange,
   onUpdatedReview,
 }: SubmitReviewDialogProps) {
-  const { status, business, id, platform } = data;
-  const businessInfo = business;
+  const { invitation, id } = data;
+  const businessInfo = invitation.business;
   const businessName = businessInfo.business_name;
 
-  const platformInfo = platform;
+  const platformInfo = invitation.platform;
   const platformName = platformInfo.name;
 
   const [isSubmitting, startSubmitting] = useTransition();

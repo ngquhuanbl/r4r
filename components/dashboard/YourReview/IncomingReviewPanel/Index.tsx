@@ -34,7 +34,7 @@ import {
   INCOMING_REVIEWS_TAB_ID,
   REVIEW_CONTENT_LENGTH_LIMIT,
 } from "@/constants/dashboard/ui";
-import { IncomingReviewStatusNames } from "@/constants/shared";
+import { ReviewStatusNames } from "@/constants/shared";
 import { cn } from "@/lib/utils";
 import { IncomingReview, UpdatedIncomingReviewStatus } from "@/types/dashboard";
 import { Tables } from "@/types/database";
@@ -253,8 +253,10 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
         const reviewContent = content || "";
         const submittedDttm = created_at;
 
+        const platformName = invitation.platform.name;
+
         const actions =
-          reviewStatusName === IncomingReviewStatusNames.SUBMITTED ? (
+          reviewStatusName === ReviewStatusNames.SUBMITTED ? (
             <Button
               className="mt-3 bg-teal-600 hover:bg-teal-900"
               onClick={() => setSelectedVerifyingReview(item)}
@@ -280,7 +282,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
                 <p className="font-semibold text-sm sm:text-base">
                   {businessName}
                 </p>
-                <Platform name={invitation.platform.name} />
+                <Platform name={platformName} />
               </div>
               <p className="text-sm font-light">{businessAddress}</p>
               <div className="hidden sm:block">{actions}</div>

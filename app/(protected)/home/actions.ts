@@ -2,25 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 
-import {
-  IncomingReviewStatusNames,
-  InvitationStatusNames,
-  OUTGOING_REVIEW_STATUSES,
-  outgoingReviewReferenceStatusNameMap,
-} from "@/constants/shared";
+import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
 import { createClient } from "@/lib/supabase/server";
 import {
   IncomingReview,
-  OutgoingReview,
+  Review,
   ReviewRequest,
   SubmitReviewResponse,
   UpdatedIncomingReviewStatus,
-  UpdatedOutgoingReviewStatus,
   UpdatedReviewRequestsStatus,
 } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { APIResponse, UserId } from "@/types/shared";
-import { isInvitationOutgoingReviewStatus } from "@/utils/outgoing-review";
 
 export async function fetchBusinesses(
   userId: UserId
@@ -52,7 +45,7 @@ export async function fetchIncomingReviewStatuses(): Promise<
     const { data, error } = await supabase
       .from("review_statuses")
       .select("*")
-      .neq("name", IncomingReviewStatusNames.DRAFT);
+      .neq("name", ReviewStatusNames.DRAFT);
 
     if (error) {
       console.error("Failed to fetch incoming review status list", error);
@@ -116,7 +109,7 @@ export async function fetchIncomingReviews(
 				`
       )
       .eq("invitation.inviter_id", userId)
-      .neq("status.name", IncomingReviewStatusNames.DRAFT);
+      .neq("status.name", ReviewStatusNames.DRAFT);
 
     // Filter
     if (businessId !== undefined) {
@@ -154,7 +147,7 @@ export async function fetchIncomingReviews(
         { count: "exact", head: true }
       )
       .eq("invitation.inviter_id", userId)
-      .neq("status.name", IncomingReviewStatusNames.DRAFT);
+      .neq("status.name", ReviewStatusNames.DRAFT);
 
     // Filter
     if (businessId !== undefined) {
@@ -207,7 +200,7 @@ export async function confirmIncomingReview(
   const { data: verifiedStatus, error: statusError } = await supabase
     .from("review_statuses")
     .select("id")
-    .eq("name", IncomingReviewStatusNames.VERIFIED)
+    .eq("name", ReviewStatusNames.VERIFIED)
     .single();
 
   if (statusError) {
@@ -257,7 +250,7 @@ export async function confirmIncomingReview(
       id: reviewId,
       status: {
         id: data[0].status_id,
-        name: IncomingReviewStatusNames.VERIFIED,
+        name: ReviewStatusNames.VERIFIED,
       },
     },
   };
@@ -272,7 +265,7 @@ export async function rejectIncomingReview(
   const { data: rejectedStatus, error: statusError } = await supabase
     .from("review_statuses")
     .select("id")
-    .eq("name", IncomingReviewStatusNames.REJECTED)
+    .eq("name", ReviewStatusNames.REJECTED)
     .single();
 
   if (statusError) {
@@ -321,7 +314,7 @@ export async function rejectIncomingReview(
       id: reviewId,
       status: {
         id: data[0].status_id,
-        name: IncomingReviewStatusNames.REJECTED,
+        name: ReviewStatusNames.REJECTED,
       },
     },
   };
@@ -331,32 +324,17 @@ export async function rejectIncomingReview(
 
 //#region OUTGOING REVIEWS
 export async function fetchOutgoingReviewStatuses(): Promise<
-  APIResponse<Tables<"invitation_statuses">[]>
+  APIResponse<Tables<"review_statuses">[]>
 > {
-  // TODO: Code smells
-  return {
-    ok: true,
-    data: OUTGOING_REVIEW_STATUSES,
-  };
-  // try {
-  //   const supabase = createClient();
-  //   const { data, error } = await supabase
-  //     .from("invitation_statuses")
-  //     .select("*");
+  const supabase = createClient();
+  const { data, error } = await supabase.from("review_statuses").select("*");
 
-  //   if (error) {
-  //     console.error("Failed to fetch outgoing review status list", error);
-  //     return { ok: false, error: error.message };
-  //   }
+  if (error) {
+    console.error("Failed to fetch outgoing review status list", error);
+    return { ok: false, error: error.message };
+  }
 
-  //   return { ok: true, data: data || [] };
-  // } catch (e: any) {
-  //   console.error(
-  //     "Unexpected error during outgoing review status list fetching",
-  //     e
-  //   );
-  //   return { ok: false, error: e.message || "Unexpected error" };
-  // }
+  return { ok: true, data: data || [] };
 }
 
 export async function fetchBusinessesCount(
@@ -388,7 +366,7 @@ export async function fetchOutgoingReviews(
   statusId?: Tables<"businesses">["id"]
 ): Promise<
   APIResponse<{
-    data: OutgoingReview[];
+    data: Review[];
     total_page: number;
   }>
 > {
@@ -396,105 +374,19 @@ export async function fetchOutgoingReviews(
 
   // Create query for fetching data
   const dataQuery = (function () {
-    let query = null;
-    if (statusId !== undefined) {
-      if (isInvitationOutgoingReviewStatus(statusId)) {
-        query = supabase
-          .from("review_invitations")
-          .select(
-            `
-						id,
-						message,
-						status:invitation_statuses!inner (
-							id,
-							name
-						),
-						created_at,
-						business:businesses!inner (
-							id,
-							business_name,
-							address,
-							city,
-							state,
-							zip_code
-						),
-						platform:platforms!inner (
-							id,
-							name
-						),
-						inviter_id,
-						invitee_id,
-						review:reviews (
-							id,
-							url,
-							content,
-							status:review_statuses (
-								id,
-								name
-							)
-						)
-						`
-          )
-          .eq("invitee_id", userId)
-          .eq(
-            "status.name",
-            outgoingReviewReferenceStatusNameMap.get(statusId)
-          );
-      } else {
-        query = supabase
-          .from("review_invitations")
-          .select(
-            `
-						id,
-						message,
-						status:invitation_statuses!inner (
-							id,
-							name
-						),
-						created_at,
-						business:businesses!inner (
-							id,
-							business_name,
-							address,
-							city,
-							state,
-							zip_code
-						),
-						platform:platforms!inner (
-							id,
-							name
-						),
-						inviter_id,
-						invitee_id,
-						review:reviews!inner (
-							id,
-							url,
-							content,
-							status:review_statuses!inner (
-								id,
-								name
-							)
-						)
-						`
-          )
-          .eq("invitee_id", userId)
-          .eq(
-            "review.status.name",
-            outgoingReviewReferenceStatusNameMap.get(statusId)
-          );
-      }
-    } else {
-      query = supabase
-        .from("review_invitations")
-        .select(
-          `
+    let query = supabase
+      .from("reviews")
+      .select(
+        `
+				id,
+				content,
+				url,
+				status:review_statuses!inner (
 					id,
-					message,
-					status:invitation_statuses!inner (
-						id,
-						name
-					),
-					created_at,
+					name
+				),
+				created_at,
+				invitation:review_invitations!inner (
 					business:businesses!inner (
 						id,
 						business_name,
@@ -507,20 +399,15 @@ export async function fetchOutgoingReviews(
 						id,
 						name
 					),
-					inviter_id,
-					invitee_id,
-					review:reviews (
-						id,
-						url,
-						content,
-						status:review_statuses (
-							id,
-							name
-						)
-					)
-					`
-        )
-        .eq("invitee_id", userId);
+					inviter_id
+				)
+				`
+      )
+      .eq("invitation.invitee_id", userId);
+
+    // Filter
+    if (statusId !== undefined) {
+      query = query.eq("status.id", statusId);
     }
 
     // Pagination
@@ -532,84 +419,31 @@ export async function fetchOutgoingReviews(
   })();
 
   const countQuery = (function () {
-    let query = null;
-    if (statusId !== undefined) {
-      if (isInvitationOutgoingReviewStatus(statusId)) {
-        query = supabase
-          .from("review_invitations")
-          .select(
-            `
-						id,
-						status:invitation_statuses!inner (
-							id,
-							name
-						),
-						invitee_id,
-						review:reviews (
-							id,
-							status:review_statuses (
-								id,
-								name
-							)
-						)
-						`,
-            { count: "exact", head: false }
-          )
-          .eq("invitee_id", userId)
-          .eq(
-            "status.name",
-            outgoingReviewReferenceStatusNameMap.get(statusId)
-          );
-      } else {
-        query = supabase
-          .from("review_invitations")
-          .select(
-            `
-						id,
-						status:invitation_statuses!inner (
-							id,
-							name
-						),
-						inviter_id,
-						review:reviews!inner (
-							id,
-							status:review_statuses!inner (
-								id,
-								name
-							)
-						)
-						`,
-            { count: "exact", head: false }
-          )
-          .eq("invitee_id", userId)
-          .eq(
-            "review.status.name",
-            outgoingReviewReferenceStatusNameMap.get(statusId)
-          );
-      }
-    } else {
-      query = supabase
-        .from("review_invitations")
-        .select(
-          `
+    let query = supabase
+      .from("reviews")
+      .select(
+        `
 					id,
-					status:invitation_statuses!inner (
+					status:review_statuses!inner (
 						id,
 						name
 					),
-					invitee_id,
-					review:reviews (
-						id,
-						status:review_statuses (
-							id,
-							name
-						)
+					invitation:review_invitations!inner (
+						business:businesses!inner (
+							id
+						),
+						inviter_id
 					)
-					`,
-          { count: "exact", head: false }
-        )
-        .eq("invitee_id", userId);
+				`,
+        { count: "exact", head: true }
+      )
+      .eq("invitation.invitee_id", userId);
+
+    // Filter
+    if (statusId !== undefined) {
+      query = query.eq("status.id", statusId);
     }
+
     return query;
   })();
 
@@ -643,154 +477,18 @@ export async function fetchOutgoingReviews(
     },
   };
 }
-
-export async function acceptOutgoingReview(
-  invitationId: Tables<"review_invitations">["id"]
-): Promise<APIResponse<UpdatedOutgoingReviewStatus>> {
-  const supabase = createClient();
-
-  // Get the ACCEPTED status ID
-  const { data: acceptedStatus, error: statusError } = await supabase
-    .from("invitation_statuses")
-    .select("id")
-    .eq("name", InvitationStatusNames.ACCEPTED)
-    .single();
-
-  if (statusError) {
-    console.error(
-      "Error fetching outgoing review accepted status:",
-      statusError
-    );
-    return { ok: false, error: statusError };
-  }
-
-  // Update the invitation status
-  const { data, error } = await supabase
-    .from("review_invitations")
-    .update({ status_id: acceptedStatus.id })
-    .eq("id", invitationId)
-    .select();
-
-  if (error) {
-    console.error("Error accepting outgoing review:", error);
-    return { ok: false, error };
-  }
-
-  // Create an initial draft review
-  const { data: draftStatus } = await supabase
-    .from("review_statuses")
-    .select("id")
-    .eq("name", IncomingReviewStatusNames.DRAFT)
-    .single();
-
-  if (draftStatus) {
-    await supabase.from("reviews").insert({
-      invitation_id: invitationId,
-      status_id: draftStatus.id,
-    });
-  }
-
-  revalidatePath("/home");
-  return {
-    ok: true,
-    data: {
-      id: invitationId,
-      status: {
-        id: acceptedStatus.id,
-        name: InvitationStatusNames.ACCEPTED,
-      },
-    },
-  };
-}
-
-export async function rejectOutgoingReview(
-  invitationId: Tables<"review_invitations">["id"]
-): Promise<APIResponse<UpdatedOutgoingReviewStatus>> {
-  const supabase = createClient();
-
-  // Get the REJECTED status ID
-  const { data: rejectedStatus, error: statusError } = await supabase
-    .from("invitation_statuses")
-    .select("id")
-    .eq("name", InvitationStatusNames.REJECTED)
-    .single();
-
-  if (statusError) {
-    console.error(
-      "Error fetching outgoing review rejected status:",
-      statusError
-    );
-    return { ok: false, error: statusError };
-  }
-
-  // Update the invitation status
-  const { data, error } = await supabase
-    .from("review_invitations")
-    .update({ status_id: rejectedStatus.id })
-    .eq("id", invitationId)
-    .select();
-
-  if (error) {
-    console.error("Error rejecting outgoing review:", error);
-    return { ok: false, error };
-  }
-
-  revalidatePath("/home");
-  return {
-    ok: true,
-    data: {
-      id: invitationId,
-      status: {
-        id: rejectedStatus.id,
-        name: InvitationStatusNames.REJECTED,
-      },
-    },
-  };
-}
-
 export async function submitOutgoingReview(
-  invitationId: Tables<"review_invitations">["id"],
+  reviewId: Tables<"reviews">["id"],
   reviewContent: Tables<"reviews">["content"],
   reviewUrl: Tables<"reviews">["url"]
 ): Promise<APIResponse<SubmitReviewResponse>> {
   const supabase = createClient();
 
-  //#region Accept invitation
-  // Get the ACCEPTED status ID
-  const { data: acceptedStatus, error: invitationStatusError } = await supabase
-    .from("invitation_statuses")
-    .select("id")
-    .eq("name", InvitationStatusNames.ACCEPTED)
-    .single();
-
-  if (invitationStatusError) {
-    console.error(
-      "Error fetching outgoing review accepted status:",
-      invitationStatusError
-    );
-    return { ok: false, error: invitationStatusError };
-  }
-
-  // Update the invitation status
-  const { data: updatedInvitationResult, error: updatedInvitationError } =
-    await supabase
-      .from("review_invitations")
-      .update({ status_id: acceptedStatus.id })
-      .eq("id", invitationId)
-      .select();
-
-  if (updatedInvitationError) {
-    console.error("Error accepting outgoing review:", updatedInvitationError);
-    return { ok: false, error: updatedInvitationError };
-  }
-  //#endregion
-
-  //#region Create new review
   // Get the SUBMITTED status ID
   const { data: submittedStatus, error: reviewStatusError } = await supabase
     .from("review_statuses")
     .select("id")
-    .eq("name", IncomingReviewStatusNames.SUBMITTED)
+    .eq("name", ReviewStatusNames.SUBMITTED)
     .single();
 
   if (reviewStatusError) {
@@ -799,21 +497,21 @@ export async function submitOutgoingReview(
   }
 
   // Update the review
-  const { data: insertResult, error: insertError } = await supabase
+  const { data: updateData, error: updateError } = await supabase
     .from("reviews")
-    .insert({
-      invitation_id: invitationId,
+    .update({
       content: reviewContent,
       url: reviewUrl,
       status_id: submittedStatus.id,
       submitted_at: new Date().toISOString(),
     })
+    .eq("id", reviewId)
     .select(
       `
 			id,
 			url,
 			content,
-			status:review_statuses (
+			status:review_statuses!inner (
 				id,
 				name
 			)
@@ -821,29 +519,17 @@ export async function submitOutgoingReview(
     )
     .single();
 
-  if (insertError) {
-    console.error("Error create new review:", insertError);
-    return { ok: false, error: insertError };
+  if (updateError) {
+    console.error("Error submitting review:", updateError);
+    return { ok: false, error: updateError };
   }
-  //#endregion
 
   // Ensure all relevant paths are revalidated
   revalidatePath("/home", "layout");
   revalidatePath("/home", "page");
   return {
     ok: true,
-    data: {
-      ...updatedInvitationResult,
-      id: invitationId,
-      status: {
-        id: acceptedStatus.id,
-        name: InvitationStatusNames.ACCEPTED,
-      },
-      review: {
-        ...insertResult,
-        status: insertResult.status!,
-      },
-    },
+    data: updateData,
   };
 }
 
@@ -880,7 +566,7 @@ export async function acceptReviewRequest(
   const { data: draftStatus } = await supabase
     .from("review_statuses")
     .select("id")
-    .eq("name", IncomingReviewStatusNames.DRAFT)
+    .eq("name", ReviewStatusNames.DRAFT)
     .single();
 
   if (draftStatus) {

@@ -64,8 +64,9 @@ function ReviewRequestItem({ data, onUpdateStatus }: ReviewRequestItemProps) {
     return (
       <div className="p-4 text-sm">
         <p>
-          Check your OUTGOING REVIEWS to send a review to{" "}
-          <span className="font-semibold">{data.business.business_name}</span>
+          Complete your review to{" "}
+          <span className="font-semibold">{data.business.business_name}</span>{" "}
+          in the OUTGOING REVIEWS section
         </p>
       </div>
     );
