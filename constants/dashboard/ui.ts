@@ -6,21 +6,16 @@ export const OUTGOING_REVIEWS_PANEL_ID = "panel/outgoing-reviews";
 
 export const REVIEW_CONTENT_LENGTH_LIMIT = 250;
 
-export const INCOMING_REVIEW_STATUS_FILTER_ALL_OPTION = {
-  id: "-1",
+export const REVIEW_STATUS_FILTER_ALL_OPTION = {
+  id: -1,
   name: "ALL",
 };
 
 export const BUSINESS_FILTER_ALL_OPTION = {
-  id: "-1",
+  id: -1,
   name: "ALL",
 };
 
 export const INCOMING_REVIEWS_PAGE_SIZE = 4;
-
-export const OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION = {
-  id: "-1",
-  name: "ALL",
-};
 
 export const OUTGOING_REVIEWS_PAGE_SIZE = 4;

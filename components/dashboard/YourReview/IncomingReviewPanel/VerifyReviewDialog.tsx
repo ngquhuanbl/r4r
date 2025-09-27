@@ -16,14 +16,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IncomingReview, UpdatedIncomingReviewStatus } from "@/types/dashboard";
+import { Review, UpdatedReviewStatus } from "@/types/dashboard";
 import { getAddress } from "@/utils/shared";
 
 interface VerifyReviewDialogProps {
   open: boolean;
-  data: IncomingReview;
+  data: Review;
   onOpenChange: (open: boolean) => void;
-  onUpdatedReview: (updatedReview: UpdatedIncomingReviewStatus) => void;
+  onUpdatedReview: (updatedReview: UpdatedReviewStatus) => void;
 }
 export function VerifyReviewDialog({
   open,
@@ -41,7 +41,6 @@ export function VerifyReviewDialog({
 
   const reviewURL = url;
   const reviewContent = content;
-  const reviewStatusName = status.name;
 
   const [isConfirming, startConfirming] = useTransition();
   const [isRejecting, startRejecting] = useTransition();
@@ -61,7 +60,7 @@ export function VerifyReviewDialog({
           throw result.error;
         }
       } catch (e) {
-        toast.error("Failed to approve review", {
+        toast.error("Failed to confirm review", {
           description: `Error: ${e}`,
         });
       }
@@ -73,7 +72,7 @@ export function VerifyReviewDialog({
       try {
         const result = await rejectIncomingReview(id);
         if (result.ok) {
-          toast.success(`Deny review successfully`);
+          toast.success(`Reject review successfully`);
           // setStatus("rejected");
           // Notify parent component that this review has been processed
           if (onUpdatedReview) {
@@ -83,7 +82,7 @@ export function VerifyReviewDialog({
           throw result.error;
         }
       } catch (e) {
-        toast.error("Failed to deny review", {
+        toast.error("Failed to reject review", {
           description: `Error: ${e}`,
         });
       }
@@ -176,7 +175,7 @@ export function VerifyReviewDialog({
         <DialogFooter>
           <div className="flex flex-col gap-2 items-end">
             <Button
-              className="bg-teal-600"
+              className="bg-teal-600 hover:bg-teal-700"
               onClick={onConfirm}
               disabled={isLoading}
             >

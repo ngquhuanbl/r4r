@@ -5,11 +5,10 @@ import { revalidatePath } from "next/cache";
 import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
 import { createClient } from "@/lib/supabase/server";
 import {
-  IncomingReview,
   Review,
   ReviewRequest,
   SubmitReviewResponse,
-  UpdatedIncomingReviewStatus,
+  UpdatedReviewStatus,
   UpdatedReviewRequestsStatus,
 } from "@/types/dashboard";
 import { Tables } from "@/types/database";
@@ -37,15 +36,12 @@ export async function fetchBusinesses(
   }
 }
 
-export async function fetchIncomingReviewStatuses(): Promise<
+export async function fetchReviewStatuses(): Promise<
   APIResponse<Tables<"review_statuses">[]>
 > {
   try {
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from("review_statuses")
-      .select("*")
-      .neq("name", ReviewStatusNames.DRAFT);
+    const { data, error } = await supabase.from("review_statuses").select("*");
 
     if (error) {
       console.error("Failed to fetch incoming review status list", error);
@@ -71,7 +67,7 @@ export async function fetchIncomingReviews(
   statusId?: Tables<"review_statuses">["id"]
 ): Promise<
   APIResponse<{
-    data: IncomingReview[];
+    data: Review[];
     total_page: number;
   }>
 > {
@@ -193,7 +189,7 @@ export async function fetchIncomingReviews(
 
 export async function confirmIncomingReview(
   reviewId: Tables<"reviews">["id"]
-): Promise<APIResponse<UpdatedIncomingReviewStatus>> {
+): Promise<APIResponse<UpdatedReviewStatus>> {
   const supabase = createClient();
 
   // Get the VERIFIED status ID
@@ -258,7 +254,7 @@ export async function confirmIncomingReview(
 
 export async function rejectIncomingReview(
   reviewId: Tables<"reviews">["id"]
-): Promise<APIResponse<UpdatedIncomingReviewStatus>> {
+): Promise<APIResponse<UpdatedReviewStatus>> {
   const supabase = createClient();
 
   // Get the VERIFIED status ID

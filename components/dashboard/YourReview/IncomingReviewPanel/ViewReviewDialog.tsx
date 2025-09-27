@@ -8,12 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IncomingReview } from "@/types/dashboard";
+import { Review } from "@/types/dashboard";
 import { getAddress } from "@/utils/shared";
 
 interface ViewReviewDialogProps {
   open: boolean;
-  data: IncomingReview;
+  data: Review;
   onOpenChange: (open: boolean) => void;
 }
 export function ViewReviewDialog({

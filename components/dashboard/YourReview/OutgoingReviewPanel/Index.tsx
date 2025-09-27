@@ -4,11 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import {
-  fetchBusinessesCount,
-  fetchOutgoingReviews,
-  fetchOutgoingReviewStatuses,
-} from "@/app/(protected)/home/actions";
 import { Platform } from "@/components/dashboard/Platform";
 import {
   Accordion,
@@ -18,27 +13,28 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION,
   OUTGOING_REVIEWS_PAGE_SIZE,
   OUTGOING_REVIEWS_PANEL_ID,
   OUTGOING_REVIEWS_TAB_ID,
   REVIEW_CONTENT_LENGTH_LIMIT,
+  REVIEW_STATUS_FILTER_ALL_OPTION,
 } from "@/constants/dashboard/ui";
-import { ReviewStatusNames } from "@/constants/shared";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
+import {
+  outgoingReviewsActions,
+  outgoingReviewsSelectors,
+  Status,
+} from "@/lib/redux/slices/outgoing-review";
 import { cn } from "@/lib/utils";
 import { Review, SubmitReviewResponse } from "@/types/dashboard";
-import { Tables } from "@/types/database";
+import { ErrorUtils } from "@/utils/error";
+import { ReviewUtils } from "@/utils/review";
 import { getAddress } from "@/utils/shared";
-import { Label } from "@radix-ui/react-dropdown-menu";
 
 import { InboxPagination } from "../Pagination";
+import { ReviewStatus } from "../ReviewStatus";
+import { ReviewStatusFilter } from "./ReviewStatusFilter";
 import { SubmitReviewDialog } from "./SubmitReviewDialog";
 import { ViewOutgoingReviewDialog } from "./ViewReviewDialog";
 
@@ -47,109 +43,57 @@ interface OutgoingReviewsPanelProps {
 }
 
 export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
-  const [data, setData] = useState<Review[] | null>(null);
-  const [isLoadingData, startLoadingData] = useTransition();
+  const data = useAppSelector(outgoingReviewsSelectors.selectData);
+  const status = useAppSelector(outgoingReviewsSelectors.selectStatus);
+  const page = useAppSelector(outgoingReviewsSelectors.selectPage);
+  const totalPage = useAppSelector(outgoingReviewsSelectors.selectTotalPage);
+  const hasBusiness = useAppSelector(myBusinessesSelectors.selectHasBusinesses);
+  const filteredStatus = useAppSelector(
+    outgoingReviewsSelectors.selectFilteredStatus
+  );
+  const dispatch = useAppDispatch();
+
+  const isLoading = status === Status.LOADING;
+
   const [selectedSubmitReview, setSelectedSubmitReview] =
     useState<Review | null>(null);
   const [selectedViewReview, setSelectedViewReview] = useState<Review | null>(
     null
   );
 
-  const [page, setPage] = useState(1);
-  const [totalPage, setTotalPage] = useState(0);
-
-  const [businessCount, setBusinessesCount] = useState<number | null>(null);
-  const [reviewStatuses, setReviewStatuses] = useState<
-    Tables<"invitation_statuses">[] | null
-  >(null);
-
-  const [isLoadingFilter, startLoadingFilter] = useTransition();
-
-  const [filteredStatus, setFilteredStatus] = useState(
-    OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.id
-  );
-
   useEffect(() => {
-    let toastId: string | number | null = null;
-    let shouldIgnore = false;
-    startLoadingFilter(async () => {
+    const abortController = new AbortController();
+    async function startFetch() {
       try {
-        const [businessCountResult, reviewStatusesResult] = await Promise.all([
-          fetchBusinessesCount(userId),
-          fetchOutgoingReviewStatuses(),
-        ]);
-        if (shouldIgnore) return;
-        if (!businessCountResult.ok || !reviewStatusesResult.ok) {
-          toastId = toast.error("Unexpected error", {
-            description: "Please reload the page",
-          });
-        } else {
-          setBusinessesCount(businessCountResult.data);
-          setReviewStatuses(reviewStatusesResult.data);
-        }
+        await dispatch(
+          outgoingReviewsActions.fetchOutgoingReviewsThunk(
+            { userId, page, filteredStatus },
+            {
+              signal: abortController.signal,
+            }
+          )
+        ).unwrap();
       } catch (e) {
-        toastId = toast.error("Unexpected error", {
-          description: "Please reload the page",
+        if (ErrorUtils.isAbortError(e)) return;
+        toast.error(`Failed to load outgoing reviews`, {
+          description: `${e}`,
         });
       }
-    });
-    return () => {
-      if (toastId !== null) {
-        toastId = toast.dismiss(toastId);
-      }
-      shouldIgnore = true;
-    };
-  }, [userId]);
+    }
 
-  useEffect(() => {
-    let toastId: string | number | null = null;
-    let shouldIgnore = false;
-    startLoadingData(async () => {
-      try {
-        toastId = toast.info("Loading...", {
-          position: "top-center",
-        });
-
-        const result = await fetchOutgoingReviews(
-          userId,
-          page,
-          OUTGOING_REVIEWS_PAGE_SIZE,
-          filteredStatus !== OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.id
-            ? +filteredStatus
-            : undefined
-        );
-
-        if (shouldIgnore) return;
-        if (result.ok) {
-          const { total_page, data } = result.data!;
-          setTotalPage(total_page);
-          setData(data);
-        } else {
-          const { error } = result as any;
-          toastId = toast.error("Failed to load outgoing reviews", {
-            description: error || "Unexpected error",
-            position: "top-center",
-          });
-        }
-      } catch (e: any) {
-        toastId = toast.error("Failed to load outgoing reviews", {
-          description: e.message || "Unexpected error",
-          position: "top-center",
-        });
-      }
-    });
+    startFetch();
 
     return () => {
-      if (toastId !== null) {
-        toast.dismiss(toastId);
-      }
-      shouldIgnore = true;
+      abortController.abort();
     };
-  }, [page, userId, filteredStatus]);
+  }, [page, userId, filteredStatus, dispatch]);
 
-  const onPageChange = useCallback((nextPage: number) => {
-    setPage(nextPage);
-  }, []);
+  const onPageChange = useCallback(
+    (nextPage: number) => {
+      dispatch(outgoingReviewsActions.setPage(nextPage));
+    },
+    [dispatch]
+  );
 
   const onOpenChangeVerifiedReview = useCallback((opened: boolean) => {
     if (!opened) {
@@ -165,32 +109,18 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
 
   const onSubmittedReview = useCallback(
     (submittedReview: SubmitReviewResponse) => {
-      setData((prevState) =>
-        prevState!.map((currItem) =>
-          currItem.id === submittedReview.id
-            ? {
-                ...currItem,
-                ...submittedReview,
-              }
-            : currItem
-        )
-      );
+      dispatch(outgoingReviewsActions.updateReview(submittedReview));
+
       setSelectedSubmitReview(null);
     },
-    []
+    [dispatch]
   );
 
   const onFilteredByStatus = useCallback((value: string) => {
-    setFilteredStatus(value);
-    setPage(1);
+    dispatch(outgoingReviewsActions.setFilteredReviewStatus(+value));
   }, []);
 
-  const isFilterReady = reviewStatuses !== null;
-
-  const isLoading = isLoadingData || isLoadingFilter;
-
-  const hasNoBusiness = businessCount === 0;
-  if (hasNoBusiness) {
+  if (!hasBusiness) {
     const params = new URLSearchParams();
     params.append("show", "1");
     return (
@@ -225,37 +155,36 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
         const businessAddress = getAddress(businessInfo);
 
         const reviewStatusName = status.name;
+        const reviewStatusId = status.id;
         const reviewContent = content || "";
         const submittedDttm = created_at;
 
         const platformName = invitation.platform.name;
 
         let actions = null;
-        switch (reviewStatusName) {
-          case ReviewStatusNames.DRAFT:
-            actions = (
-              <div className="flex gap-3 mt-3">
-                <Button
-                  className="bg-violet-600 hover:bg-violet-900"
-                  onClick={() => setSelectedSubmitReview(item)}
-                >
-                  Complete review
-                </Button>
-              </div>
-            );
-            break;
-          default:
-            actions = (
+        if (ReviewUtils.isDraftReviewStatus(reviewStatusName)) {
+          actions = (
+            <div className="flex gap-3 mt-3">
               <Button
-                className="mt-3"
-                variant="outline"
-                onClick={() => setSelectedViewReview(item)}
+                className="bg-violet-600 hover:bg-violet-900"
+                onClick={() => setSelectedSubmitReview(item)}
               >
-                View details
+                Complete review
               </Button>
-            );
-            break;
+            </div>
+          );
+        } else {
+          actions = (
+            <Button
+              className="mt-3"
+              variant="outline"
+              onClick={() => setSelectedViewReview(item)}
+            >
+              View details
+            </Button>
+          );
         }
+
         return (
           <div
             key={id}
@@ -284,7 +213,9 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
               ) : null}
             </p>
             {/* TODO: Tooltip using Redux */}
-            <p className="text-sm sm:text-base">{reviewStatusName}</p>
+            <div>
+              <ReviewStatus id={reviewStatusId} />
+            </div>
             <p className="text-xs sm:text-sm font-medium">
               {new Date(submittedDttm).toLocaleString()}
             </p>
@@ -311,64 +242,34 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
           "animate-pulse": isLoading,
         })}
       >
-        {isFilterReady &&
-          (function () {
-            const content = (
-              <>
-                {reviewStatuses.length && (
-                  <div className="flex justify-between sm:justify-start items-center sm:ml-auto">
-                    <Label className="sm:mr-4 text-xs sm:text-base">
-                      By status:
-                    </Label>
-                    <Select
-                      value={filteredStatus}
-                      onValueChange={onFilteredByStatus}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem
-                          value={OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.id}
-                        >
-                          {OUTGOING_REVIEW_STATUS_FILTER_ALL_OPTION.name}
-                        </SelectItem>
-                        {reviewStatuses.map(({ id, name }) => (
-                          <SelectItem key={id} value={`${id}`}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </>
-            );
-            return (
-              <div className="py-2 px-3 sm:px-5 sm:py-2">
-                <div className="hidden sm:flex flex-row items-center gap-10">
-                  <p className="font-semibold text-sm sm:text-base">Filter:</p>
-                  {content}
-                </div>
-                <Accordion
-                  type="single"
-                  collapsible
-                  className="block sm:hidden"
-                >
-                  <AccordionItem value="filter">
-                    <AccordionTrigger>
-                      <p className="font-semibold text-sm sm:text-base">
-                        Filter:
-                      </p>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="flex flex-col gap-2">{content}</div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+        {(function () {
+          const content = (
+            <ReviewStatusFilter
+              value={`${filteredStatus}`}
+              onChange={onFilteredByStatus}
+            />
+          );
+          return (
+            <div className="py-2 px-3 sm:px-5 sm:py-2">
+              <div className="hidden sm:flex flex-row items-center gap-10">
+                <p className="font-semibold text-sm sm:text-base">Filter:</p>
+                <div className="ml-auto">{content}</div>
               </div>
-            );
-          })()}
+              <Accordion type="single" collapsible className="block sm:hidden">
+                <AccordionItem value="filter">
+                  <AccordionTrigger>
+                    <p className="font-semibold text-sm sm:text-base">
+                      Filter:
+                    </p>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="flex flex-col gap-2">{content}</div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+          );
+        })()}
         {tableContent}
       </div>
       {!isLoading && (
