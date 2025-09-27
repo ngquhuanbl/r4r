@@ -5,11 +5,11 @@ import { revalidatePath } from "next/cache";
 import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
 import { createClient } from "@/lib/supabase/server";
 import {
-  Review,
+  FetchedReviewsResponse,
   ReviewRequest,
   SubmitReviewResponse,
-  UpdatedReviewStatus,
   UpdatedReviewRequestsStatus,
+  UpdatedReviewStatus,
 } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { APIResponse, UserId } from "@/types/shared";
@@ -65,12 +65,7 @@ export async function fetchIncomingReviews(
   pageSize: number,
   businessId?: Tables<"businesses">["id"],
   statusId?: Tables<"review_statuses">["id"]
-): Promise<
-  APIResponse<{
-    data: Review[];
-    total_page: number;
-  }>
-> {
+): Promise<APIResponse<FetchedReviewsResponse>> {
   const supabase = createClient();
 
   // Create query for fetching data
@@ -360,12 +355,7 @@ export async function fetchOutgoingReviews(
   page: number,
   pageSize: number,
   statusId?: Tables<"businesses">["id"]
-): Promise<
-  APIResponse<{
-    data: Review[];
-    total_page: number;
-  }>
-> {
+): Promise<APIResponse<FetchedReviewsResponse>> {
   const supabase = createClient();
 
   // Create query for fetching data

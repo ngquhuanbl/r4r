@@ -1,7 +1,16 @@
 import { Footer } from "@/components/shared/footer";
 import { Header } from "@/components/shared/header";
+import { INCOMING_REVIEWS_PAGE_SIZE } from "@/constants/dashboard/ui";
 import { createClient } from "@/lib/supabase/server";
+import { unwrap } from "@/utils/api";
 
+import {
+  fetchBusinesses,
+  fetchIncomingReviews,
+  fetchOutgoingReviews,
+  fetchPendingReviewRequests,
+  fetchReviewStatuses,
+} from "./home/actions";
 import { StoreProvider } from "./StoreProvider";
 
 interface LayoutProps {
@@ -13,8 +22,33 @@ export default async function Layout({ children }: LayoutProps) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const userId = user!.id;
+
+  const [
+    incomingReviews,
+    outgoingReviews,
+    reviewRequests,
+    myBusinesses,
+    reviewStatuses,
+  ] = await Promise.all([
+    unwrap(fetchIncomingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
+    unwrap(fetchOutgoingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
+    unwrap(fetchPendingReviewRequests(userId)),
+    unwrap(fetchBusinesses(userId)),
+    unwrap(fetchReviewStatuses()),
+  ]);
+
   return (
-    <StoreProvider>
+    <StoreProvider
+      initialData={{
+        incomingReviews,
+        outgoingReviews,
+        reviewRequests,
+        myBusinesses,
+        reviewStatuses,
+      }}
+    >
       <div className="flex flex-col min-h-screen">
         <Header userId={user!.id} email={user!.email} />
 

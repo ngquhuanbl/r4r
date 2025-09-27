@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Review, UpdatedReviewStatus } from "@/types/dashboard";
+import { ErrorUtils } from "@/utils/error";
 import { getAddress } from "@/utils/shared";
 
 interface VerifyReviewDialogProps {
@@ -31,7 +32,7 @@ export function VerifyReviewDialog({
   onOpenChange,
   onUpdatedReview,
 }: VerifyReviewDialogProps) {
-  const { url, content, status, invitation, id } = data;
+  const { url, content, invitation, id } = data;
   const businessInfo = invitation.business;
   const businessName = businessInfo.business_name;
   const businessAddress = getAddress(businessInfo);
@@ -61,7 +62,7 @@ export function VerifyReviewDialog({
         }
       } catch (e) {
         toast.error("Failed to confirm review", {
-          description: `Error: ${e}`,
+          description: ErrorUtils.serializeError(e),
         });
       }
     });
@@ -83,7 +84,7 @@ export function VerifyReviewDialog({
         }
       } catch (e) {
         toast.error("Failed to reject review", {
-          description: `Error: ${e}`,
+          description: ErrorUtils.serializeError(e),
         });
       }
     });

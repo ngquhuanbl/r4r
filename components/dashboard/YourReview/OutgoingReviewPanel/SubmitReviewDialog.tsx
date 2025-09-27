@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Review, SubmitReviewResponse } from "@/types/dashboard";
+import { ErrorUtils } from "@/utils/error";
 
 const REVIEW_URL_FIELD_NAME = "url";
 const REVIEW_CONTENT_FIELD_NAME = "content";
@@ -68,7 +69,7 @@ export function SubmitReviewDialog({
           }
         } catch (e) {
           toast.error("Failed to submit review", {
-            description: `Error: ${e}`,
+            description: ErrorUtils.serializeError(e),
           });
         }
       });

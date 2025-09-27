@@ -1,15 +1,15 @@
 import { fetchPendingReviewRequests as fetchReviewRequestsFromServer } from "@/app/(protected)/home/actions";
+import { ReviewRequest, UpdatedReviewRequestsStatus } from "@/types/dashboard";
+import { UserId } from "@/types/shared";
 import {
   createEntityAdapter,
   createSlice,
   PayloadAction,
 } from "@reduxjs/toolkit";
 
-import type { RootState } from "../store";
 import { createAppAsyncThunk } from "../type-safe";
-import { ReviewRequest, UpdatedReviewRequestsStatus } from "@/types/dashboard";
-import { UserId } from "@/types/shared";
 
+import type { RootState } from "../store";
 export enum Status {
   INIT = "init",
   LOADING = "loading",
@@ -37,6 +37,10 @@ export const reviewRequestsSlice = createSlice({
       });
     },
     requestRemoved: reviewRequestsAdapter.removeOne,
+    loadInitData(state, action: PayloadAction<ReviewRequest[]>) {
+      reviewRequestsAdapter.setAll(state, action.payload);
+      state.status = Status.SUCCEEDED;
+    },
   },
   selectors: {
     selectStatus: (state) => state.status,

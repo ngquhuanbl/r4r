@@ -3,7 +3,11 @@ import {
   OUTGOING_REVIEWS_PAGE_SIZE,
   REVIEW_STATUS_FILTER_ALL_OPTION,
 } from "@/constants/dashboard/ui";
-import { PartialReviewWithId, Review } from "@/types/dashboard";
+import {
+  FetchedReviewsResponse,
+  PartialReviewWithId,
+  Review,
+} from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { UserId } from "@/types/shared";
 import {
@@ -53,6 +57,12 @@ export const outgoingReviewsSlice = createSlice({
         id: data.id,
         changes: data,
       });
+    },
+    loadInitData(state, action: PayloadAction<FetchedReviewsResponse>) {
+      const { data, total_page } = action.payload;
+      outgoingReviewsAdapter.setAll(state, data);
+      state.totalPage = total_page;
+      state.status = Status.SUCCEEDED;
     },
   },
   extraReducers: (builder) => {

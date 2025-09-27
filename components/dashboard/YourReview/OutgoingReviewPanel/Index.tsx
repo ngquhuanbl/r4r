@@ -1,7 +1,7 @@
 "use client";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Platform } from "@/components/dashboard/Platform";
@@ -17,7 +17,6 @@ import {
   OUTGOING_REVIEWS_PANEL_ID,
   OUTGOING_REVIEWS_TAB_ID,
   REVIEW_CONTENT_LENGTH_LIMIT,
-  REVIEW_STATUS_FILTER_ALL_OPTION,
 } from "@/constants/dashboard/ui";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
@@ -28,6 +27,7 @@ import {
 } from "@/lib/redux/slices/outgoing-review";
 import { cn } from "@/lib/utils";
 import { Review, SubmitReviewResponse } from "@/types/dashboard";
+import { Tables } from "@/types/database";
 import { ErrorUtils } from "@/utils/error";
 import { ReviewUtils } from "@/utils/review";
 import { getAddress } from "@/utils/shared";
@@ -61,39 +61,48 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
     null
   );
 
-  useEffect(() => {
-    const abortController = new AbortController();
-    async function startFetch() {
-      try {
-        await dispatch(
-          outgoingReviewsActions.fetchOutgoingReviewsThunk(
-            { userId, page, filteredStatus },
-            {
-              signal: abortController.signal,
-            }
-          )
-        ).unwrap();
-      } catch (e) {
-        if (ErrorUtils.isAbortError(e)) return;
-        toast.error(`Failed to load outgoing reviews`, {
-          description: `${e}`,
-        });
-      }
+  const lastFetchingRequest = useRef<AbortController | null>(null);
+  const refetchList = async (
+    page: number,
+    filteredStatus: Tables<"review_statuses">["id"]
+  ) => {
+    if (lastFetchingRequest.current !== null) {
+      lastFetchingRequest.current.abort();
     }
 
-    startFetch();
+    const abortController = new AbortController();
+    lastFetchingRequest.current = abortController;
+    try {
+      await dispatch(
+        outgoingReviewsActions.fetchOutgoingReviewsThunk(
+          { userId, page, filteredStatus },
+          {
+            signal: abortController.signal,
+          }
+        )
+      ).unwrap();
+    } catch (e) {
+      if (ErrorUtils.isAbortError(e)) return;
+      toast.error(`Failed to load outcoming reviews`, {
+        description: ErrorUtils.serializeError(e),
+      });
+    } finally {
+      lastFetchingRequest.current = null;
+    }
+  };
 
-    return () => {
-      abortController.abort();
-    };
-  }, [page, userId, filteredStatus, dispatch]);
+  const onPageChange = (nextPage: number) => {
+    dispatch(outgoingReviewsActions.setPage(nextPage));
+    refetchList(nextPage, filteredStatus);
+  };
 
-  const onPageChange = useCallback(
-    (nextPage: number) => {
-      dispatch(outgoingReviewsActions.setPage(nextPage));
-    },
-    [dispatch]
-  );
+  const onFilteredByStatus = (value: string) => {
+    const nextFilteredStatus = +value;
+    dispatch(
+      outgoingReviewsActions.setFilteredReviewStatus(nextFilteredStatus)
+    );
+    refetchList(page, nextFilteredStatus);
+  };
 
   const onOpenChangeVerifiedReview = useCallback((opened: boolean) => {
     if (!opened) {
@@ -115,10 +124,6 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
     },
     [dispatch]
   );
-
-  const onFilteredByStatus = useCallback((value: string) => {
-    dispatch(outgoingReviewsActions.setFilteredReviewStatus(+value));
-  }, []);
 
   if (!hasBusiness) {
     const params = new URLSearchParams();

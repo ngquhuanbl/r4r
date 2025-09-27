@@ -20,6 +20,11 @@ export type Review = Pick<
   };
 };
 
+export type FetchedReviewsResponse = {
+  data: Review[];
+  total_page: number;
+};
+
 export type SubmitReviewResponse = Pick<
   Tables<"reviews">,
   "id" | "url" | "content"

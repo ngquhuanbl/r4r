@@ -1,14 +1,15 @@
 import { fetchBusinesses } from "@/app/(protected)/home/actions";
+import { Tables } from "@/types/database";
+import { UserId } from "@/types/shared";
 import {
   createEntityAdapter,
   createSlice,
+  PayloadAction,
 } from "@reduxjs/toolkit";
 
-import type { RootState } from "../store";
 import { createAppAsyncThunk } from "../type-safe";
-import { UserId } from "@/types/shared";
-import { Tables } from "@/types/database";
 
+import type { RootState } from "../store";
 export enum Status {
   INIT = "init",
   LOADING = "loading",
@@ -16,7 +17,7 @@ export enum Status {
   FAILED = "failed",
 }
 
-const myBusinessesAdapter = createEntityAdapter<Tables<'businesses'>>();
+const myBusinessesAdapter = createEntityAdapter<Tables<"businesses">>();
 
 export const myBusinessesSlice = createSlice({
   name: "my_businesses",
@@ -27,11 +28,17 @@ export const myBusinessesSlice = createSlice({
     status: Status.INIT,
     error: null,
   }),
-  reducers: {},
+  reducers: {
+    loadInitData(state, action: PayloadAction<Tables<"businesses">[]>) {
+      myBusinessesAdapter.setAll(state, action.payload);
+      state.status = Status.SUCCEEDED;
+    },
+  },
   selectors: {
     selectStatus: (state) => state.status,
     selectError: (state) => state.error,
-		selectHasBusinesses: (state) => state.status !== Status.SUCCEEDED || state.ids.length !== 0
+    selectHasBusinesses: (state) =>
+      state.status !== Status.SUCCEEDED || state.ids.length !== 0,
   },
   extraReducers: (builder) => {
     builder

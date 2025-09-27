@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -9,32 +7,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BUSINESS_FILTER_ALL_OPTION } from "@/constants/dashboard/ui";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import {
-  myBusinessesActions,
-  myBusinessesSelectors,
-  Status,
-} from "@/lib/redux/slices/my-business";
-import { UserId } from "@/types/shared";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { myBusinessesSelectors, Status } from "@/lib/redux/slices/my-business";
 
 interface BusinessesFilterProps {
-  userId: UserId;
   value: string;
   onChange: (value: string) => void;
 }
 
-export function BusinessesFilter({
-  userId,
-  value,
-  onChange,
-}: BusinessesFilterProps) {
-  const dispatch = useAppDispatch();
+export function BusinessesFilter({ value, onChange }: BusinessesFilterProps) {
   const data = useAppSelector(myBusinessesSelectors.selectData);
   const status = useAppSelector(myBusinessesSelectors.selectStatus);
-
-  useEffect(() => {
-    dispatch(myBusinessesActions.fetchMyBusinessesThunk(userId));
-  }, [userId, dispatch]);
 
   const hasContent = status === Status.SUCCEEDED && data.length;
   if (!hasContent) return null;

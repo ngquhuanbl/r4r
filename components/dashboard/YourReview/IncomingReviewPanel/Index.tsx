@@ -1,7 +1,7 @@
 "use client";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Platform } from "@/components/dashboard/Platform";
@@ -30,6 +30,7 @@ import {
 import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
 import { cn } from "@/lib/utils";
 import { Review, UpdatedReviewStatus } from "@/types/dashboard";
+import { Tables } from "@/types/database";
 import { ErrorUtils } from "@/utils/error";
 import { getAddress } from "@/utils/shared";
 
@@ -65,39 +66,55 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
     null
   );
 
-  useEffect(() => {
-    const abortController = new AbortController();
-    async function startFetch() {
-      try {
-        await dispatch(
-          incomingReviewsActions.fetchIncomingReviewsThunk(
-            { userId, page, filteredBusinessId, filteredStatus },
-            {
-              signal: abortController.signal,
-            }
-          )
-        ).unwrap();
-      } catch (e) {
-        if (ErrorUtils.isAbortError(e)) return;
-        toast.error(`Failed to load incoming reviews`, {
-          description: `${e}`,
-        });
-      }
+  const lastFetchingRequest = useRef<AbortController | null>(null);
+  const refetchList = async (
+    page: number,
+    filteredBusinessId: Tables<"businesses">["id"],
+    filteredStatus: Tables<"review_statuses">["id"]
+  ) => {
+    if (lastFetchingRequest.current !== null) {
+      lastFetchingRequest.current.abort();
     }
 
-    startFetch();
+    const abortController = new AbortController();
+    lastFetchingRequest.current = abortController;
+    try {
+      await dispatch(
+        incomingReviewsActions.fetchIncomingReviewsThunk(
+          { userId, page, filteredBusinessId, filteredStatus },
+          {
+            signal: abortController.signal,
+          }
+        )
+      ).unwrap();
+    } catch (e) {
+      if (ErrorUtils.isAbortError(e)) return;
+      toast.error(`Failed to load incoming reviews`, {
+        description: ErrorUtils.serializeError(e),
+      });
+    } finally {
+      lastFetchingRequest.current = null;
+    }
+  };
 
-    return () => {
-      abortController.abort();
-    };
-  }, [page, userId, filteredBusinessId, filteredStatus, dispatch]);
+  const onPageChange = (nextPage: number) => {
+    dispatch(incomingReviewsActions.setPage(nextPage));
+    refetchList(nextPage, filteredBusinessId, filteredStatus);
+  };
 
-  const onPageChange = useCallback(
-    (nextPage: number) => {
-      dispatch(incomingReviewsActions.setPage(nextPage));
-    },
-    [dispatch]
-  );
+  const onFilteredByBusiness = (value: string) => {
+    const nextFilteredBusinessId = +value;
+    dispatch(
+      incomingReviewsActions.setFilteredBusinessId(nextFilteredBusinessId)
+    );
+    refetchList(page, nextFilteredBusinessId, filteredStatus);
+  };
+
+  const onFilteredByStatus = (value: string) => {
+    const nextFilterStatus = +value;
+    dispatch(incomingReviewsActions.setFilteredReviewStatus(nextFilterStatus));
+    refetchList(page, filteredBusinessId, nextFilterStatus);
+  };
 
   const onOpenChangeVerifiedReview = useCallback((opened: boolean) => {
     if (!opened) {
@@ -111,21 +128,13 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
     }
   }, []);
 
-  const onUpdatedReview = useCallback((updatedReview: UpdatedReviewStatus) => {
-    dispatch(incomingReviewsActions.updateReview(updatedReview));
-    setSelectedVerifyingReview(null);
-  }, []);
-
-  const onFilteredByBusiness = useCallback(
-    (value: string) => {
-      dispatch(incomingReviewsActions.setFilteredBusinessId(+value));
+  const onUpdatedReview = useCallback(
+    (updatedReview: UpdatedReviewStatus) => {
+      dispatch(incomingReviewsActions.updateReview(updatedReview));
+      setSelectedVerifyingReview(null);
     },
     [dispatch]
   );
-
-  const onFilteredByStatus = useCallback((value: string) => {
-    dispatch(incomingReviewsActions.setFilteredReviewStatus(+value));
-  }, []);
 
   if (!hasBusiness) {
     const params = new URLSearchParams();
@@ -241,7 +250,6 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
           const content = (
             <>
               <BusinessesFilter
-                userId={userId}
                 value={`${filteredBusinessId}`}
                 onChange={onFilteredByBusiness}
               />

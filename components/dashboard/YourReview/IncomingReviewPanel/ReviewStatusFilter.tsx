@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -9,9 +7,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { REVIEW_STATUS_FILTER_ALL_OPTION } from "@/constants/dashboard/ui";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { useAppSelector } from "@/lib/redux/hooks";
 import {
-  reviewStatusesActions,
   reviewStatusesSelectors,
   Status,
 } from "@/lib/redux/slices/review-status";
@@ -26,13 +23,8 @@ export function ReviewStatusFilter({
   value,
   onChange,
 }: ReviewStatusFilterProps) {
-  const dispatch = useAppDispatch();
   const data = useAppSelector(reviewStatusesSelectors.selectData);
   const status = useAppSelector(reviewStatusesSelectors.selectStatus);
-
-  useEffect(() => {
-    dispatch(reviewStatusesActions.fetchReviewStatusesThunk());
-  }, [dispatch]);
 
   const hasContent = status === Status.SUCCEEDED && data.length;
   if (!hasContent) return null;

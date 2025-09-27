@@ -1,10 +1,14 @@
 import { fetchReviewStatuses as fetchReviewStatusesFromServer } from "@/app/(protected)/home/actions";
 import { Tables } from "@/types/database";
-import { createEntityAdapter, createSlice } from "@reduxjs/toolkit";
+import {
+  createEntityAdapter,
+  createSlice,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
-import type { RootState } from "../store";
 import { createAppAsyncThunk } from "../type-safe";
 
+import type { RootState } from "../store";
 export enum Status {
   INIT = "init",
   LOADING = "loading",
@@ -19,7 +23,12 @@ export const reviewStatusesSlice = createSlice({
   initialState: reviewStatusesAdapter.getInitialState({
     status: Status.INIT,
   }),
-  reducers: {},
+  reducers: {
+    loadInitData(state, action: PayloadAction<Tables<"review_statuses">[]>) {
+      reviewStatusesAdapter.setAll(state, action.payload);
+      state.status = Status.SUCCEEDED;
+    },
+  },
   selectors: {
     selectStatus: (state) => state.status,
   },
