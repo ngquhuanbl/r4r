@@ -29,7 +29,7 @@ import {
 } from "@/lib/redux/slices/incoming-review";
 import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
 import { cn } from "@/lib/utils";
-import { Review, UpdatedReviewStatus } from "@/types/dashboard";
+import { IncomingReview, UpdatedReviewStatus } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { ErrorUtils } from "@/utils/error";
 import { getAddress } from "@/utils/shared";
@@ -55,16 +55,16 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
     incomingReviewsSelectors.selectFilteredStatus
   );
 
+  const businessEntries = useAppSelector(myBusinessesSelectors.selectEntries);
   const hasBusiness = useAppSelector(myBusinessesSelectors.selectHasBusinesses);
   const dispatch = useAppDispatch();
 
   const isLoading = status === Status.LOADING;
 
   const [selectedVerifyingReview, setSelectedVerifyingReview] =
-    useState<Review | null>(null);
-  const [selectedViewReview, setSelectedViewReview] = useState<Review | null>(
-    null
-  );
+    useState<IncomingReview | null>(null);
+  const [selectedViewReview, setSelectedViewReview] =
+    useState<IncomingReview | null>(null);
 
   const lastFetchingRequest = useRef<AbortController | null>(null);
   const refetchList = async (
@@ -162,78 +162,86 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
   }
 
   let tableContent = null;
-  if (data.length) {
-    tableContent = data.map((item) => {
-      const { id, content, created_at, status, invitation } = item;
-      const businessInfo = invitation.business;
-      const businessName = businessInfo.business_name;
-      const businessAddress = getAddress(businessInfo);
-
-      const reviewStatusName = status.name;
-      const reviewStatusId = status.id;
-      const reviewContent = content || "";
-      const submittedDttm = created_at;
-
-      const platformName = invitation.platform.name;
-
-      const actions =
-        reviewStatusName === ReviewStatusNames.SUBMITTED ? (
-          <Button
-            className="mt-3 bg-teal-600 hover:bg-teal-900"
-            onClick={() => setSelectedVerifyingReview(item)}
-          >
-            Verify now
-          </Button>
-        ) : (
-          <Button
-            className="mt-3"
-            variant="outline"
-            onClick={() => setSelectedViewReview(item)}
-          >
-            View details
-          </Button>
-        );
-      return (
-        <div
-          key={id}
-          className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-0 sm:grid sm:grid-cols-[2fr_3fr_1fr_1fr]"
-        >
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="font-semibold text-sm sm:text-base">
-                {businessName}
-              </p>
-              <Platform name={platformName} />
-            </div>
-            <p className="text-sm font-light">{businessAddress}</p>
-            <div className="hidden sm:block">{actions}</div>
-          </div>
-          <p className="italic text-sm sm:text-base">
-            &quot;
-            {reviewContent.length > REVIEW_CONTENT_LENGTH_LIMIT
-              ? reviewContent.slice(0, REVIEW_CONTENT_LENGTH_LIMIT) + "..."
-              : reviewContent}
-            &quot;
-          </p>
-          <div>
-            <ReviewStatus
-              className="text-sm sm:text-base"
-              id={reviewStatusId}
-            />
-          </div>
-          <p className="text-xs sm:text-sm font-medium">
-            {new Date(submittedDttm).toLocaleString()}
-          </p>
-          <div className="block sm:hidden">{actions}</div>
-        </div>
-      );
-    });
-  } else {
+  if (isLoading) {
     tableContent = (
       <div className="p-4">
-        <p className="mx-auto text-xs sm:text-sm w-max">No result found</p>
+        <p className="mx-auto text-xs sm:text-sm w-max">Loading ...</p>
       </div>
     );
+  } else {
+    if (data.length) {
+      tableContent = data.map((item) => {
+        const { id, content, created_at, status, invitation } = item;
+        const businessInfo = businessEntries[invitation.business.id];
+        const businessName = businessInfo.business_name;
+        const businessAddress = getAddress(businessInfo);
+
+        const reviewStatusName = status.name;
+        const reviewStatusId = status.id;
+        const reviewContent = content || "";
+        const submittedDttm = created_at;
+
+        const platformName = invitation.platform.name;
+
+        const actions =
+          reviewStatusName === ReviewStatusNames.SUBMITTED ? (
+            <Button
+              className="mt-3 bg-teal-600 hover:bg-teal-900"
+              onClick={() => setSelectedVerifyingReview(item)}
+            >
+              Verify now
+            </Button>
+          ) : (
+            <Button
+              className="mt-3"
+              variant="outline"
+              onClick={() => setSelectedViewReview(item)}
+            >
+              View details
+            </Button>
+          );
+        return (
+          <div
+            key={id}
+            className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-0 sm:grid sm:grid-cols-[2fr_3fr_1fr_1fr]"
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-sm sm:text-base">
+                  {businessName}
+                </p>
+                <Platform name={platformName} />
+              </div>
+              <p className="text-sm font-light">{businessAddress}</p>
+              <div className="hidden sm:block">{actions}</div>
+            </div>
+            <p className="italic text-sm sm:text-base">
+              &quot;
+              {reviewContent.length > REVIEW_CONTENT_LENGTH_LIMIT
+                ? reviewContent.slice(0, REVIEW_CONTENT_LENGTH_LIMIT) + "..."
+                : reviewContent}
+              &quot;
+            </p>
+            <div>
+              <ReviewStatus
+                className="text-sm sm:text-base"
+                id={reviewStatusId}
+              />
+            </div>
+            <p className="text-xs sm:text-sm font-medium">
+              {new Date(submittedDttm).toLocaleString()}
+            </p>
+            <div className="block sm:hidden">{actions}</div>
+          </div>
+        );
+      });
+    } else {
+      tableContent = (
+        <div className="p-4">
+          <p className="mx-auto text-xs sm:text-sm w-max">No result found</p>
+        </div>
+      );
+    }
   }
 
   return (

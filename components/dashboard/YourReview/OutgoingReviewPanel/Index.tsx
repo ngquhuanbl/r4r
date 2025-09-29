@@ -1,6 +1,4 @@
 "use client";
-import { Plus } from "lucide-react";
-import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -19,14 +17,13 @@ import {
   REVIEW_CONTENT_LENGTH_LIMIT,
 } from "@/constants/dashboard/ui";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
 import {
   outgoingReviewsActions,
   outgoingReviewsSelectors,
   Status,
 } from "@/lib/redux/slices/outgoing-review";
 import { cn } from "@/lib/utils";
-import { Review, SubmitReviewResponse } from "@/types/dashboard";
+import { OutgoingReview, SubmitReviewResponse } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { ErrorUtils } from "@/utils/error";
 import { ReviewUtils } from "@/utils/review";
@@ -47,7 +44,6 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
   const status = useAppSelector(outgoingReviewsSelectors.selectStatus);
   const page = useAppSelector(outgoingReviewsSelectors.selectPage);
   const totalPage = useAppSelector(outgoingReviewsSelectors.selectTotalPage);
-  const hasBusiness = useAppSelector(myBusinessesSelectors.selectHasBusinesses);
   const filteredStatus = useAppSelector(
     outgoingReviewsSelectors.selectFilteredStatus
   );
@@ -56,10 +52,9 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
   const isLoading = status === Status.LOADING;
 
   const [selectedSubmitReview, setSelectedSubmitReview] =
-    useState<Review | null>(null);
-  const [selectedViewReview, setSelectedViewReview] = useState<Review | null>(
-    null
-  );
+    useState<OutgoingReview | null>(null);
+  const [selectedViewReview, setSelectedViewReview] =
+    useState<OutgoingReview | null>(null);
 
   const lastFetchingRequest = useRef<AbortController | null>(null);
   const refetchList = async (
@@ -124,31 +119,6 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
     },
     [dispatch]
   );
-
-  if (!hasBusiness) {
-    const params = new URLSearchParams();
-    params.append("show", "1");
-    return (
-      <div className="border border-zinc-20 h-full content-center">
-        <div className="flex flex-col items-center mx-auto">
-          <p className="font-semibold">Your review is waiting!</p>
-          <p className="font-light text-sm mt-2">
-            It looks a little empty right now because you haven't add any
-            businesses yet.
-            <br />
-            Add your business to start receiving notifications and managing your
-            feedback!
-          </p>
-          <Button asChild className="mt-5">
-            <Link href={`/businesses?${params.toString()}`}>
-              <Plus />
-              Add new business
-            </Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   let tableContent = null;
   if (data !== null) {
@@ -217,7 +187,6 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
                 </>
               ) : null}
             </p>
-            {/* TODO: Tooltip using Redux */}
             <div>
               <ReviewStatus id={reviewStatusId} />
             </div>

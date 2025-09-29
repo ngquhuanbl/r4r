@@ -33,7 +33,9 @@ export function YourReview({ userId }: { userId: string }) {
           role="tab"
           aria-selected={isIncomingReviewsTabSelected}
           aria-controls={INCOMING_REVIEWS_PANEL_ID}
-          onClick={() => setSelectedTab(INCOMING_REVIEWS_TAB_ID)}
+          onClick={() => {
+            setSelectedTab(INCOMING_REVIEWS_TAB_ID);
+          }}
         >
           <div
             className={cn("flex items-center gap-2 sm:gap-4", {
@@ -69,7 +71,9 @@ export function YourReview({ userId }: { userId: string }) {
           role="tab"
           aria-selected={isOutgoingReviewsTabSelected}
           aria-controls={OUTGOING_REVIEWS_PANEL_ID}
-          onClick={() => setSelectedTab(OUTGOING_REVIEWS_TAB_ID)}
+          onClick={() => {
+            setSelectedTab(OUTGOING_REVIEWS_TAB_ID);
+          }}
         >
           <div
             className={cn("flex items-center gap-2 sm:gap-4", {

@@ -133,8 +133,8 @@ export function Notifications({ userId }: NotificationsProps) {
           ))}
         </div>
       ) : (
-        <div className="px-2 text-center">
-          <p>Nothing to shown</p>
+        <div className="px-2 text-center text-sm text-gray-800">
+          <p>Nothing here</p>
         </div>
       );
       break;

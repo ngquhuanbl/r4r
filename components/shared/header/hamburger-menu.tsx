@@ -5,12 +5,8 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import Logo from "@/components/shared/logo";
+import { NAV_LINKS } from "@/constants/nav-links";
 import { cn } from "@/lib/utils";
-
-const navLinks = [
-  { name: "Dashboard", href: "/home" },
-  { name: "Businesses", href: "/businesses" },
-];
 
 export function HamburgerMenu() {
   const pathname = usePathname();
@@ -52,7 +48,7 @@ export function HamburgerMenu() {
             "translate-x-0": isOpen,
           }
         )}
-				// @ts-ignore
+        // @ts-ignore
         closedby="any"
       >
         <div className="flex flex-col">
@@ -66,7 +62,7 @@ export function HamburgerMenu() {
           <div className="py-4 border-b border-gray-300 dark:text-white">
             <p className="pl-4 text-xs">MENU</p>
             <nav className="flex flex-col gap-1 pr-2 mt-3">
-              {navLinks.map(({ name, href }, index) => (
+              {NAV_LINKS.map(({ name, href }, index) => (
                 <Link
                   key={index}
                   href={href}

@@ -1,4 +1,5 @@
-import { fetchBusinesses } from "@/app/(protected)/home/actions";
+import { fetchBusinesses } from "@/app/(protected)/my-businesses/actions";
+import { FetchedBusiness } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { UserId } from "@/types/shared";
 import {
@@ -17,7 +18,7 @@ export enum Status {
   FAILED = "failed",
 }
 
-const myBusinessesAdapter = createEntityAdapter<Tables<"businesses">>();
+const myBusinessesAdapter = createEntityAdapter<FetchedBusiness>();
 
 export const myBusinessesSlice = createSlice({
   name: "my_businesses",
@@ -29,9 +30,22 @@ export const myBusinessesSlice = createSlice({
     error: null,
   }),
   reducers: {
-    loadInitData(state, action: PayloadAction<Tables<"businesses">[]>) {
+    loadInitData(state, action: PayloadAction<FetchedBusiness[]>) {
       myBusinessesAdapter.setAll(state, action.payload);
       state.status = Status.SUCCEEDED;
+    },
+    updateById(state, action: PayloadAction<FetchedBusiness>) {
+      const data = action.payload;
+      myBusinessesAdapter.updateOne(state, {
+        id: data.id,
+        changes: data,
+      });
+    },
+    deleteById(state, action: PayloadAction<Tables<"businesses">["id"]>) {
+      myBusinessesAdapter.removeOne(state, action.payload);
+    },
+    addData(state, action: PayloadAction<FetchedBusiness>) {
+      myBusinessesAdapter.addOne(state, action.payload);
     },
   },
   selectors: {
@@ -88,4 +102,5 @@ const adaptorSelector = myBusinessesAdapter.getSelectors<RootState>(
 export const myBusinessesSelectors = {
   ...myBusinessesSlice.selectors,
   selectData: adaptorSelector.selectAll,
+  selectEntries: adaptorSelector.selectEntities,
 };

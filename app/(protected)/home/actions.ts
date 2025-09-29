@@ -2,10 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
+import { Paths } from "@/constants/paths";
 import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
 import { createClient } from "@/lib/supabase/server";
 import {
   FetchedReviewsResponse,
+  IncomingReview,
+  OutgoingReview,
   ReviewRequest,
   SubmitReviewResponse,
   UpdatedReviewRequestsStatus,
@@ -13,28 +16,6 @@ import {
 } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { APIResponse, UserId } from "@/types/shared";
-
-export async function fetchBusinesses(
-  userId: UserId
-): Promise<APIResponse<Tables<"businesses">[]>> {
-  try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("businesses")
-      .select("*")
-      .eq("user_id", userId);
-
-    if (error) {
-      console.error("Failed to fetch business list", error);
-      return { ok: false, error: error.message };
-    }
-
-    return { ok: true, data: data || [] };
-  } catch (e: any) {
-    console.error("Unexpected error during business list fetching", e);
-    return { ok: false, error: e.message || "Unexpected error" };
-  }
-}
 
 export async function fetchReviewStatuses(): Promise<
   APIResponse<Tables<"review_statuses">[]>
@@ -58,6 +39,25 @@ export async function fetchReviewStatuses(): Promise<
   }
 }
 
+export async function fetchPlatforms(): Promise<
+  APIResponse<Tables<"platforms">[]>
+> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.from("platforms").select("*");
+
+    if (error) {
+      console.error("Failed to fetch platforms", error);
+      return { ok: false, error: error.message };
+    }
+
+    return { ok: true, data: data || [] };
+  } catch (e: any) {
+    console.error("Unexpected error during platforms fetching", e);
+    return { ok: false, error: e.message || "Unexpected error" };
+  }
+}
+
 //#region INCOMING REVIEWS
 export async function fetchIncomingReviews(
   userId: UserId,
@@ -65,7 +65,7 @@ export async function fetchIncomingReviews(
   pageSize: number,
   businessId?: Tables<"businesses">["id"],
   statusId?: Tables<"review_statuses">["id"]
-): Promise<APIResponse<FetchedReviewsResponse>> {
+): Promise<APIResponse<FetchedReviewsResponse<IncomingReview>>> {
   const supabase = createClient();
 
   // Create query for fetching data
@@ -84,12 +84,7 @@ export async function fetchIncomingReviews(
 				created_at,
 				invitation:review_invitations!inner (
 					business:businesses!inner (
-						id,
-						business_name,
-						address,
-						city,
-						state,
-						zip_code
+						id
 					),
 					platform:platforms!inner (
 						id,
@@ -230,8 +225,8 @@ export async function confirmIncomingReview(
 
     if (invitationData) {
       // Revalidate paths for both business owner and reviewer
-      revalidatePath("/home");
-      revalidatePath("/businesses");
+      revalidatePath(Paths.HOME);
+      revalidatePath(Paths.MY_BUSINESSES);
     }
   }
 
@@ -294,8 +289,8 @@ export async function rejectIncomingReview(
 
     if (invitationData) {
       // Revalidate paths for both business owner and reviewer
-      revalidatePath("/home");
-      revalidatePath("/businesses");
+      revalidatePath(Paths.HOME);
+      revalidatePath(Paths.MY_BUSINESSES);
     }
   }
 
@@ -314,48 +309,13 @@ export async function rejectIncomingReview(
 //#endregion
 
 //#region OUTGOING REVIEWS
-export async function fetchOutgoingReviewStatuses(): Promise<
-  APIResponse<Tables<"review_statuses">[]>
-> {
-  const supabase = createClient();
-  const { data, error } = await supabase.from("review_statuses").select("*");
-
-  if (error) {
-    console.error("Failed to fetch outgoing review status list", error);
-    return { ok: false, error: error.message };
-  }
-
-  return { ok: true, data: data || [] };
-}
-
-export async function fetchBusinessesCount(
-  userId: UserId
-): Promise<APIResponse<number>> {
-  try {
-    const supabase = createClient();
-    const { count, error } = await supabase
-      .from("businesses")
-      .select("*", { count: "exact", head: false })
-      .eq("user_id", userId);
-
-    if (error) {
-      console.error("Failed to fetch business list", error);
-      return { ok: false, error: error.message };
-    }
-
-    return { ok: true, data: count || 0 };
-  } catch (e: any) {
-    console.error("Unexpected error during business list fetching", e);
-    return { ok: false, error: e.message || "Unexpected error" };
-  }
-}
 
 export async function fetchOutgoingReviews(
   userId: UserId,
   page: number,
   pageSize: number,
   statusId?: Tables<"businesses">["id"]
-): Promise<APIResponse<FetchedReviewsResponse>> {
+): Promise<APIResponse<FetchedReviewsResponse<OutgoingReview>>> {
   const supabase = createClient();
 
   // Create query for fetching data
@@ -511,8 +471,8 @@ export async function submitOutgoingReview(
   }
 
   // Ensure all relevant paths are revalidated
-  revalidatePath("/home", "layout");
-  revalidatePath("/home", "page");
+  revalidatePath(Paths.HOME, "layout");
+  revalidatePath(Paths.HOME, "page");
   return {
     ok: true,
     data: updateData,
@@ -562,7 +522,7 @@ export async function acceptReviewRequest(
     });
   }
 
-  revalidatePath("/home");
+  revalidatePath(Paths.HOME);
   return {
     ok: true,
     data: {
@@ -605,7 +565,7 @@ export async function rejectReviewRequest(
     return { ok: false, error };
   }
 
-  revalidatePath("/home");
+  revalidatePath(Paths.HOME);
   return {
     ok: true,
     data: {
@@ -947,7 +907,7 @@ export async function acceptInvitation(invitationId) {
     });
   }
 
-  revalidatePath("/home");
+  revalidatePath(Paths.HOME);
   return { success: true, data };
 }
 
@@ -979,7 +939,7 @@ export async function rejectInvitation(invitationId) {
     return { success: false, error };
   }
 
-  revalidatePath("/home");
+  revalidatePath(Paths.HOME);
   return { success: true, data };
 }
 
@@ -1029,8 +989,8 @@ export async function submitReview(invitationId, reviewContent, reviewUrl) {
   }
 
   // Ensure all relevant paths are revalidated
-  revalidatePath("/home", "layout");
-  revalidatePath("/home", "page");
+  revalidatePath(Paths.HOME, "layout");
+  revalidatePath(Paths.HOME, "page");
   return { success: true, data, status_id: submittedStatus.id };
 }
 
@@ -1081,8 +1041,8 @@ export async function approveReview(reviewId) {
 
     if (invitationData) {
       // Revalidate paths for both business owner and reviewer
-      revalidatePath("/home");
-      revalidatePath("/businesses");
+      revalidatePath(Paths.HOME);
+      revalidatePath(Paths.MY_BUSINESSES);
     }
   }
 
@@ -1135,8 +1095,8 @@ export async function denyReview(reviewId) {
 
     if (invitationData) {
       // Revalidate paths for both business owner and reviewer
-      revalidatePath("/home");
-      revalidatePath("/businesses");
+      revalidatePath(Paths.HOME);
+      revalidatePath(Paths.MY_BUSINESSES);
     }
   }
 

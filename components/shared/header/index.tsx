@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NAV_LINKS } from "@/constants/nav-links";
 import userSrc from "@/public/shared/user.png";
 import { UserId } from "@/types/shared";
 
@@ -47,16 +48,13 @@ export async function Header({ userId, email }: HeaderProps) {
       <nav className="hidden md:flex items-center justify-between w-full">
         <Logo />
         <ul role="menu" className="flex items-center gap-10 text-sm">
-          <li role="menuitem">
-            <Link href="/home" className="font-medium hover:text-primary">
-              Dashboard
-            </Link>
-          </li>
-          <li role="menuitem">
-            <Link href="/businesses" className="font-medium hover:text-primary">
-              My busineses
-            </Link>
-          </li>
+          {NAV_LINKS.map(({ name, href }, index) => (
+            <li key={index} role="menuitem">
+              <Link href={href} className="font-medium hover:text-primary">
+                {name}
+              </Link>
+            </li>
+          ))}
           <li>
             <Notifications userId={userId} />
           </li>

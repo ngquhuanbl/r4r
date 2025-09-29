@@ -5,8 +5,8 @@ import {
 } from "@/constants/dashboard/ui";
 import {
   FetchedReviewsResponse,
+  OutgoingReview,
   PartialReviewWithId,
-  Review,
 } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { UserId } from "@/types/shared";
@@ -25,7 +25,7 @@ export enum Status {
   FAILED = "failed",
 }
 
-const outgoingReviewsAdapter = createEntityAdapter<Review>();
+const outgoingReviewsAdapter = createEntityAdapter<OutgoingReview>();
 
 export const outgoingReviewsSlice = createSlice({
   name: "outgoing_reviews",
@@ -51,14 +51,20 @@ export const outgoingReviewsSlice = createSlice({
       state.filteredStatus = action.payload;
       state.page = 1;
     },
-    updateReview(state, action: PayloadAction<PartialReviewWithId>) {
+    updateReview(
+      state,
+      action: PayloadAction<PartialReviewWithId<OutgoingReview>>
+    ) {
       const data = action.payload;
       outgoingReviewsAdapter.updateOne(state, {
         id: data.id,
         changes: data,
       });
     },
-    loadInitData(state, action: PayloadAction<FetchedReviewsResponse>) {
+    loadInitData(
+      state,
+      action: PayloadAction<FetchedReviewsResponse<OutgoingReview>>
+    ) {
       const { data, total_page } = action.payload;
       outgoingReviewsAdapter.setAll(state, data);
       state.totalPage = total_page;

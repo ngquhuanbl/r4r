@@ -16,13 +16,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Review, UpdatedReviewStatus } from "@/types/dashboard";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
+import { IncomingReview, UpdatedReviewStatus } from "@/types/dashboard";
 import { ErrorUtils } from "@/utils/error";
 import { getAddress } from "@/utils/shared";
 
 interface VerifyReviewDialogProps {
   open: boolean;
-  data: Review;
+  data: IncomingReview;
   onOpenChange: (open: boolean) => void;
   onUpdatedReview: (updatedReview: UpdatedReviewStatus) => void;
 }
@@ -32,8 +34,9 @@ export function VerifyReviewDialog({
   onOpenChange,
   onUpdatedReview,
 }: VerifyReviewDialogProps) {
+  const businessEntries = useAppSelector(myBusinessesSelectors.selectEntries);
   const { url, content, invitation, id } = data;
-  const businessInfo = invitation.business;
+  const businessInfo = businessEntries[invitation.business.id];
   const businessName = businessInfo.business_name;
   const businessAddress = getAddress(businessInfo);
 

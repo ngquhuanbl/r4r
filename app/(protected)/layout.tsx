@@ -5,12 +5,13 @@ import { createClient } from "@/lib/supabase/server";
 import { unwrap } from "@/utils/api";
 
 import {
-  fetchBusinesses,
   fetchIncomingReviews,
   fetchOutgoingReviews,
   fetchPendingReviewRequests,
+  fetchPlatforms,
   fetchReviewStatuses,
 } from "./home/actions";
+import { fetchBusinesses } from "./my-businesses/actions";
 import { StoreProvider } from "./StoreProvider";
 
 interface LayoutProps {
@@ -31,22 +32,26 @@ export default async function Layout({ children }: LayoutProps) {
     reviewRequests,
     myBusinesses,
     reviewStatuses,
+    platforms,
   ] = await Promise.all([
     unwrap(fetchIncomingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
     unwrap(fetchOutgoingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
     unwrap(fetchPendingReviewRequests(userId)),
     unwrap(fetchBusinesses(userId)),
     unwrap(fetchReviewStatuses()),
+    unwrap(fetchPlatforms()),
   ]);
 
   return (
     <StoreProvider
       initialData={{
+        user: user!,
         incomingReviews,
         outgoingReviews,
         reviewRequests,
         myBusinesses,
         reviewStatuses,
+        platforms,
       }}
     >
       <div className="flex flex-col min-h-screen">
