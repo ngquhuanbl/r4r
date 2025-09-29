@@ -42,7 +42,7 @@ export function HamburgerMenu() {
         />
         {NAV_LINKS.map(({ href, name }, index) => (
           <p
-						key={index}
+            key={index}
             className={cn("font-bold uppercase", { hidden: href !== pathname })}
           >
             {name}

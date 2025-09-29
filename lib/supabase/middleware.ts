@@ -1,3 +1,4 @@
+import { Paths } from "@/constants/paths";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
@@ -57,12 +58,33 @@ export const updateSession = async (request: NextRequest) => {
             });
           },
         },
-      },
+      }
     );
 
     // This will refresh session if expired - required for Server Components
     // https://supabase.com/docs/guides/auth/server-side/nextjs
-    await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const path = request.nextUrl.pathname;
+    const regexForAuthRoutes = /^\/(sign-in|sign-up)($|\/)/;
+    const isAuthRoute = regexForAuthRoutes.test(path);
+
+    if (isAuthRoute) {
+      // If has session, redirect to home
+      if (user) {
+        const url = request.nextUrl.clone();
+        url.pathname = Paths.HOME;
+        return NextResponse.redirect(url);
+      }
+    } else {
+      if (!user) {
+        const url = request.nextUrl.clone();
+        url.pathname = Paths.SIGN_IN;
+        return NextResponse.redirect(url);
+      }
+    }
 
     return response;
   } catch (e) {

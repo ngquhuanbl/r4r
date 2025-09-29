@@ -2,7 +2,7 @@ import { Handshake } from "lucide-react";
 
 export function WaitingFallback() {
   return (
-    <div className="flex flex-col justify-center items-center gap-2 grow">
+    <div className="flex flex-col justify-center items-center gap-2 grow text-center">
       <div className="flex flex-col gap-1 items-center mb-3">
         <Handshake className="animate-bounce" />
         <p className="text-sm sm:text-base">Connecting You to the Network!</p>
