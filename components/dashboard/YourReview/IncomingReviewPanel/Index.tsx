@@ -20,6 +20,8 @@ import {
   INCOMING_REVIEWS_TAB_ID,
   REVIEW_CONTENT_LENGTH_LIMIT,
 } from "@/constants/dashboard/ui";
+import { MyBusinessesSearchParams } from "@/constants/my-businesses";
+import { Paths } from "@/constants/paths";
 import { ReviewStatusNames } from "@/constants/shared";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
@@ -138,7 +140,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
 
   if (!hasBusiness) {
     const params = new URLSearchParams();
-    params.append("show", "1");
+    params.append(MyBusinessesSearchParams.SHOW, "1");
     return (
       <div className="border border-zinc-20 h-full content-center">
         <div className="flex flex-col items-center mx-auto">
@@ -151,7 +153,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
             feedback!
           </p>
           <Button asChild className="mt-5">
-            <Link href={`/businesses?${params.toString()}`}>
+            <Link href={`${Paths.MY_BUSINESSES}?${params.toString()}`}>
               <Plus />
               Add new business
             </Link>

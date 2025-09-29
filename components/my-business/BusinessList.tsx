@@ -1,8 +1,11 @@
 "use client";
 import { Plus } from "lucide-react";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { MyBusinessesSearchParams } from "@/constants/my-businesses";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
 import {
@@ -10,6 +13,7 @@ import {
   myBusinessesSelectors,
 } from "@/lib/redux/slices/my-business";
 import { reviewRequestsActions } from "@/lib/redux/slices/review-request";
+import plusSrc from "@/public/my-businesses/plus.png";
 import { FetchedBusiness } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { getAddress } from "@/utils/shared";
@@ -17,10 +21,9 @@ import { getAddress } from "@/utils/shared";
 import { CreateBusinessDialog } from "./CreateBusinessDialog";
 import { DeleteBusinessDialog } from "./DeleteBusinessDialog";
 import { ManageBusinessDialog } from "./ManageBusinessDialog";
-import Image from "next/image";
-import plusSrc from "@/public/my-businesses/plus.png";
 
 export function BusinessList() {
+  const searchParams = useSearchParams();
   const userId = useAppSelector(authSelectors.selectUserId);
   const myBusinesses = useAppSelector(myBusinessesSelectors.selectData);
   const dispatch = useAppDispatch();
@@ -28,8 +31,9 @@ export function BusinessList() {
     useState<FetchedBusiness | null>(null);
   const [selectedDeletedBusiness, setSelectedDeletedBusiness] =
     useState<FetchedBusiness | null>(null);
-  const [openedCreateBusinessDialog, setOpenedCreateBusinessDialog] =
-    useState(false);
+  const [openedCreateBusinessDialog, setOpenedCreateBusinessDialog] = useState(
+    searchParams.get(MyBusinessesSearchParams.SHOW) === "1"
+  );
 
   const onManageBusinessDialogOpenChange = useCallback((opened: boolean) => {
     if (!opened) {
