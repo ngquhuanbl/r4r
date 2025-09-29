@@ -5,7 +5,7 @@ export default async function Page() {
   const user = await getUserOrRedirect();
   return (
     <>
-      <section>
+      <section className="grow md:grow-0 flex flex-col">
         <div className="mb-5">
           <h1
             id="section-1-title"

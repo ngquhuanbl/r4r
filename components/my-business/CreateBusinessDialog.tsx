@@ -187,7 +187,7 @@ export function CreateBusinessDialog({
                         className="flex items-center gap-2"
                       >
                         <Platform name={platform.name} />
-                        <p className="text-sm text-black">{platform.name}</p>
+                        <p className="text-sm">{platform.name}</p>
                       </Label>
                       <Input
                         id={fieldName}

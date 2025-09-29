@@ -19,7 +19,7 @@ export function YourReview({ userId }: { userId: string }) {
   const isOutgoingReviewsTabSelected = selectedTab === OUTGOING_REVIEWS_TAB_ID;
 
   return (
-    <div>
+    <div className="flex flex-col grow">
       <div
         className="flex border border-zinc-200 border-b-0 w-full sm:w-max"
         role="tablist"
@@ -39,10 +39,10 @@ export function YourReview({ userId }: { userId: string }) {
         >
           <div
             className={cn("flex items-center gap-2 sm:gap-4", {
-              "opacity-20": !isIncomingReviewsTabSelected,
+              "opacity-50 sm:opacity-20": !isIncomingReviewsTabSelected,
             })}
           >
-            <ArrowDownLeft className="w-4 h-4 sm:w-6 sm:h-6 text-teal-600" />
+            <ArrowDownLeft className="w-6 h-6 text-teal-600" />
             <div
               className={cn("text-start", {
                 "hidden sm:block": !isIncomingReviewsTabSelected,
@@ -77,10 +77,10 @@ export function YourReview({ userId }: { userId: string }) {
         >
           <div
             className={cn("flex items-center gap-2 sm:gap-4", {
-              "opacity-20": !isOutgoingReviewsTabSelected,
+              "opacity-50 sm:opacity-20": !isOutgoingReviewsTabSelected,
             })}
           >
-            <ArrowUpRight className="w-4 h-4 sm:w-6 sm:h-6 text-purple-700" />
+            <ArrowUpRight className="w-6 h-6 text-purple-700" />
             <div
               className={cn("text-start", {
                 "hidden sm:block": !isOutgoingReviewsTabSelected,
@@ -94,7 +94,7 @@ export function YourReview({ userId }: { userId: string }) {
           </div>
         </button>
       </div>
-      <div className="h-[650px]">
+      <div className="grow md:h-[650px] md:grow-0 flex flex-col">
         {/* INCOMING REVIEWS PANEL */}
         {isIncomingReviewsTabSelected && (
           <IncomingReviewsPanel userId={userId} />

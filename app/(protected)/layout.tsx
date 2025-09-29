@@ -58,11 +58,9 @@ export default async function Layout({ children }: LayoutProps) {
         <Header userId={user!.id} email={user!.email} />
 
         {/* Page content */}
-        <main className="flex-1">
-          <div className="py-6">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              {children}
-            </div>
+        <main className="grow py-6 flex flex-col items-center">
+          <div className="max-w-7xl px-4 pl-6 sm:px-6 lg:px-8 grow flex flex-col w-full">
+            {children}
           </div>
         </main>
         <Footer />

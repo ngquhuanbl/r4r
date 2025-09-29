@@ -34,11 +34,20 @@ export function HamburgerMenu() {
 
   return (
     <>
-      <Menu
-        aria-label="Open menu"
-        className="w-6 h-6 text-gray-800 dark:text-white pl-0 sm:pl-4"
-        onClick={openMenu}
-      />
+      <div className="flex items-center gap-3">
+        <Menu
+          aria-label="Open menu"
+          className="w-6 h-6 text-gray-800 dark:text-white pl-0 sm:pl-4"
+          onClick={openMenu}
+        />
+        {NAV_LINKS.map(({ href, name }) => (
+          <p
+            className={cn("font-bold uppercase", { hidden: href !== pathname })}
+          >
+            {name}
+          </p>
+        ))}
+      </div>
       <dialog
         ref={ref}
         // className="w-[80%] h-screen backdrop:bg-gray-500 backdrop:opacity-70 m-0 md:hidden max-h-screen dark:bg-black transition-transform duration-500 ease-in-out transform -translate-x-full open:translate-x-0"

@@ -142,10 +142,12 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
     const params = new URLSearchParams();
     params.append(MyBusinessesSearchParams.SHOW, "1");
     return (
-      <div className="border border-zinc-20 h-full content-center">
+      <div className="border border-zinc-20 h-full content-center px-3 text-center grow md:grow-0">
         <div className="flex flex-col items-center mx-auto">
-          <p className="font-semibold">Your review is waiting!</p>
-          <p className="font-light text-sm mt-2">
+          <p className="font-semibold text-sm md:text-base">
+            Your review is waiting!
+          </p>
+          <p className="font-light text-xs md:text-sm mt-2">
             It looks a little empty right now because you haven't add any
             businesses yet.
             <br />
@@ -247,14 +249,17 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
   }
 
   return (
-    <div className="flex flex-col justify-between">
+    <div className="flex flex-col justify-between grow md:grow-0">
       <div
         id={INCOMING_REVIEWS_PANEL_ID}
         role="tabpanel"
         aria-labelledby={INCOMING_REVIEWS_TAB_ID}
-        className={cn("border border-zinc-200 divide-y divide-zinc-200", {
-          "animate-pulse": isLoading,
-        })}
+        className={cn(
+          "border border-zinc-200 divide-y divide-zinc-200 grow md:grow-0",
+          {
+            "animate-pulse": isLoading,
+          }
+        )}
       >
         {(function () {
           const content = (

@@ -45,31 +45,33 @@ export async function Header({ userId, email }: HeaderProps) {
   );
   return (
     <header className="w-full px-5 md:px-8 py-2 max-w-7xl mx-auto">
-      <nav className="hidden md:flex items-center justify-between w-full">
-        <Logo />
-        <ul role="menu" className="flex items-center gap-10 text-sm">
-          {NAV_LINKS.map(({ name, href }, index) => (
-            <li key={index} role="menuitem">
-              <Link href={href} className="font-medium hover:text-primary">
-                {name}
-              </Link>
-            </li>
-          ))}
-          <li>
-            <Notifications userId={userId} />
-          </li>
-          <li>{profileMenu}</li>
-        </ul>
-      </nav>
-      <div className="flex md:hidden items-center justify-between pt-2">
-        {/* Hambuger btn */}
-        <HamburgerMenu />
-        {/* TODO: Show screen title (e.g. DASHBOARD / BUSINESSES) */}
-
-        <div className="ml-auto mr-3">
-          <Notifications userId={userId} />
+      <div className="flex items-center justify-between pt-2 md:pt-0 md:w-full">
+        <div className="flex md:hidden items-center gap-3">
+          <HamburgerMenu />
         </div>
-        {profileMenu}
+        <div className="hidden md:block">
+          <Logo />
+        </div>
+        <div className="flex items-center gap-10">
+          <nav
+            role="menu"
+            className="hidden md:flex md:items-center text-sm gap-10 list-none"
+          >
+            {NAV_LINKS.map(({ name, href }, index) => (
+              <li key={index} role="menuitem">
+                <Link href={href} className="font-medium hover:text-primary">
+                  {name}
+                </Link>
+              </li>
+            ))}
+          </nav>
+          <ul className="flex items-center gap-3 md:gap-10 text-sm">
+            <li>
+              <Notifications userId={userId} />
+            </li>
+            <li>{profileMenu}</li>
+          </ul>
+        </div>
       </div>
     </header>
   );

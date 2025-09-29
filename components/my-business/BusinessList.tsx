@@ -88,7 +88,7 @@ export function BusinessList() {
             alt={"An business man holding a yellow plus symbol"}
             width={320}
             height={320}
-            className="w-28 h-28 md:w-40 md:h-40"
+            className="w-28 h-28 mb-3 md:mb-0 md:w-40 md:h-40"
           />
           <div>
             <p className="font-semibold">No businesses added yet!</p>

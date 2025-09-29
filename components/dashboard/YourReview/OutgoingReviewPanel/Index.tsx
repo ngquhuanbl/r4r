@@ -207,14 +207,17 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
   }
 
   return (
-    <div className="flex flex-col justify-between">
+    <div className="flex flex-col justify-between grow md:grow-0">
       <div
         id={OUTGOING_REVIEWS_PANEL_ID}
         role="tabpanel"
         aria-labelledby={OUTGOING_REVIEWS_TAB_ID}
-        className={cn("border border-zinc-200 divide-y divide-zinc-200", {
-          "animate-pulse": isLoading,
-        })}
+        className={cn(
+          "border border-zinc-200 divide-y divide-zinc-200 grow md:grow-0",
+          {
+            "animate-pulse": isLoading,
+          }
+        )}
       >
         {(function () {
           const content = (
