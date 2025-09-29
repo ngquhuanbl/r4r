@@ -40,8 +40,9 @@ export function HamburgerMenu() {
           className="w-6 h-6 text-gray-800 dark:text-white pl-0 sm:pl-4"
           onClick={openMenu}
         />
-        {NAV_LINKS.map(({ href, name }) => (
+        {NAV_LINKS.map(({ href, name }, index) => (
           <p
+						key={index}
             className={cn("font-bold uppercase", { hidden: href !== pathname })}
           >
             {name}

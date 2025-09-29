@@ -179,8 +179,8 @@ export function SubmitReviewDialog({
                 knowledge of <span className="font-medium">{businessName}</span>
                 .
               </p>
-              <div className="px-3 py-2 border border-sky-400 bg-cyan-100 rounded-md">
-                <p className="italic text-sky-700 text-xs sm:text-sm">
+              <div className="px-3 py-2 border border-sky-400 bg-cyan-100 dark:bg-cyan-900 rounded-md">
+                <p className="italic text-sky-700 dark:text-white text-xs sm:text-sm">
                   <span className="font-semibold">Tip:</span>&nbsp;Focus on
                   specific aspects, be professional, and ensure your review adds
                   value to future visitors.
@@ -223,7 +223,7 @@ export function SubmitReviewDialog({
                         How to get your review URL
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="px-3 py-2 bg-cyan-100 rounded-md text-xs sm:text-sm">
+                        <div className="px-3 py-2 bg-cyan-100 dark:bg-cyan-900 rounded-md text-xs sm:text-sm">
                           {getInstructions()}
                         </div>
                       </AccordionContent>
@@ -246,8 +246,8 @@ export function SubmitReviewDialog({
                     name={REVIEW_CONTENT_FIELD_NAME}
                   />
                 </div>
-                <div className="px-3 py-2 border border-sky-400 bg-cyan-100 rounded-md text-xs sm:text-sm">
-                  <p className="text-sky-700 text-xs sm:text-sm italic">
+                <div className="px-3 py-2 border border-sky-400 bg-cyan-100 dark:bg-cyan-900 rounded-md text-xs sm:text-sm">
+                  <p className="text-sky-700 text-xs sm:text-sm italic dark:text-white">
                     After submitting this form, the business owner will be
                     notified and will verify your review.
                     <br />

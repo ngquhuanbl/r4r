@@ -15,6 +15,7 @@ import {
   OUTGOING_REVIEWS_PANEL_ID,
   OUTGOING_REVIEWS_TAB_ID,
   REVIEW_CONTENT_LENGTH_LIMIT,
+  REVIEW_STATUS_FILTER_ALL_OPTION,
 } from "@/constants/dashboard/ui";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
@@ -31,6 +32,7 @@ import { getAddress } from "@/utils/shared";
 
 import { InboxPagination } from "../Pagination";
 import { ReviewStatus } from "../ReviewStatus";
+import { WaitingFallback } from "../WaitingFallback";
 import { ReviewStatusFilter } from "./ReviewStatusFilter";
 import { SubmitReviewDialog } from "./SubmitReviewDialog";
 import { ViewOutgoingReviewDialog } from "./ViewReviewDialog";
@@ -121,7 +123,13 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
   );
 
   let tableContent = null;
-  if (data !== null) {
+  if (isLoading) {
+    tableContent = (
+      <div className="p-4 grow flex flex-col justify-center">
+        <p className="mx-auto text-xs sm:text-sm w-max">Loading ...</p>
+      </div>
+    );
+  } else {
     if (data.length) {
       tableContent = data.map((item) => {
         const { id, content, created_at, status, invitation } = item;
@@ -198,22 +206,28 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
         );
       });
     } else {
-      tableContent = (
-        <div className="p-4">
-          <p className="mx-auto text-sm w-max">No result found</p>
-        </div>
-      );
+      const areFiltersApplied =
+        filteredStatus !== REVIEW_STATUS_FILTER_ALL_OPTION.id;
+      if (areFiltersApplied) {
+        tableContent = (
+          <div className="p-4 grow flex flex-col justify-center">
+            <p className="mx-auto text-xs sm:text-sm w-max">No result found</p>
+          </div>
+        );
+      } else {
+        tableContent = <WaitingFallback />;
+      }
     }
   }
 
   return (
-    <div className="flex flex-col justify-between grow md:grow-0">
+    <div className="flex flex-col justify-between grow ">
       <div
         id={OUTGOING_REVIEWS_PANEL_ID}
         role="tabpanel"
         aria-labelledby={OUTGOING_REVIEWS_TAB_ID}
         className={cn(
-          "border border-zinc-200 divide-y divide-zinc-200 grow md:grow-0",
+          "border border-zinc-200 divide-y divide-zinc-200 grow flex flex-col",
           {
             "animate-pulse": isLoading,
           }
@@ -250,14 +264,12 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
         {tableContent}
       </div>
       {!isLoading && (
-        <div className="mt-5">
-          <InboxPagination
-            page={page}
-            totalPage={totalPage}
-            numVisiblePage={OUTGOING_REVIEWS_PAGE_SIZE}
-            onPageChange={onPageChange}
-          />
-        </div>
+        <InboxPagination
+          page={page}
+          totalPage={totalPage}
+          numVisiblePage={OUTGOING_REVIEWS_PAGE_SIZE}
+          onPageChange={onPageChange}
+        />
       )}
       {selectedSubmitReview !== null && (
         <SubmitReviewDialog

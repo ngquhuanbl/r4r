@@ -8,14 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAppSelector } from "@/lib/redux/hooks";
-import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
-import { IncomingReview } from "@/types/dashboard";
+import { OutgoingReview } from "@/types/dashboard";
 import { getAddress } from "@/utils/shared";
 
 interface ViewOutgoingReviewDialogProps {
   open: boolean;
-  data: IncomingReview;
+  data: OutgoingReview;
   onOpenChange: (open: boolean) => void;
 }
 export function ViewOutgoingReviewDialog({
@@ -23,9 +21,8 @@ export function ViewOutgoingReviewDialog({
   data,
   onOpenChange,
 }: ViewOutgoingReviewDialogProps) {
-  const businessEntries = useAppSelector(myBusinessesSelectors.selectEntries);
   const { url, content, status, invitation } = data;
-  const businessInfo = businessEntries[invitation.business.id];
+  const businessInfo = invitation.business;
   const businessName = businessInfo.business_name;
   const businessAddress = getAddress(businessInfo);
 

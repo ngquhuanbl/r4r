@@ -15,10 +15,12 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import {
+  BUSINESS_FILTER_ALL_OPTION,
   INCOMING_REVIEWS_PAGE_SIZE,
   INCOMING_REVIEWS_PANEL_ID,
   INCOMING_REVIEWS_TAB_ID,
   REVIEW_CONTENT_LENGTH_LIMIT,
+  REVIEW_STATUS_FILTER_ALL_OPTION,
 } from "@/constants/dashboard/ui";
 import { MyBusinessesSearchParams } from "@/constants/my-businesses";
 import { Paths } from "@/constants/paths";
@@ -38,6 +40,7 @@ import { getAddress } from "@/utils/shared";
 
 import { InboxPagination } from "../Pagination";
 import { ReviewStatus } from "../ReviewStatus";
+import { WaitingFallback } from "../WaitingFallback";
 import { BusinessesFilter } from "./BusinessesFilter";
 import { ReviewStatusFilter } from "./ReviewStatusFilter";
 
@@ -168,7 +171,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
   let tableContent = null;
   if (isLoading) {
     tableContent = (
-      <div className="p-4">
+      <div className="p-4 grow flex flex-col justify-center">
         <p className="mx-auto text-xs sm:text-sm w-max">Loading ...</p>
       </div>
     );
@@ -240,22 +243,29 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
         );
       });
     } else {
-      tableContent = (
-        <div className="p-4">
-          <p className="mx-auto text-xs sm:text-sm w-max">No result found</p>
-        </div>
-      );
+      const areFiltersApplied =
+        filteredBusinessId !== BUSINESS_FILTER_ALL_OPTION.id ||
+        filteredStatus !== REVIEW_STATUS_FILTER_ALL_OPTION.id;
+      if (areFiltersApplied) {
+        tableContent = (
+          <div className="p-4 grow flex flex-col justify-center">
+            <p className="mx-auto text-xs sm:text-sm w-max">No result found</p>
+          </div>
+        );
+      } else {
+        tableContent = <WaitingFallback />;
+      }
     }
   }
 
   return (
-    <div className="flex flex-col justify-between grow md:grow-0">
+    <div className="flex flex-col justify-between grow">
       <div
         id={INCOMING_REVIEWS_PANEL_ID}
         role="tabpanel"
         aria-labelledby={INCOMING_REVIEWS_TAB_ID}
         className={cn(
-          "border border-zinc-200 divide-y divide-zinc-200 grow md:grow-0",
+          "border border-zinc-200 divide-y divide-zinc-200 grow flex flex-col",
           {
             "animate-pulse": isLoading,
           }
@@ -300,14 +310,12 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
         {tableContent}
       </div>
       {!isLoading && (
-        <div className="mt-5">
-          <InboxPagination
-            page={page}
-            totalPage={totalPage}
-            numVisiblePage={INCOMING_REVIEWS_PAGE_SIZE}
-            onPageChange={onPageChange}
-          />
-        </div>
+        <InboxPagination
+          page={page}
+          totalPage={totalPage}
+          numVisiblePage={INCOMING_REVIEWS_PAGE_SIZE}
+          onPageChange={onPageChange}
+        />
       )}
       {selectedVerifyingReview !== null && (
         <VerifyReviewDialog

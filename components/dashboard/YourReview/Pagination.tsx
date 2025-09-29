@@ -39,45 +39,50 @@ export function InboxPagination({
   if (visiblePageNoList.length < 2) return null;
 
   return (
-    <Pagination>
+    <div className="pt-3">
       <Pagination>
-        <PaginationContent>
-          {page !== 1 && (
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={() => onPageChange(page - 1)}
-              />
-            </PaginationItem>
-          )}
-          {visiblePageNoList[0] !== 1 && (
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-          )}
-          {visiblePageNoList.map((pageNo) => (
-            <PaginationItem key={pageNo}>
-              <PaginationLink
-                href="#"
-                isActive={page === pageNo}
-                onClick={() => onPageChange(pageNo)}
-              >
-                {pageNo}
-              </PaginationLink>
-            </PaginationItem>
-          ))}
-          {visiblePageNoList[visiblePageNoList.length - 1] !== totalPage && (
-            <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>
-          )}
-          {page !== totalPage && (
-            <PaginationItem>
-              <PaginationNext href="#" onClick={() => onPageChange(page + 1)} />
-            </PaginationItem>
-          )}
-        </PaginationContent>
+        <Pagination>
+          <PaginationContent>
+            {page !== 1 && (
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={() => onPageChange(page - 1)}
+                />
+              </PaginationItem>
+            )}
+            {visiblePageNoList[0] !== 1 && (
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+            )}
+            {visiblePageNoList.map((pageNo) => (
+              <PaginationItem key={pageNo}>
+                <PaginationLink
+                  href="#"
+                  isActive={page === pageNo}
+                  onClick={() => onPageChange(pageNo)}
+                >
+                  {pageNo}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            {visiblePageNoList[visiblePageNoList.length - 1] !== totalPage && (
+              <PaginationItem>
+                <PaginationEllipsis />
+              </PaginationItem>
+            )}
+            {page !== totalPage && (
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={() => onPageChange(page + 1)}
+                />
+              </PaginationItem>
+            )}
+          </PaginationContent>
+        </Pagination>
       </Pagination>
-    </Pagination>
+    </div>
   );
 }
