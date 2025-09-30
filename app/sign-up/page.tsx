@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -5,6 +6,11 @@ import Logo from "@/components/shared/logo";
 import welcomeSrc from "@/public/sign-in/welcome.png";
 
 import SignUpForm from "./form";
+
+export const metadata: Metadata = {
+  title: "Sign Up To Review4Review",
+  description: `Create your free account today and start tracking, analyzing, and improving your business's customer reviews and online reputation.`,
+};
 
 export default function SignUp() {
   return (

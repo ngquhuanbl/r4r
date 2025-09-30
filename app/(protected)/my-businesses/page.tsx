@@ -1,4 +1,11 @@
+import { Metadata } from "next";
+
 import { BusinessList } from "@/components/my-business/BusinessList";
+
+export const metadata: Metadata = {
+  title: "My Businesses: Manage Business Profiles",
+  description: `View, edit, and manage all your business profiles from one centralized list. Add new businesses here.`,
+};
 
 export default function Page() {
   return (

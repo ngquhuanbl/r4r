@@ -1,4 +1,5 @@
 "use client";
+import { Bell, Radio } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -32,7 +33,6 @@ import { getAddress } from "@/utils/shared";
 
 import { InboxPagination } from "../Pagination";
 import { ReviewStatus } from "../ReviewStatus";
-import { WaitingFallback } from "../WaitingFallback";
 import { ReviewStatusFilter } from "./ReviewStatusFilter";
 import { SubmitReviewDialog } from "./SubmitReviewDialog";
 import { ViewOutgoingReviewDialog } from "./ViewReviewDialog";
@@ -215,7 +215,28 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
           </div>
         );
       } else {
-        tableContent = <WaitingFallback />;
+        tableContent = (
+          <div className="flex flex-col justify-center items-center gap-2 grow text-center">
+            <div className="flex flex-col gap-1 items-center mb-3">
+              <Radio className="animate-bounce" />
+              <p className="text-sm sm:text-base">Connecting Others to You!</p>
+            </div>
+            <p className="text-xs sm:text-sm">
+              Our network community is actively working to connect other
+              businesses with you.
+              <br />
+              Review requests will appear in the{" "}
+              <Bell className="inline" size={20} /> in the page header.
+              <br />
+              After you accept a request, your review for them will be shown
+              here.
+            </p>
+            <p className="text-xs sm:text-sm italic">
+              Please check your notifications regularly for new outgoing review
+              requests.
+            </p>
+          </div>
+        );
       }
     }
   }

@@ -1,6 +1,7 @@
+import { type NextRequest, NextResponse } from "next/server";
+
 import { Paths } from "@/constants/paths";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { type NextRequest, NextResponse } from "next/server";
 
 export const updateSession = async (request: NextRequest) => {
   // This `try/catch` block is only here for the interactive tutorial.
@@ -68,7 +69,8 @@ export const updateSession = async (request: NextRequest) => {
     } = await supabase.auth.getUser();
 
     const path = request.nextUrl.pathname;
-    const regexForAuthRoutes = /^\/(sign-in|sign-up|forgot-password)($|\/)/;
+    const regexForAuthRoutes =
+      /^\/(sign-in|sign-up|forgot-password|new-password)($|\/)/;
     const isAuthRoute = regexForAuthRoutes.test(path);
 
     if (isAuthRoute) {

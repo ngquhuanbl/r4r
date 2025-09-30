@@ -1,5 +1,12 @@
+import { Metadata } from "next";
+
 import { YourReview } from "@/components/dashboard/YourReview/Index";
 import { getUserOrRedirect } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Dashboard: Manage Business Reviews & Insights",
+  description: `Your personalized reputation management hub. View new reviews, insights for all your connected businesses.`,
+};
 
 export default async function Page() {
   const user = await getUserOrRedirect();

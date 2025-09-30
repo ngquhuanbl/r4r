@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -5,6 +6,11 @@ import Logo from "@/components/shared/logo";
 import welcomeSrc from "@/public/sign-in/welcome.png";
 
 import SignInForm from "./form";
+
+export const metadata: Metadata = {
+  title: "Sign In To Review4Review",
+  description: "Log back in to your dashboard to manage your business reviews.",
+};
 
 export default function SignIn() {
   return (
