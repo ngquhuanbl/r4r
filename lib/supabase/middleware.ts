@@ -68,7 +68,7 @@ export const updateSession = async (request: NextRequest) => {
     } = await supabase.auth.getUser();
 
     const path = request.nextUrl.pathname;
-    const regexForAuthRoutes = /^\/(sign-in|sign-up)($|\/)/;
+    const regexForAuthRoutes = /^\/(sign-in|sign-up|forgot-password)($|\/)/;
     const isAuthRoute = regexForAuthRoutes.test(path);
 
     if (isAuthRoute) {

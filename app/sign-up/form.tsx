@@ -7,6 +7,7 @@ import { signUp } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ErrorUtils } from "@/utils/error";
 
 export default function SignUpForm() {
   const [isPending, startTransition] = useTransition();
@@ -16,9 +17,16 @@ export default function SignUpForm() {
       const result = await signUp(formData);
       if (!result.ok) {
         const { error } = result;
-        toast.error(`Failed to sign up: ${error}`);
+        toast.error(`Failed to sign up`, {
+          duration: 5e3,
+          position: "bottom-center",
+          description: ErrorUtils.serializeError(error),
+        });
       } else {
-        toast.success(result.message);
+        toast.success(result.message, {
+          duration: 5e3,
+          position: "bottom-center",
+        });
       }
     });
   };
