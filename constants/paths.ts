@@ -5,4 +5,5 @@ export enum Paths {
   MY_BUSINESSES = "/my-businesses",
   FORGOT_PWD = "/forgot-password",
   NEW_PWD = "/new-password",
+  ADMIN = "/admin",
 }

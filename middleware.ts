@@ -9,6 +9,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(Paths.HOME, request.url));
   }
 
+  if (path.startsWith("/businesses")) {
+    return NextResponse.redirect(new URL(Paths.MY_BUSINESSES, request.url));
+  }
+
   return await updateSession(request);
 }
 

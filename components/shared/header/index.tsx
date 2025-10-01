@@ -15,6 +15,7 @@ import { NAV_LINKS } from "@/constants/nav-links";
 import userSrc from "@/public/shared/user.png";
 import { UserId } from "@/types/shared";
 
+import { AdminNavItem } from "./admin-nav-item";
 import { HamburgerMenu } from "./hamburger-menu";
 import { LogOutBtn } from "./log-out-btn";
 import { Notifications } from "./notifications";
@@ -66,6 +67,7 @@ export async function Header({ userId, email }: HeaderProps) {
                 </Link>
               </li>
             ))}
+            <AdminNavItem />
           </nav>
           <ul className="flex items-center gap-3 md:gap-10 text-sm">
             <li id={ONBOARDING_STEP_IDS.NOTIFICATIONS}>

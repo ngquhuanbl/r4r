@@ -1,17 +1,20 @@
 "use client";
-import { Menu, X } from "lucide-react";
+import { Lock, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import Logo from "@/components/shared/logo";
 import { NAV_LINKS } from "@/constants/nav-links";
+import { Paths } from "@/constants/paths";
 import { useAppSelector } from "@/lib/redux/hooks";
+import { authSelectors } from "@/lib/redux/slices/auth";
 import { metricSelectors } from "@/lib/redux/slices/metric";
 import { cn } from "@/lib/utils";
 import { getVerifiedRate } from "@/utils/metrics";
 
 export function HamburgerMenu() {
+  const isAdmin = useAppSelector(authSelectors.selectIsAdmin);
   const {
     total_incoming_verified,
     total_incoming_all,
@@ -93,6 +96,18 @@ export function HamburgerMenu() {
                   {name}
                 </Link>
               ))}
+              {isAdmin ? (
+                <Link
+                  href={Paths.ADMIN}
+                  className={cn("px-4 py-2 font-medium", {
+                    "bg-primary rounded-r-xl text-white":
+                      pathname === Paths.ADMIN,
+                  })}
+                  onClick={closeMenu}
+                >
+                  Admin <Lock className="inline ml-1 align-top" size={20} />
+                </Link>
+              ) : null}
             </nav>
           </div>
           <div className="p-4 dark:text-white">
