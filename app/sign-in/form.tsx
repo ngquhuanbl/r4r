@@ -21,7 +21,7 @@ export default function SignInForm() {
     params.get(SignInSearchParams.NEW_PWD) === "1";
 
   useEffect(() => {
-    let toastId = null;
+    let toastId: string | number | null = null;
     if (isRedirectedAfterPwdUpdated) {
       toastId = toast.info("Please sign in with your new password", {
         position: "bottom-center",
