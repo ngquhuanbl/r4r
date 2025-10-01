@@ -1,7 +1,18 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { Paths } from "./constants/paths";
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  if (path === "/") {
+    return NextResponse.redirect(new URL(Paths.HOME, request.url));
+  }
+
+  if (path.startsWith("/businesses")) {
+    return NextResponse.redirect(new URL(Paths.MY_BUSINESSES, request.url));
+  }
+
   return await updateSession(request);
 }
 

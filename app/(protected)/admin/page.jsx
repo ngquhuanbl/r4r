@@ -3,7 +3,7 @@ import { fetchAllBusinesses } from "./actions";
 import AdminHeader from "@/components/admin/AdminHeader";
 import BusinessList from "@/components/admin/BusinessList";
 
-const adminId = process.env.ADMIN_ID;
+const adminId = process.env.NEXT_PUBLIC_ADMIN_ID;
 
 export default async function Page() {
   const user = await getUserOrRedirect();

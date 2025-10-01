@@ -28,8 +28,8 @@ export default function BusinessList({ businesses = [] }) {
                 <tr className="bg-gray-50 dark:bg-slate-900 border-b">
                   <th className="text-left py-3 px-4 font-medium">Business</th>
                   <th className="text-left py-3 px-4 font-medium">Address</th>
-                  <th className="text-left py-3 px-4 font-medium">Owner</th>
-                  <th className="text-left py-3 px-4 font-medium">Platforms</th>
+                  <th className="text-left py-3 px-4 font-medium hidden sm:block">Owner</th>
+                  <th className="text-left py-3 px-4 font-medium hidden sm:block">Platforms</th>
                   <th className="text-right py-3 px-4 font-medium">Action</th>
                 </tr>
               </thead>
@@ -43,10 +43,10 @@ export default function BusinessList({ businesses = [] }) {
                       {business.address}, <br />
                       {business.city}, {business.state} {business.zip_code}
                     </td>
-                    <td className="py-3 px-4 align-top text-gray-500 dark:text-gray-300">
+                    <td className="hidden sm:block py-3 px-4 align-top text-gray-500 dark:text-gray-300">
                       {business.user?.displayId || 'Unknown'}
                     </td>
-                    <td className="py-3 px-4 align-top">
+                    <td className="hidden sm:block py-3 px-4 align-top">
                       <div className="flex flex-wrap gap-1 ">
                         {business.platforms && business.platforms.length > 0 ? (
                           business.platforms.map((platform) => (
