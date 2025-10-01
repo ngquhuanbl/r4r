@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { OnboardingBanner } from "@/components/dashboard/OnboardingBanner";
 import { YourAchievement } from "@/components/dashboard/YourAchievement";
 import { YourReview } from "@/components/dashboard/YourReview/Index";
+import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
 import { getUserOrRedirect } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -17,7 +18,10 @@ export default async function Page() {
       <section className="mb-10">
         <OnboardingBanner />
       </section>
-      <section className="grow md:grow-0 flex flex-col">
+      <section
+        id={ONBOARDING_STEP_IDS.YOUR_REVIEWS}
+        className="grow md:grow-0 flex flex-col"
+      >
         <div className="mb-5">
           <h1
             id="section-1-title"
@@ -32,7 +36,10 @@ export default async function Page() {
         </div>
         <YourReview userId={user.id} />
       </section>
-      <section className="mt-10 hidden md:block">
+      <section
+        id={ONBOARDING_STEP_IDS.YOUR_ACHIEVEMENT}
+        className="mt-10 hidden md:block"
+      >
         <h1
           id="section-2-title"
           aria-describedby="section-2-desc"

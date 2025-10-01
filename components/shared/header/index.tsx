@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
 import { NAV_LINKS } from "@/constants/nav-links";
 import userSrc from "@/public/shared/user.png";
 import { UserId } from "@/types/shared";
@@ -54,6 +55,7 @@ export async function Header({ userId, email }: HeaderProps) {
         </div>
         <div className="flex items-center gap-10">
           <nav
+            id={ONBOARDING_STEP_IDS.NAV_BAR}
             role="menu"
             className="hidden md:flex md:items-center text-sm gap-10 list-none"
           >
@@ -66,7 +68,7 @@ export async function Header({ userId, email }: HeaderProps) {
             ))}
           </nav>
           <ul className="flex items-center gap-3 md:gap-10 text-sm">
-            <li>
+            <li id={ONBOARDING_STEP_IDS.NOTIFICATIONS}>
               <Notifications userId={userId} />
             </li>
             <li>{profileMenu}</li>

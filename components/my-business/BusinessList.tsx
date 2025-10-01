@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
 import { MyBusinessesSearchParams } from "@/constants/my-businesses";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
@@ -98,6 +99,7 @@ export function BusinessList() {
               tracking your reviews and requests!
             </p>
             <Button
+              id={ONBOARDING_STEP_IDS.LETS_START}
               className="mt-3"
               onClick={() => setOpenedCreateBusinessDialog(true)}
             >
@@ -112,6 +114,7 @@ export function BusinessList() {
     content = (
       <>
         <button
+          id={ONBOARDING_STEP_IDS.LETS_START}
           className="border-dashed border-2 border-primary flex flex-col items-center justify-center hover:border-cyan-600 text-primary hover:text-cyan-600 py-3"
           onClick={() => setOpenedCreateBusinessDialog(true)}
         >

@@ -1,6 +1,8 @@
 "use client";
 import { Sparkle } from "lucide-react";
+import { useNextStep } from "nextstepjs";
 
+import { ONBOARDING_TOUR_NAME } from "@/constants/dashboard/onboarding";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
 import { getUsernameFromEmail } from "@/utils/shared";
@@ -10,6 +12,7 @@ import { Button } from "../ui/button";
 export function OnboardingBanner() {
   const email = useAppSelector(authSelectors.selectEmail);
   const username = getUsernameFromEmail(email);
+  const { startNextStep } = useNextStep();
 
   return (
     <div
@@ -27,7 +30,11 @@ export function OnboardingBanner() {
         Let's get you set up and ready to explore everything our service has to
         offer!
       </p>
-      <Button variant="outline" className="mt-6">
+      <Button
+        variant="outline"
+        className="mt-6"
+        onClick={() => startNextStep(ONBOARDING_TOUR_NAME)}
+      >
         <Sparkle />
         Get started
       </Button>

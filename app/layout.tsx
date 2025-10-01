@@ -1,7 +1,9 @@
-import { GeistSans } from "geist/font/sans";
-import { cn } from "@/lib/utils";
-import { Toaster } from "sonner";
 import "./globals.css";
+
+import { GeistSans } from "geist/font/sans";
+import { Toaster } from "sonner";
+
+import { cn } from "@/lib/utils";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`

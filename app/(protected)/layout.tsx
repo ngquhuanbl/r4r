@@ -1,5 +1,9 @@
+import { NextStep, NextStepProvider } from "nextstepjs";
+
+import StepCard from "@/components/shared/CardStep";
 import { Footer } from "@/components/shared/footer";
 import { Header } from "@/components/shared/header";
+import { ONBOARDING_STEPS } from "@/constants/dashboard/onboarding";
 import { INCOMING_REVIEWS_PAGE_SIZE } from "@/constants/dashboard/ui";
 import { createClient } from "@/lib/supabase/server";
 import { unwrap } from "@/utils/api";
@@ -58,17 +62,21 @@ export default async function Layout({ children }: LayoutProps) {
         metrics,
       }}
     >
-      <div className="flex flex-col min-h-screen">
-        <Header userId={user!.id} email={user!.email} />
+      <NextStepProvider>
+        <NextStep steps={ONBOARDING_STEPS} cardComponent={StepCard}>
+          <div className="flex flex-col min-h-screen">
+            <Header userId={user!.id} email={user!.email} />
 
-        {/* Page content */}
-        <main className="grow py-6 flex flex-col items-center">
-          <div className="max-w-7xl px-4 pl-6 sm:px-6 lg:px-8 grow flex flex-col w-full">
-            {children}
+            {/* Page content */}
+            <main className="grow py-6 flex flex-col items-center">
+              <div className="max-w-7xl px-4 pl-6 sm:px-6 lg:px-8 grow flex flex-col w-full">
+                {children}
+              </div>
+            </main>
+            <Footer />
           </div>
-        </main>
-        <Footer />
-      </div>
+        </NextStep>
+      </NextStepProvider>
     </StoreProvider>
   );
 }
