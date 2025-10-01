@@ -866,7 +866,9 @@ export async function fetchPendingReviews(userId: UserId) {
 }
 
 // Accept an invitation
-export async function acceptInvitation(invitationId) {
+export async function acceptInvitation(
+  invitationId: Tables<"review_invitations">["id"]
+) {
   const supabase = createClient();
 
   // Get the ACCEPTED status ID
@@ -912,7 +914,9 @@ export async function acceptInvitation(invitationId) {
 }
 
 // Reject an invitation
-export async function rejectInvitation(invitationId) {
+export async function rejectInvitation(
+  invitationId: Tables<"review_invitations">["id"]
+) {
   const supabase = createClient();
 
   // Get the REJECTED status ID
@@ -944,7 +948,11 @@ export async function rejectInvitation(invitationId) {
 }
 
 // Submit a review
-export async function submitReview(invitationId, reviewContent, reviewUrl) {
+export async function submitReview(
+  invitationId: Tables<"review_invitations">["id"],
+  reviewContent: Tables<"reviews">["content"],
+  reviewUrl: Tables<"reviews">["url"]
+) {
   const supabase = createClient();
 
   // Get the SUBMITTED status ID
@@ -995,7 +1003,7 @@ export async function submitReview(invitationId, reviewContent, reviewUrl) {
 }
 
 // Approve a review
-export async function approveReview(reviewId) {
+export async function approveReview(reviewId: Tables<"reviews">["id"]) {
   const supabase = createClient();
 
   // Get the VERIFIED status ID
@@ -1050,7 +1058,7 @@ export async function approveReview(reviewId) {
 }
 
 // Deny a review
-export async function denyReview(reviewId) {
+export async function denyReview(reviewId: Tables<"reviews">["id"]) {
   const supabase = createClient();
 
   // Get the REJECTED status ID
