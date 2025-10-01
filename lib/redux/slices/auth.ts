@@ -1,7 +1,7 @@
-import { User } from "@/types/shared";
 import { createSlice } from "@reduxjs/toolkit";
 
 import type { PayloadAction } from "@reduxjs/toolkit";
+import type { User } from "@supabase/supabase-js";
 
 type AuthState = {
   user: User | null;
@@ -17,6 +17,7 @@ export const authSlice = createSlice({
   },
   selectors: {
     selectUserId: (state) => state.user!.id!,
+    selectEmail: (state) => state.user!.email!,
   },
 });
 

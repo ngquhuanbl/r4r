@@ -5,3 +5,9 @@ export function getAddress(
 ) {
   return [business.address, business.city, business.state].join(", ");
 }
+
+export function getUsernameFromEmail(email: string) {
+  const regex = /^[^@]+/;
+  const match = email.match(regex);
+  return match ? match[0] : "";
+}

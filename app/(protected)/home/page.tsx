@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 
+import { OnboardingBanner } from "@/components/dashboard/OnboardingBanner";
 import { YourAchievement } from "@/components/dashboard/YourAchievement";
 import { YourReview } from "@/components/dashboard/YourReview/Index";
 import { getUserOrRedirect } from "@/lib/supabase/server";
@@ -13,6 +14,9 @@ export default async function Page() {
   const user = await getUserOrRedirect();
   return (
     <>
+      <section className="mb-10">
+        <OnboardingBanner />
+      </section>
       <section className="grow md:grow-0 flex flex-col">
         <div className="mb-5">
           <h1

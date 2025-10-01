@@ -23,8 +23,8 @@ export function YourAchievement() {
         <p className="text-5xl text-purple-500 font-bold pt-4">
           {total_outgoing_all}
         </p>
-        <p className="text-lg font-bold ">reviews you have received</p>
-        <p className="text-lg font-bold ">reviews you have given</p>
+        <p className="text-xl font-bold ">reviews you have received</p>
+        <p className="text-xl font-bold ">reviews you have given</p>
         <p className="text-sm font-medium">
           (total number including all submitted, verified and rejected reviews)
         </p>

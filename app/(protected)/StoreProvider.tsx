@@ -20,10 +20,11 @@ import {
 } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { Metrics } from "@/types/metric";
-import { User } from "@/types/shared";
 import { setupListeners } from "@reduxjs/toolkit/query";
 
 import type { ReactNode } from "react";
+import type { User } from "@supabase/supabase-js";
+
 interface Props {
   readonly children: ReactNode;
 

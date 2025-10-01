@@ -8,8 +8,4 @@ export type APIResponse<Result> =
       error: any;
     };
 
-export type User = {
-  id: UserId;
-};
-
 export type UserId = string;
