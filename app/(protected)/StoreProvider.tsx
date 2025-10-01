@@ -4,6 +4,7 @@ import { Provider } from "react-redux";
 
 import { authActions } from "@/lib/redux/slices/auth";
 import { incomingReviewsActions } from "@/lib/redux/slices/incoming-review";
+import { metricActions } from "@/lib/redux/slices/metric";
 import { myBusinessesActions } from "@/lib/redux/slices/my-business";
 import { outgoingReviewsActions } from "@/lib/redux/slices/outgoing-review";
 import { platformsActions } from "@/lib/redux/slices/platform";
@@ -18,6 +19,7 @@ import {
   ReviewRequest,
 } from "@/types/dashboard";
 import { Tables } from "@/types/database";
+import { Metrics } from "@/types/metric";
 import { User } from "@/types/shared";
 import { setupListeners } from "@reduxjs/toolkit/query";
 
@@ -33,6 +35,7 @@ interface Props {
     myBusinesses: FetchedBusiness[];
     reviewStatuses: Tables<"review_statuses">[];
     platforms: Tables<"platforms">[];
+    metrics: Metrics;
   };
 }
 
@@ -58,6 +61,7 @@ export const StoreProvider = ({ initialData, children }: Props) => {
       reviewStatusesActions.loadInitData(initialData.reviewStatuses)
     );
     store.dispatch(platformsActions.loadInitData(initialData.platforms));
+    store.dispatch(metricActions.setMetric(initialData.metrics));
 
     storeRef.current = store;
   }

@@ -11,6 +11,7 @@ import {
   fetchPlatforms,
   fetchReviewStatuses,
 } from "./home/actions";
+import { fetchMetrics } from "./metrics/actions";
 import { fetchBusinesses } from "./my-businesses/actions";
 import { StoreProvider } from "./StoreProvider";
 
@@ -33,6 +34,7 @@ export default async function Layout({ children }: LayoutProps) {
     myBusinesses,
     reviewStatuses,
     platforms,
+    metrics,
   ] = await Promise.all([
     unwrap(fetchIncomingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
     unwrap(fetchOutgoingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
@@ -40,6 +42,7 @@ export default async function Layout({ children }: LayoutProps) {
     unwrap(fetchBusinesses(userId)),
     unwrap(fetchReviewStatuses()),
     unwrap(fetchPlatforms()),
+    unwrap(fetchMetrics(userId)),
   ]);
 
   return (
@@ -52,6 +55,7 @@ export default async function Layout({ children }: LayoutProps) {
         myBusinesses,
         reviewStatuses,
         platforms,
+        metrics,
       }}
     >
       <div className="flex flex-col min-h-screen">

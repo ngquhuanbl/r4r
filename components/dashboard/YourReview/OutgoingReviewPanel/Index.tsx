@@ -216,7 +216,7 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
         );
       } else {
         tableContent = (
-          <div className="flex flex-col justify-center items-center gap-2 grow text-center">
+          <div className="flex flex-col justify-center items-center gap-2 grow text-center px-3">
             <div className="flex flex-col gap-1 items-center mb-3">
               <Radio className="animate-bounce" />
               <p className="text-sm sm:text-base">Connecting Others to You!</p>

@@ -6,9 +6,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import Logo from "@/components/shared/logo";
 import { NAV_LINKS } from "@/constants/nav-links";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { metricSelectors } from "@/lib/redux/slices/metric";
 import { cn } from "@/lib/utils";
+import { getVerifiedRate } from "@/utils/metrics";
 
 export function HamburgerMenu() {
+  const {
+    total_incoming_verified,
+    total_incoming_all,
+    total_outgoing_verified,
+    total_outgoing_all,
+  } = useAppSelector(metricSelectors.selectData);
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDialogElement>(null);
@@ -89,25 +98,35 @@ export function HamburgerMenu() {
           <div className="p-4 dark:text-white">
             <p className="text-xs">YOUR ACHIEVEMENT</p>
             <div className="grid grid-cols-[1fr_4fr] py-3 items-center border-b border-gray-300">
-              <p className="font-bold text-3xl  text-teal-500">25</p>
+              <p className="font-bold text-3xl text-teal-500">
+                {total_incoming_all}
+              </p>
               <div>
                 <p className="text-sm font-medium">reviews you have received</p>
                 <p className="text-xs">
-                  (total number including both valid and invalid reviews)
+                  (total number including all submitted, verified and rejected
+                  reviews)
                 </p>
               </div>
-              <p className="font-bold text-lg text-teal-500">70%</p>
+              <p className="font-bold text-lg text-teal-500">
+                {getVerifiedRate(total_incoming_verified, total_incoming_all)}%
+              </p>
               <p className="text-sm font-medium">reviews are valid</p>
             </div>
             <div className="grid grid-cols-[1fr_4fr] py-3 items-center">
-              <p className="font-bold text-3xl text-purple-700">26</p>
+              <p className="font-bold text-3xl text-purple-700">
+                {total_outgoing_all}
+              </p>
               <div>
                 <p className="text-sm font-medium">reviews you have given</p>
                 <p className="text-xs">
-                  (total number including both valid and invalid reviews)
+                  (total number including all submitted, verified and rejected
+                  reviews)
                 </p>
               </div>
-              <p className="font-bold text-lg text-purple-700">82%</p>
+              <p className="font-bold text-lg text-purple-700">
+                {getVerifiedRate(total_outgoing_verified, total_outgoing_all)}%
+              </p>
               <p className="text-sm font-medium">acceptance rate</p>
             </div>
           </div>

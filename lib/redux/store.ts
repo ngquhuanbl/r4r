@@ -2,11 +2,11 @@ import type { Action, ThunkAction } from "@reduxjs/toolkit";
 import {
   combineSlices,
   configureStore,
-  createAsyncThunk,
 } from "@reduxjs/toolkit";
 
 import { authSlice } from "./slices/auth";
 import { incomingReviewsSlice } from "./slices/incoming-review";
+import { metricSlice } from "./slices/metric";
 import { myBusinessesSlice } from "./slices/my-business";
 import { outgoingReviewsSlice } from "./slices/outgoing-review";
 import { platformsSlice } from "./slices/platform";
@@ -22,7 +22,8 @@ const rootReducer = combineSlices(
   myBusinessesSlice,
   outgoingReviewsSlice,
   platformsSlice,
-  authSlice
+  authSlice,
+  metricSlice
 );
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>;

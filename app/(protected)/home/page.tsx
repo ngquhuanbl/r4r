@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 
+import { YourAchievement } from "@/components/dashboard/YourAchievement";
 import { YourReview } from "@/components/dashboard/YourReview/Index";
 import { getUserOrRedirect } from "@/lib/supabase/server";
 
@@ -38,6 +39,7 @@ export default async function Page() {
         <p id="section-2-desc" className="font-light text-sm sm:text-base">
           Everything you have achieved so far with the community
         </p>
+        <YourAchievement />
       </section>
     </>
   );
