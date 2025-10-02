@@ -21,6 +21,7 @@ export default function SignUp() {
         width={790}
         height={1024}
         alt={""}
+				priority
       />
       <div className="flex flex-col h-full justify-between sm:justify-center py-20 sm:py-0 items-center sm:items-start">
         <Logo />

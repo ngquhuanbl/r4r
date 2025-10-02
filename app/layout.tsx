@@ -4,15 +4,30 @@ import { GeistSans } from "geist/font/sans";
 import { Toaster } from "sonner";
 
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
 
-export const metadata = {
+export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "",
-  description: "",
+  openGraph: {
+    images: {
+      url: "/shared/og-image.jpg",
+      alt: `Logo for Review4Review. The design features two intersecting speech bubbles with a star icon inside each one. The tagline "A business to business review network" is written below the main logo.`,
+      width: 1200,
+      height: 630,
+    },
+  },
+  twitter: {
+    images: {
+      url: "/shared/twt-image.jpg",
+      alt: `Logo for Review4Review. The design features two intersecting speech bubbles with a star icon inside each one. The tagline "A business to business review network" is written below the main logo.`,
+      width: 1200,
+      height: 630,
+    },
+  },
 };
 
 export default function RootLayout({
