@@ -6,8 +6,8 @@ import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
+const defaultUrl = process.env.PROD_URL
+  ? `https://${process.env.PROD_URL}`
   : "http://localhost:3000";
 
 export const metadata: Metadata = {
