@@ -46,7 +46,7 @@ export function InboxPagination({
             {page !== 1 && (
               <PaginationItem>
                 <PaginationPrevious
-                  href="#"
+                  className="hover:cursor-pointer"
                   onClick={() => onPageChange(page - 1)}
                 />
               </PaginationItem>
@@ -59,9 +59,11 @@ export function InboxPagination({
             {visiblePageNoList.map((pageNo) => (
               <PaginationItem key={pageNo}>
                 <PaginationLink
-                  href="#"
                   isActive={page === pageNo}
-                  onClick={() => onPageChange(pageNo)}
+                  onClick={() => {
+                    if (page !== pageNo) onPageChange(pageNo);
+                  }}
+                  className="hover:cursor-pointer"
                 >
                   {pageNo}
                 </PaginationLink>
@@ -75,7 +77,7 @@ export function InboxPagination({
             {page !== totalPage && (
               <PaginationItem>
                 <PaginationNext
-                  href="#"
+                  className="hover:cursor-pointer"
                   onClick={() => onPageChange(page + 1)}
                 />
               </PaginationItem>
