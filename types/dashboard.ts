@@ -57,7 +57,7 @@ export type OutgoingReview = Pick<
 
 export type FetchedReviewsResponse<ReviewType> = {
   data: ReviewType[];
-  total_page: number;
+  total_results: number;
 };
 
 export type SubmitReviewResponse = Pick<

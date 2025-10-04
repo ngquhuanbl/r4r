@@ -78,7 +78,7 @@ export default function SignInForm() {
       </div>
       <Link
         href={Paths.FORGOT_PWD}
-        className="text-sm text-neutral-500 hover:text-primary hover:cursor-pointer"
+        className="text-sm text-neutral-500 dark:text-neutral-300 hover:text-primary hover:cursor-pointer"
       >
         Forgot your password?
       </Link>

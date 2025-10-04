@@ -64,12 +64,12 @@ export default async function Layout({ children }: LayoutProps) {
     >
       <NextStepProvider>
         <NextStep steps={ONBOARDING_STEPS} cardComponent={StepCard}>
-          <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col min-h-screen gap-6">
             <Header userId={user!.id} email={user!.email} />
 
             {/* Page content */}
-            <main className="grow py-6 flex flex-col items-center">
-              <div className="max-w-7xl px-4 pl-6 sm:px-6 lg:px-8 grow flex flex-col w-full">
+            <main className="grow flex flex-col items-center">
+              <div className="max-w-7xl px-4 pl-6 sm:px-6 lg:px-8 grow flex flex-col w-full gap-10">
                 {children}
               </div>
             </main>

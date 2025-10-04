@@ -5,6 +5,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/components/ui/select";
 import { REVIEW_STATUS_FILTER_ALL_OPTION } from "@/constants/dashboard/ui";
 import { useAppSelector } from "@/lib/redux/hooks";
@@ -35,20 +37,32 @@ export function ReviewStatusFilter({
 
   return (
     <div className="flex justify-between sm:justify-start items-center">
-      <Label className="sm:mr-4 text-xs sm:text-base">By status:</Label>
+      <Label
+        htmlFor="incoming-review-status-select"
+        className="sm:mr-4 text-xs sm:text-base sr-only"
+      >
+        Filter by review status
+      </Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger
+          id="incoming-review-status-select"
+          className="w-[180px]"
+          aria-controls="incoming-review-table"
+        >
           <SelectValue placeholder="Select status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={`${REVIEW_STATUS_FILTER_ALL_OPTION.id}`}>
-            {REVIEW_STATUS_FILTER_ALL_OPTION.name}
-          </SelectItem>
-          {finalData.map(({ id, name }) => (
-            <SelectItem key={id} value={`${id}`}>
-              {name}
+          <SelectGroup>
+            <SelectLabel>Select review status</SelectLabel>
+            <SelectItem value={`${REVIEW_STATUS_FILTER_ALL_OPTION.id}`}>
+              {REVIEW_STATUS_FILTER_ALL_OPTION.name}
             </SelectItem>
-          ))}
+            {finalData.map(({ id, name }) => (
+              <SelectItem key={id} value={`${id}`}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     </div>

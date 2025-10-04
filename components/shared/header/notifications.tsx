@@ -8,12 +8,6 @@ import {
   rejectReviewRequest,
 } from "@/app/(protected)/home/actions";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
   reviewRequestsActions,
@@ -24,6 +18,14 @@ import { ReviewRequest } from "@/types/dashboard";
 import { UserId } from "@/types/shared";
 import { ReviewRequestUtils } from "@/utils/review-request";
 import { getAddress } from "@/utils/shared";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface ReviewRequestItemProps {
   data: ReviewRequest;
@@ -133,7 +135,7 @@ export function Notifications({ userId }: NotificationsProps) {
           ))}
         </div>
       ) : (
-        <div className="px-2 text-center text-sm text-gray-800">
+        <div className="px-2 text-center text-sm text-gray-800 dark:text-gray-400">
           <p>Nothing here</p>
         </div>
       );
@@ -149,16 +151,22 @@ export function Notifications({ userId }: NotificationsProps) {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost">{hasRequests ? <BellDot /> : <Bell />}</Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-screen md:w-[400px]">
-        <DropdownMenuLabel className="text-base">
-          Review requests
-        </DropdownMenuLabel>
-        <div className="py-2 flex flex-col gap-3">{content}</div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Dialog modal={false}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" aria-label="Review request notifications">
+          {hasRequests ? <BellDot /> : <Bell />}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Review request notifications</DialogTitle>
+          <DialogDescription>
+            When another business wants a review from you, their request will
+            appear here.
+          </DialogDescription>
+          <div className="py-2 flex flex-col gap-3">{content}</div>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
   );
 }

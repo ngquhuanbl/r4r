@@ -19,6 +19,7 @@ import { AdminNavItem } from "./admin-nav-item";
 import { HamburgerMenu } from "./hamburger-menu";
 import { LogOutBtn } from "./log-out-btn";
 import { Notifications } from "./notifications";
+import { PageTitle } from "./page-title";
 
 interface HeaderProps {
   userId: UserId;
@@ -27,8 +28,11 @@ interface HeaderProps {
 export async function Header({ userId, email }: HeaderProps) {
   const profileMenu = (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full border-primary border sm:border-2 overflow-hidden">
+      <DropdownMenuTrigger asChild>
+        <button
+          aria-label="User profile"
+          className="w-6 h-6 md:w-8 md:h-8 rounded-full border-primary border sm:border-2 overflow-hidden"
+        >
           <Image
             src={userSrc}
             width={64}
@@ -36,7 +40,7 @@ export async function Header({ userId, email }: HeaderProps) {
             className="w-6 h-6 md:w-8 md:h-8"
             alt={""}
           />
-        </div>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" side="bottom">
         <DropdownMenuLabel>{email || "My account"}</DropdownMenuLabel>
@@ -54,6 +58,7 @@ export async function Header({ userId, email }: HeaderProps) {
         <div className="hidden md:block">
           <Logo />
         </div>
+        <PageTitle />
         <div className="flex items-center gap-10">
           <nav
             id={ONBOARDING_STEP_IDS.NAV_BAR}

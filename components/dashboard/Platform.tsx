@@ -39,7 +39,7 @@ export function Platform({ name }: PlatformProps) {
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
-        <TooltipTrigger asChild>
+        <TooltipTrigger aria-label={name} asChild>
           <div className="rounded-full overflow-hidden">
             <Image
               src={src}

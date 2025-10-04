@@ -15,7 +15,7 @@ export default async function Page() {
   const user = await getUserOrRedirect();
   return (
     <>
-      <section className="mb-10">
+      <section className="hidden md:block">
         <OnboardingBanner />
       </section>
       <section
@@ -23,13 +23,13 @@ export default async function Page() {
         className="grow md:grow-0 flex flex-col"
       >
         <div className="mb-5">
-          <h1
+          <h2
             id="section-1-title"
             aria-describedby="section-1-desc"
             className="font-bold sm:text-lg"
           >
             YOUR REVIEWS
-          </h1>
+          </h2>
           <p id="section-1-desc" className="font-light text-sm sm:text-base">
             Your central hub for all incoming/outgoing reviews.
           </p>
@@ -38,15 +38,15 @@ export default async function Page() {
       </section>
       <section
         id={ONBOARDING_STEP_IDS.YOUR_ACHIEVEMENT}
-        className="mt-10 hidden md:block"
+        className="hidden md:block"
       >
-        <h1
+        <h2
           id="section-2-title"
           aria-describedby="section-2-desc"
           className="font-bold sm:text-lg"
         >
           YOUR ACHIEVEMENT
-        </h1>
+        </h2>
         <p id="section-2-desc" className="font-light text-sm sm:text-base">
           Everything you have achieved so far with the community
         </p>

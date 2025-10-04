@@ -113,21 +113,23 @@ export function BusinessList() {
   } else {
     content = (
       <>
-        <button
-          id={ONBOARDING_STEP_IDS.LETS_START}
-          className="border-dashed border-2 border-primary flex flex-col items-center justify-center hover:border-cyan-600 text-primary hover:text-cyan-600 py-3"
-          onClick={() => setOpenedCreateBusinessDialog(true)}
-        >
-          <div>
-            <Plus className="text-sm md:text-base inline mr-1" />
-            <p className="text-sm md:text-base font-semibold align-middle inline">
-              Add new business
-            </p>
-          </div>
-        </button>
+        <li className="block">
+          <button
+            id={ONBOARDING_STEP_IDS.LETS_START}
+            className="border-dashed border-2 border-primary flex flex-col items-center justify-center hover:border-cyan-600 text-primary hover:text-cyan-600 py-3 w-full h-full"
+            onClick={() => setOpenedCreateBusinessDialog(true)}
+          >
+            <div>
+              <Plus className="text-sm md:text-base inline mr-1" />
+              <p className="text-sm md:text-base font-semibold align-middle inline">
+                Add new business
+              </p>
+            </div>
+          </button>
+        </li>
         {myBusinesses.map((item) => {
           return (
-            <div
+            <li
               key={item.id}
               className="border border-black p-5 text-black dark:border-white dark:text-white"
             >
@@ -138,21 +140,26 @@ export function BusinessList() {
                 {getAddress(item)}
               </p>
               <p className="text-xs md:text-sm font-light">{item.phone}</p>
-              <div className="flex gap-3 mt-3">
+              <div
+                aria-label={`Actions for ${item.business_name}`}
+                className="flex gap-3 mt-3"
+              >
                 <Button
+                  aria-label={`Edit ${item.business_name}`}
                   className="bg-black hover:bg-slate-900 dark:bg-primary dark:hover:bg-sky-700"
                   onClick={() => setSelectedManagedBusiness(item)}
                 >
                   Manage
                 </Button>
                 <Button
+                  aria-label={`Delete ${item.business_name}`}
                   variant="outline"
                   onClick={() => setSelectedDeletedBusiness(item)}
                 >
                   Delete
                 </Button>
               </div>
-            </div>
+            </li>
           );
         })}
       </>
@@ -160,8 +167,10 @@ export function BusinessList() {
   }
 
   return (
-    <div className="flex flex-col gap-2 md:grid md:grid-cols-[1fr_1fr] md:gap-5">
-      {content}
+    <div>
+      <ul className="flex flex-col gap-2 md:grid md:grid-cols-[1fr_1fr] md:gap-5">
+        {content}
+      </ul>
       {selectedManagedBusiness !== null && (
         <ManageBusinessDialog
           open={true}

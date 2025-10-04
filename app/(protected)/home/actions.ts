@@ -172,7 +172,7 @@ export async function fetchIncomingReviews(
     ok: true,
     data: {
       data: dataResult.data,
-      total_page: Math.ceil(countResult.count! / pageSize),
+      total_results: countResult.count!,
     },
   };
 }
@@ -419,7 +419,7 @@ export async function fetchOutgoingReviews(
     ok: true,
     data: {
       data: dataResult.data,
-      total_page: Math.ceil(countResult.count! / pageSize),
+      total_results: countResult.count!,
     },
   };
 }

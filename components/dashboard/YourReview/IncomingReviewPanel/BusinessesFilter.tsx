@@ -2,7 +2,9 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -24,20 +26,32 @@ export function BusinessesFilter({ value, onChange }: BusinessesFilterProps) {
 
   return (
     <div className="flex justify-between sm:justify-start items-center">
-      <Label className="sm:mr-4 text-xs sm:text-base">By business:</Label>
+      <Label
+        htmlFor="incoming-business-select"
+        className="sm:mr-4 text-xs sm:text-base sr-only"
+      >
+        Filter by business
+      </Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger
+          id="incoming-business-select"
+          className="w-[180px]"
+          aria-controls="incoming-review-table"
+        >
           <SelectValue placeholder="Select status" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={`${BUSINESS_FILTER_ALL_OPTION.id}`}>
-            {BUSINESS_FILTER_ALL_OPTION.name}
-          </SelectItem>
-          {data.map(({ id, business_name }) => (
-            <SelectItem key={id} value={`${id}`}>
-              {business_name}
+          <SelectGroup>
+            <SelectLabel>Select business</SelectLabel>
+            <SelectItem value={`${BUSINESS_FILTER_ALL_OPTION.id}`}>
+              {BUSINESS_FILTER_ALL_OPTION.name}
             </SelectItem>
-          ))}
+            {data.map(({ id, business_name }) => (
+              <SelectItem key={id} value={`${id}`}>
+                {business_name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         </SelectContent>
       </Select>
     </div>

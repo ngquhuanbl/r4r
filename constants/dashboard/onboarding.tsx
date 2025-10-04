@@ -13,7 +13,7 @@ export const ONBOARDING_STEPS: Tour[] = [
       {
         title: "Navigation Bar",
         content: (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1 sm:gap-3">
             <p>
               <b className="font-semibold">Dashboard</b>: Manage all reviews for
               your businesses.
@@ -35,7 +35,7 @@ export const ONBOARDING_STEPS: Tour[] = [
       {
         title: "Review Request Notifications",
         content: (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1 sm:gap-3">
             <p className="font-semibold text-primary">
               When another business wants a review from you, their request will
               appear here.
@@ -72,7 +72,7 @@ export const ONBOARDING_STEPS: Tour[] = [
       {
         title: "Your Review/Incoming Reviews",
         content: (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1 sm:gap-3">
             <p>
               This section shows reviews sent{" "}
               <b className="font-semibold">by others</b> to your businesses.
@@ -85,7 +85,7 @@ export const ONBOARDING_STEPS: Tour[] = [
             </p>
           </div>
         ),
-        side: "bottom",
+        side: "bottom-left",
         icon: <>📩</>,
         selector: "#" + ONBOARDING_STEP_IDS.INCOMING_REVIEWS,
         showControls: true,
@@ -96,8 +96,8 @@ export const ONBOARDING_STEPS: Tour[] = [
       {
         title: "Your Review/Outgoing reviews",
         content: (
-          <div className="flex flex-col gap-3x">
-            <p className="mb-3">
+          <div className="flex flex-col gap-1 sm:gap-3">
+            <p>
               This section shows reviews sent{" "}
               <b className="font-semibold">by you</b> to other businesses.
             </p>
@@ -109,7 +109,7 @@ export const ONBOARDING_STEPS: Tour[] = [
             </p>
           </div>
         ),
-        side: "bottom",
+        side: "bottom-right",
         icon: <>✍️</>,
         selector: "#" + ONBOARDING_STEP_IDS.OUTGOING_REVIEWS,
         showControls: true,

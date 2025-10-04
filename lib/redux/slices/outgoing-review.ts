@@ -32,12 +32,12 @@ export const outgoingReviewsSlice = createSlice({
   initialState: outgoingReviewsAdapter.getInitialState<{
     status: Status;
     page: number;
-    totalPage: number;
+    totalResults: number;
     filteredStatus: Tables<"review_statuses">["id"];
   }>({
     status: Status.LOADING,
     page: 1,
-    totalPage: 0,
+    totalResults: 0,
     filteredStatus: REVIEW_STATUS_FILTER_ALL_OPTION.id,
   }),
   reducers: {
@@ -65,9 +65,9 @@ export const outgoingReviewsSlice = createSlice({
       state,
       action: PayloadAction<FetchedReviewsResponse<OutgoingReview>>
     ) {
-      const { data, total_page } = action.payload;
+      const { data, total_results } = action.payload;
       outgoingReviewsAdapter.setAll(state, data);
-      state.totalPage = total_page;
+      state.totalResults = total_results;
       state.status = Status.SUCCEEDED;
     },
   },
@@ -78,9 +78,9 @@ export const outgoingReviewsSlice = createSlice({
       })
       .addCase(fetchOutgoingReviewsThunk.fulfilled, (state, action) => {
         state.status = Status.SUCCEEDED;
-        const { data, total_page } = action.payload;
+        const { data, total_results } = action.payload;
         outgoingReviewsAdapter.setAll(state, data);
-        state.totalPage = total_page;
+        state.totalResults = total_results;
       })
       .addCase(fetchOutgoingReviewsThunk.rejected, (state) => {
         state.status = Status.FAILED;
@@ -88,7 +88,7 @@ export const outgoingReviewsSlice = createSlice({
   },
   selectors: {
     selectPage: (state) => state.page,
-    selectTotalPage: (state) => state.totalPage,
+    selectTotalResults: (state) => state.totalResults,
     selectStatus: (state) => state.status,
     selectFilteredStatus: (state) => state.filteredStatus,
   },

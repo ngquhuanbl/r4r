@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -27,7 +26,11 @@ export function ReviewStatus({ id, className = "" }: ReviewStatusProps) {
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger
+          asChild
+          aria-label={data.name}
+          aria-description={data.description}
+        >
           <p className={className}>{data.name}</p>
         </TooltipTrigger>
         <TooltipContent>

@@ -11,3 +11,7 @@ export function getUsernameFromEmail(email: string) {
   const match = email.match(regex);
   return match ? match[0] : "";
 }
+
+export function getTotalPage(totalResults: number, pageSize: number) {
+	return Math.ceil(totalResults / pageSize);
+}

@@ -54,6 +54,7 @@ export function HamburgerMenu() {
         />
         {NAV_LINKS.map(({ href, name }, index) => (
           <p
+						aria-hidden
             key={index}
             className={cn("font-bold uppercase", { hidden: href !== pathname })}
           >
@@ -89,7 +90,8 @@ export function HamburgerMenu() {
                   key={index}
                   href={href}
                   className={cn("px-4 py-2 font-medium", {
-                    "bg-primary rounded-r-xl text-white": pathname === href,
+                    "bg-primary rounded-r-xl text-white":
+                      pathname === href,
                   })}
                   onClick={closeMenu}
                 >

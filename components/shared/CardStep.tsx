@@ -23,25 +23,27 @@ const StepCard = ({
   arrow,
 }: CardComponentProps) => {
   return (
-    <Card className="w-[500px]">
+    <Card className="w-[80vw] sm:w-[500px]">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-1 sm:gap-2">
           {step.icon && <span>{step.icon}</span>}
           {step.title}
         </CardTitle>
       </CardHeader>
 
       <CardContent>
-        <div className="mb-2 text-base whitespace-normal">{step.content}</div>
+        <div className="sm:mb-2 text-sm sm:text-base whitespace-normal">
+          {step.content}
+        </div>
         {arrow}
       </CardContent>
 
       <CardFooter className="flex justify-between">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs sm:text-sm text-muted-foreground">
           {currentStep + 1} / {totalSteps}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-1 sm:gap-2">
           {currentStep > 0 && (
             <Button variant="outline" onClick={prevStep}>
               Previous
