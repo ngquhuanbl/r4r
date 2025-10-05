@@ -145,7 +145,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
     const params = new URLSearchParams();
     params.append(MyBusinessesSearchParams.SHOW, "1");
     return (
-      <div className="border border-zinc-20 content-center px-3 text-center grow md:grow-0">
+      <div className="border border-zinc-20 content-center p-4 grow flex flex-col justify-center">
         <div className="flex flex-col items-center mx-auto">
           <p className="font-semibold text-base">Your review is waiting!</p>
           <p className="font-light text-sm mt-2">
@@ -304,7 +304,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
               reviewStatusName === ReviewStatusNames.SUBMITTED ? (
                 <Button
                   aria-label={`Verify ${reviewAriaId} now.`}
-                  className="mt-3 bg-teal-700 hover:bg-teal-600 text-white"
+                  className="mt-3 md:mt-0 bg-teal-700 hover:bg-teal-600 text-white"
                   onClick={() => setSelectedVerifyingReview(item)}
                 >
                   Verify now
@@ -312,7 +312,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
               ) : (
                 <Button
                   aria-label={`View details of ${reviewAriaId}.`}
-                  className="mt-3"
+                  className="mt-3 md:mt-0"
                   variant="outline"
                   onClick={() => setSelectedViewReview(item)}
                 >

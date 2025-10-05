@@ -271,7 +271,7 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
             if (isDraftReview) {
               actions = (
                 <Button
-                  className="bg-violet-600 hover:bg-violet-900"
+                  className="mt-3 md:mt-0 bg-violet-600 hover:bg-violet-900"
                   onClick={() => setSelectedSubmitReview(item)}
                 >
                   Complete review
@@ -280,7 +280,7 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
             } else {
               actions = (
                 <Button
-                  className="mt-3"
+                  className="mt-3 md:mt-0"
                   variant="outline"
                   onClick={() => setSelectedViewReview(item)}
                 >
