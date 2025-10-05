@@ -177,3 +177,5 @@ export const ONBOARDING_STEPS: Tour[] = [
     ],
   },
 ];
+
+export const ONBOARDING_IMG_SRC = "/dashboard/onboarding-banner.jpg";

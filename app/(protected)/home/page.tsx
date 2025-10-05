@@ -6,6 +6,8 @@ import { YourReview } from "@/components/dashboard/YourReview/Index";
 import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
 import { getUserOrRedirect } from "@/lib/supabase/server";
 
+import { PreloadResources } from "./preload-resources";
+
 export const metadata: Metadata = {
   title: "Dashboard: Manage Business Reviews & Insights",
   description: `Your personalized reputation management hub. View new reviews, insights for all your connected businesses.`,
@@ -15,6 +17,7 @@ export default async function Page() {
   const user = await getUserOrRedirect();
   return (
     <>
+      <PreloadResources />
       <section className="hidden md:block">
         <OnboardingBanner />
       </section>

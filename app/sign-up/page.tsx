@@ -18,10 +18,11 @@ export default function SignUp() {
       <Image
         className="w-[388px] hidden sm:block justify-self-end"
         src={welcomeSrc}
-        width={790}
-        height={1024}
+        width={500}
+        height={648}
         alt={""}
-				priority
+        priority
+        sizes="(max-width: 640px) 0, 388px"
       />
       <div className="flex flex-col h-full justify-between sm:justify-center py-20 sm:py-0 items-center sm:items-start">
         <Logo />

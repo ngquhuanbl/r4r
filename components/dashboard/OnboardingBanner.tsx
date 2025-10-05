@@ -2,7 +2,10 @@
 import { Sparkle } from "lucide-react";
 import { useNextStep } from "nextstepjs";
 
-import { ONBOARDING_TOUR_NAME } from "@/constants/dashboard/onboarding";
+import {
+  ONBOARDING_IMG_SRC,
+  ONBOARDING_TOUR_NAME,
+} from "@/constants/dashboard/onboarding";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
 import { getUsernameFromEmail } from "@/utils/shared";
@@ -18,7 +21,7 @@ export function OnboardingBanner() {
     <div
       className="w-full p-4 md:p-10 bg-left-top md:bg-right-bottom bg-cover"
       style={{
-        backgroundImage: "url(/dashboard/onboarding-banner.jpg)",
+        backgroundImage: `url(${ONBOARDING_IMG_SRC})`,
       }}
     >
       <p className="text-2xl md:text-4xl font-bold text-white tracking-[-.04em]">
