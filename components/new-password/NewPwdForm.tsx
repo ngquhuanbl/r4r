@@ -55,10 +55,10 @@ export function NewPwdForm() {
           description: ErrorUtils.serializeError(result.error),
         });
       } else {
-        toast.success(`Password updated!`, {
+        toast.success(`Password updated successfully!`, {
           position: "bottom-center",
           duration: 5e3,
-          description: "Redirecting to sign in...",
+          description: "Signing you in ...",
         });
         setTimeout(() => {
           const params = new URLSearchParams();
