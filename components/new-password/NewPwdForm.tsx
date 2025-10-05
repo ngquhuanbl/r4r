@@ -1,6 +1,6 @@
 "use client";
 import { Loader2Icon } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -15,7 +15,7 @@ import { ErrorUtils } from "@/utils/error";
 export function NewPwdForm() {
   const [isLoading, startTransition] = useTransition();
   const router = useRouter();
-  const params = useParams();
+  const params = useSearchParams();
 
   const onSubmit = (formData: FormData) => {
     const newPassword = formData.get("new-password");
@@ -29,7 +29,7 @@ export function NewPwdForm() {
       return;
     }
 
-    const code = params["code"];
+    const code = params.get("code");
     if (!code) {
       toast.error("Unexpected error", {
         description: "Empty session",
