@@ -93,6 +93,9 @@ export const updatePwd = async (
   const password = formData.get("new-password") as string;
 
   const supabase = createClient();
+  const code = formData.get("code") as string;
+  await supabase.auth.exchangeCodeForSession(code);
+
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
