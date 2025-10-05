@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { Paths } from "@/constants/paths";
-import { SignInSearchParams } from "@/constants/sign-in";
 import { createClient } from "@/lib/supabase/server";
 import { APIResponse } from "@/types/shared";
 
@@ -27,6 +26,7 @@ export async function signIn(formData: FormData) {
   });
 
   if (error) {
+    console.error(`Failed to sign in`, error);
     return { ok: false, error: error.message || "Unexpected error" };
   }
 
@@ -48,6 +48,7 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
+    console.error(`Failed to sign up`, error);
     return { ok: false, error: error.message || "Unexpected error" };
   }
 
@@ -76,6 +77,7 @@ export const sendResetPwdURL = async (
   });
 
   if (error) {
+    console.error(`Failed to send reset pwd url:`, error);
     return { ok: false, error };
   }
 
@@ -94,12 +96,9 @@ export const updatePwd = async (
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
+    console.error(`Failed to update password:`, error);
     return { ok: false, error };
   }
-
-  const params = new URLSearchParams();
-  params.append(SignInSearchParams.NEW_PWD, "1");
-  redirect(`${Paths.SIGN_IN}?${params.toString()}`);
 
   return {
     ok: true,

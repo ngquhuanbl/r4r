@@ -1,16 +1,20 @@
 "use client";
 import { Loader2Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
+import { updatePwd } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Paths } from "@/constants/paths";
+import { SignInSearchParams } from "@/constants/sign-in";
 import { ErrorUtils } from "@/utils/error";
-import { updatePwd } from "@/app/actions/auth";
 
 export function NewPwdForm() {
   const [isLoading, startTransition] = useTransition();
+  const router = useRouter();
 
   const onSubmit = (formData: FormData) => {
     const newPassword = formData.get("new-password");
@@ -37,6 +41,11 @@ export function NewPwdForm() {
           duration: 5e3,
           description: "Redirecting to sign in...",
         });
+        setTimeout(() => {
+          const params = new URLSearchParams();
+          params.append(SignInSearchParams.NEW_PWD, "1");
+          router.replace(`${Paths.SIGN_IN}?${params.toString()}`);
+        }, 1e3);
       }
     });
   };
