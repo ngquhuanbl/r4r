@@ -41,6 +41,7 @@ Create a `.env.local` file in the root directory with the following:
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_ADMIN_ID=user_id_of_admin
 ```
 
 ### Database Setup

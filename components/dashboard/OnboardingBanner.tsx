@@ -25,7 +25,7 @@ export function OnboardingBanner() {
       }}
     >
       <p className="text-2xl md:text-4xl font-bold text-white tracking-[-.04em]">
-        Wellcome back, {username}
+        Welcome back, {username}
       </p>
       <p className="font-light text-sm md:text-lg text-white leading-6 mt-2">
         We're thrilled to have you join our community.
