@@ -15,6 +15,7 @@ import {
   fetchPlatforms,
   fetchReviewStatuses,
 } from "./home/actions";
+import { processAutoConnect } from "./home/auto-connect";
 import { fetchMetrics } from "./metrics/actions";
 import { fetchBusinesses } from "./my-businesses/actions";
 import { StoreProvider } from "./StoreProvider";
@@ -30,6 +31,19 @@ export default async function Layout({ children }: LayoutProps) {
   } = await supabase.auth.getUser();
 
   const userId = user!.id;
+
+  // Process auto-connect queue on page visit (fire and forget)
+  // This runs in parallel with data fetching but we don't wait for the result
+  // The Realtime subscription will pick up any new invitations
+  // Feature flag: set NEXT_PUBLIC_ENABLE_AUTO_CONNECT=true in .env to enable
+  const isAutoConnectEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_AUTO_CONNECT === "true";
+
+  if (isAutoConnectEnabled) {
+    processAutoConnect(userId).catch((err) =>
+      console.error("Auto-connect processing error:", err)
+    );
+  }
 
   const [
     incomingReviews,

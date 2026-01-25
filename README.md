@@ -27,6 +27,12 @@ R4R allows businesses to connect with each other, send review invitations, and e
    - The app tracks relationships between users and businesses
    - Relationships have different statuses
 
+5. **Auto-Connect System** (Optional)
+   - When enabled, businesses are automatically connected to other businesses over time
+   - New businesses receive up to 3 connections per day
+   - Respects user rejections (won't connect to businesses the user has rejected)
+   - Uses Supabase Realtime for instant UI updates when new connections are made
+
 ## Getting Started
 
 ### Prerequisites
@@ -42,12 +48,17 @@ Create a `.env.local` file in the root directory with the following:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 NEXT_PUBLIC_ADMIN_ID=user_id_of_admin
+NEXT_PUBLIC_ENABLE_AUTO_CONNECT=true  # Optional: Enable automatic business connections
 ```
 
 ### Database Setup
 
 1. Create a new Supabase project
-2. Run the SQL script in `supabase_schema.sql` in the Supabase SQL editor to set up the database schema
+2. Run the SQL script in `schema.sql` in the Supabase SQL editor to set up the database schema
+3. Enable Realtime for the `review_invitations` table (required for auto-connect feature):
+   - Go to Supabase Dashboard → Database → Replication
+   - Enable replication for the `review_invitations` table
+   - Or run: `ALTER PUBLICATION supabase_realtime ADD TABLE review_invitations;`
 
 ### Installation
 

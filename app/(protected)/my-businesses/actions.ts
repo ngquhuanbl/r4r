@@ -7,6 +7,7 @@ import { FetchedBusiness, PlatformURLs } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { APIResponse, UserId } from "@/types/shared";
 import { FieldNames } from "@/utils/my-business";
+import { addToAutoConnectQueue } from "@/app/(protected)/home/auto-connect";
 
 export async function fetchBusinesses(
   userId: UserId
@@ -364,6 +365,19 @@ export async function createBusiness(
       platformData.forEach(({ platform_id, platform_url }) => {
         createdBusiness.platform_urls[platform_id] = platform_url;
       });
+    }
+  }
+
+  // 3. Add the business to the auto-connect queue for gradual connections
+  // Only if auto-connect feature is enabled
+  const isAutoConnectEnabled =
+    process.env.NEXT_PUBLIC_ENABLE_AUTO_CONNECT === "true";
+
+  if (isAutoConnectEnabled) {
+    const queueResult = await addToAutoConnectQueue(newBusiness.id);
+    if (!queueResult.success) {
+      console.error("Error adding to auto-connect queue:", queueResult.error);
+      // Don't fail the business creation, just log the error
     }
   }
 

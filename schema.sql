@@ -138,3 +138,28 @@ EXECUTE FUNCTION trigger_set_updated_at();
   FOR EACH ROW
   EXECUTE FUNCTION trigger_set_updated_at();
 
+-- Auto-connect queue for gradual business connections
+CREATE TABLE IF NOT EXISTS public.auto_connect_queue (
+  id SERIAL PRIMARY KEY,
+  business_id INTEGER NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
+  attempts_today INTEGER DEFAULT 0,
+  last_attempt_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  UNIQUE(business_id)
+);
+
+-- Create trigger for auto_connect_queue table
+CREATE TRIGGER set_auto_connect_queue_updated_at
+BEFORE UPDATE ON public.auto_connect_queue
+FOR EACH ROW
+EXECUTE FUNCTION trigger_set_updated_at();
+
+-- Index for efficient queue fetching
+CREATE INDEX IF NOT EXISTS idx_auto_connect_queue_attempts 
+ON public.auto_connect_queue(attempts_today, last_attempt_at);
+
+-- Enable Realtime on review_invitations table
+-- Run this in Supabase SQL Editor or Dashboard:
+-- ALTER PUBLICATION supabase_realtime ADD TABLE review_invitations;
+

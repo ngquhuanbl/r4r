@@ -41,6 +41,10 @@ export const reviewRequestsSlice = createSlice({
       reviewRequestsAdapter.setAll(state, action.payload);
       state.status = Status.SUCCEEDED;
     },
+    // Add a single review request (used by Realtime subscription)
+    addOne(state, action: PayloadAction<ReviewRequest>) {
+      reviewRequestsAdapter.addOne(state, action.payload);
+    },
   },
   selectors: {
     selectStatus: (state) => state.status,

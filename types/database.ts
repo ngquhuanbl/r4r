@@ -14,6 +14,41 @@ export type Database = {
   };
   public: {
     Tables: {
+      auto_connect_queue: {
+        Row: {
+          id: number;
+          business_id: number;
+          attempts_today: number;
+          last_attempt_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          business_id: number;
+          attempts_today?: number;
+          last_attempt_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          business_id?: number;
+          attempts_today?: number;
+          last_attempt_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "auto_connect_queue_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: true;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       business_platforms: {
         Row: {
           business_id: number;

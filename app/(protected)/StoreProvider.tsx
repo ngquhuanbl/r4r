@@ -11,6 +11,7 @@ import { platformsActions } from "@/lib/redux/slices/platform";
 import { reviewRequestsActions } from "@/lib/redux/slices/review-request";
 import { reviewStatusesActions } from "@/lib/redux/slices/review-status";
 import { AppStore, makeStore } from "@/lib/redux/store";
+import { useRealtimeInvitations } from "@/lib/supabase/realtime";
 import {
   FetchedBusiness,
   FetchedReviewsResponse,
@@ -38,6 +39,15 @@ interface Props {
     platforms: Tables<"platforms">[];
     metrics: Metrics;
   };
+}
+
+/**
+ * Inner component that sets up Realtime subscriptions.
+ * Must be inside Provider to use Redux hooks.
+ */
+function RealtimeSubscriptions({ userId }: { userId: string }) {
+  useRealtimeInvitations(userId);
+  return null;
 }
 
 export const StoreProvider = ({ initialData, children }: Props) => {
@@ -76,5 +86,10 @@ export const StoreProvider = ({ initialData, children }: Props) => {
     }
   }, []);
 
-  return <Provider store={storeRef.current}>{children}</Provider>;
+  return (
+    <Provider store={storeRef.current}>
+      <RealtimeSubscriptions userId={initialData.user.id} />
+      {children}
+    </Provider>
+  );
 };
