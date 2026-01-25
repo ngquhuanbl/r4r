@@ -1,5 +1,6 @@
 "use client";
 
+import { RealtimePostgresInsertPayload } from "@supabase/supabase-js";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
@@ -9,11 +10,6 @@ import { ReviewRequest } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 
 import { createClient } from "./client";
-
-type RealtimeInvitationPayload = {
-  new: Tables<"review_invitations">;
-  old: Tables<"review_invitations"> | null;
-};
 
 /**
  * Hook to subscribe to Supabase Realtime for new review invitations.
@@ -29,7 +25,7 @@ export function useRealtimeInvitations(userId: string) {
 
     const channel = supabase
       .channel(`invitations:${userId}`)
-      .on<Tables<"review_invitations">>(
+      .on(
         "postgres_changes",
         {
           event: "INSERT",
@@ -37,7 +33,9 @@ export function useRealtimeInvitations(userId: string) {
           table: "review_invitations",
           filter: `invitee_id=eq.${userId}`,
         },
-        async (payload: RealtimeInvitationPayload) => {
+        async (
+          payload: RealtimePostgresInsertPayload<Tables<"review_invitations">>
+        ) => {
           console.log("Realtime: New invitation received", payload.new);
 
           // Fetch the full invitation details with relations
