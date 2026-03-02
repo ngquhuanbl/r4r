@@ -103,8 +103,8 @@ export async function createBusinessConnection(inviterBusinessId, inviteeBusines
     return { success: false, error: 'One or both businesses not found' };
   }
 
-  // 2. Get all platforms for the inviter business
-  const { data: inviterPlatforms, error: platformError } = await supabase
+  // 2. Get all platforms for the inviter business that have a URL defined
+  const { data: inviterPlatformsRaw, error: platformError } = await supabase
     .from('business_platforms')
     .select(`
       id,
@@ -116,6 +116,14 @@ export async function createBusinessConnection(inviterBusinessId, inviteeBusines
   if (platformError) {
     console.error('Error fetching inviter platforms:', platformError);
     return { success: false, error: platformError };
+  }
+
+  const inviterPlatforms = (inviterPlatformsRaw || []).filter(
+    (p) => p.platform_url != null && String(p.platform_url).trim() !== ''
+  );
+
+  if (inviterPlatforms.length === 0) {
+    return { success: false, error: 'Inviter business has no platform URLs configured. Add at least one platform URL before connecting.' };
   }
 
   // 3. Get the "PENDING" status ID for invitations
@@ -130,7 +138,7 @@ export async function createBusinessConnection(inviterBusinessId, inviteeBusines
     return { success: false, error: statusError };
   }
 
-  // 4. Create an invitation for each platform pair
+  // 4. Create an invitation for each platform that has a URL
   const results = await Promise.all(
     inviterPlatforms.map(async (platform) => {
       // Create invitation

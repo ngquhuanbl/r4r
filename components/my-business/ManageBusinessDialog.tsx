@@ -1,5 +1,5 @@
-import { Loader2Icon } from "lucide-react";
-import { useTransition } from "react";
+import { AlertCircle, Loader2Icon } from "lucide-react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { updateBusiness } from "@/app/(protected)/my-businesses/actions";
@@ -23,6 +23,7 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { PhoneInput } from "../ui/phone-input";
 
 interface ManageBusinessDialogProps {
   open: boolean;
@@ -38,10 +39,32 @@ export function ManageBusinessDialog({
   onUpdatedData,
 }: ManageBusinessDialogProps) {
   const [isUpdating, startUpdating] = useTransition();
+  const [platformError, setPlatformError] = useState<string | null>(null);
   const platforms = useAppSelector(platformsSelectors.selectData);
 
   const onSubmit = (formData: FormData) => {
-    console.log("here");
+    setPlatformError(null);
+
+    const nextPlatformUrls: Record<
+      Tables<"platforms">["id"],
+      FormDataEntryValue | null
+    > = {};
+    let hasAtLeastOnePlatform = false;
+
+    platforms.forEach(({ id }) => {
+      const value = formData.get(FieldNames.forSinglePlatformURL(id)) as string;
+      const trimmed = value ? String(value).trim() : "";
+      nextPlatformUrls[id] = trimmed;
+      if (trimmed !== "") {
+        hasAtLeastOnePlatform = true;
+      }
+    });
+
+    if (!hasAtLeastOnePlatform) {
+      setPlatformError("At least one platform URL must be filled");
+      return;
+    }
+
     startUpdating(async () => {
       try {
         const nextBusinessName =
@@ -52,15 +75,6 @@ export function ManageBusinessDialog({
         const nextState = formData.get(FieldNames.forState()) || "";
         const nextZipCode = formData.get(FieldNames.forZipCode()) || "";
 
-        const nextPlatformUrls: Record<
-          Tables<"platforms">["id"],
-          FormDataEntryValue | null
-        > = {};
-        platforms.forEach(({ id }) => {
-          nextPlatformUrls[id] =
-            formData.get(FieldNames.forSinglePlatformURL(id)) || "";
-        });
-
         const changed =
           nextBusinessName !== data.business_name ||
           nextPhone !== data.phone ||
@@ -69,7 +83,8 @@ export function ManageBusinessDialog({
           nextState !== data.state ||
           nextZipCode !== data.zip_code ||
           platforms.some(
-            ({ id }) => nextPlatformUrls[id] !== (data.platform_urls[id] || "")
+            ({ id }) =>
+              (nextPlatformUrls[id] || "") !== (data.platform_urls[id] || "")
           );
 
         if (!changed) {
@@ -128,12 +143,12 @@ export function ManageBusinessDialog({
 
                 <div className="grid grid-cols-[1fr_5fr] gap-2 items-center md:block md:space-y-1">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
+                  <PhoneInput
+                    key={data.id}
                     name={FieldNames.forPhone()}
-                    type="tel"
-                    className="text-sm md:text-base"
                     defaultValue={data.phone || ""}
+                    placeholder="e.g., (555) 555-1234"
+                    className="text-sm md:text-base"
                   />
                 </div>
 
@@ -143,6 +158,7 @@ export function ManageBusinessDialog({
                     id="street-address"
                     name={FieldNames.forAddress()}
                     required
+                    autoComplete="street-address"
                     className="text-sm md:text-base"
                     defaultValue={data.address}
                   />
@@ -155,6 +171,7 @@ export function ManageBusinessDialog({
                       id="city"
                       name={FieldNames.forCity()}
                       required
+                      autoComplete="address-level2"
                       className="text-sm md:text-base"
                       defaultValue={data.city}
                     />
@@ -166,6 +183,7 @@ export function ManageBusinessDialog({
                       id="state"
                       name={FieldNames.forState()}
                       required
+                      autoComplete="address-level1"
                       className="text-sm md:text-base"
                       defaultValue={data.state}
                     />
@@ -177,6 +195,7 @@ export function ManageBusinessDialog({
                       id="postal-code"
                       name={FieldNames.forZipCode()}
                       required
+                      autoComplete="postal-code"
                       className="text-sm md:text-base"
                       defaultValue={data.zip_code}
                     />
@@ -188,10 +207,11 @@ export function ManageBusinessDialog({
             <div className="border-t pt-2 md:pt-4 lg:pt-0 lg:border-t-0">
               <h2 className="text-sm md:text-lg font-medium mb-1">
                 Platform Profiles
+                <span className="text-red-500 ml-1">*</span>
               </h2>
               <p className="text-xs md:text-sm text-gray-500 mb-4">
-                Provide the direct URL to your business's page on each platform
-                if available.
+                At least one platform URL must be filled. Provide the direct URL
+                to your business&apos;s page on each platform if available.
               </p>
 
               <div className="space-y-3">
@@ -218,11 +238,19 @@ export function ManageBusinessDialog({
                         className="text-sm md:text-base"
                         placeholder={`https://${platform.name.toLowerCase()}.com/your-business`}
                         defaultValue={data.platform_urls[platform.id] || ""}
+                        onChange={() => setPlatformError(null)}
                       />
                     </div>
                   );
                 })}
               </div>
+
+              {platformError && (
+                <div className="flex items-center gap-2 mt-3 text-red-500 text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>{platformError}</span>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
