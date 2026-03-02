@@ -167,8 +167,8 @@ async function findRandomEligibleBusiness(
 
   const rejectedStatusId = rejectedStatus?.id;
 
-  // Find businesses that have platforms configured (can receive reviews)
-  // and are not owned by the same user
+  // Find businesses that have at least one platform WITH A URL configured
+  // (can receive reviews on that platform) and are not owned by the same user
   const { data: businessesWithPlatforms, error } = await supabase
     .from("businesses")
     .select(
@@ -176,7 +176,8 @@ async function findRandomEligibleBusiness(
       id, 
       user_id,
       business_platforms!inner (
-        platform_id
+        platform_id,
+        platform_url
       )
     `
     )
@@ -184,6 +185,18 @@ async function findRandomEligibleBusiness(
     .neq("id", sourceBusinessId); // Not the source business itself
 
   if (error || !businessesWithPlatforms || businessesWithPlatforms.length === 0) {
+    return null;
+  }
+
+  // Only keep businesses that have at least one platform with a non-empty URL
+  const businessesWithUrl = businessesWithPlatforms.filter((b) => {
+    const platforms = b.business_platforms as { platform_id: number; platform_url: string | null }[];
+    return platforms.some(
+      (p) => p.platform_url != null && String(p.platform_url).trim() !== ""
+    );
+  });
+
+  if (businessesWithUrl.length === 0) {
     return null;
   }
 
@@ -209,8 +222,8 @@ async function findRandomEligibleBusiness(
     }
   }
 
-  // Filter to only eligible businesses
-  const finalEligible = businessesWithPlatforms.filter(
+  // Filter to only eligible businesses (have URL + not already connected/rejected)
+  const finalEligible = businessesWithUrl.filter(
     (b) =>
       !alreadyInvitedByBusinessIds.has(b.id) &&
       !rejectedByUserBusinessIds.has(b.id)
@@ -244,9 +257,10 @@ async function createAutoConnection(
   pendingStatusId: number
 ): Promise<{ success: boolean; error?: string }> {
   // Get platforms for the TARGET business (the one wanting reviews)
-  const { data: platforms, error: platformError } = await supabase
+  // Only include platforms that have a URL defined
+  const { data: platformRows, error: platformError } = await supabase
     .from("business_platforms")
-    .select("platform_id")
+    .select("platform_id, platform_url")
     .eq("business_id", targetBusinessId);
 
   if (platformError) {
@@ -254,14 +268,18 @@ async function createAutoConnection(
     return { success: false, error: platformError.message };
   }
 
-  if (!platforms || platforms.length === 0) {
-    // No platforms configured, skip
-    return { success: false, error: "No platforms configured for business" };
+  const platformsWithUrl = (platformRows || []).filter(
+    (p) => p.platform_url != null && String(p.platform_url).trim() !== ""
+  );
+
+  if (platformsWithUrl.length === 0) {
+    // No platforms with URL configured, skip
+    return { success: false, error: "No platforms with URL configured for business" };
   }
 
-  // Create invitation for each platform
+  // Create invitation only for each platform that has a URL
   // The TARGET business is asking the SOURCE user to write a review
-  const invitations = platforms.map((p) => ({
+  const invitations = platformsWithUrl.map((p) => ({
     business_id: targetBusinessId, // Business that wants reviews
     platform_id: p.platform_id,
     inviter_id: targetUserId, // Owner of business wanting reviews

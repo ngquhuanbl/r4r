@@ -1,5 +1,5 @@
-import { Loader2Icon } from "lucide-react";
-import { useTransition } from "react";
+import { AlertCircle, Loader2Icon } from "lucide-react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { createBusiness } from "@/app/(protected)/my-businesses/actions";
@@ -23,6 +23,7 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { PhoneInput } from "../ui/phone-input";
 
 interface CreateBusinessDialogProps {
   open: boolean;
@@ -36,21 +37,33 @@ export function CreateBusinessDialog({
   onCreatedData,
 }: CreateBusinessDialogProps) {
   const [isUpdating, startUpdating] = useTransition();
+  const [platformError, setPlatformError] = useState<string | null>(null);
   const platforms = useAppSelector(platformsSelectors.selectData);
   const userId = useAppSelector(authSelectors.selectUserId);
 
   const onSubmit = (formData: FormData) => {
+    // Clear previous error
+    setPlatformError(null);
+
+    // Check if at least one platform URL is provided
+    const nextPlatformUrls: PlatformURLs = {};
+    let hasAtLeastOnePlatform = false;
+
+    platforms.forEach(({ id }) => {
+      const value = formData.get(FieldNames.forSinglePlatformURL(id)) as string;
+      if (value && value.trim() !== "") {
+        nextPlatformUrls[id] = value.trim();
+        hasAtLeastOnePlatform = true;
+      }
+    });
+
+    if (!hasAtLeastOnePlatform) {
+      setPlatformError("Please provide at least one platform URL");
+      return;
+    }
+
     startUpdating(async () => {
       try {
-        const nextPlatformUrls: PlatformURLs = {};
-        platforms.forEach(({ id }) => {
-          const value = formData.get(FieldNames.forSinglePlatformURL(id));
-          if (value !== null) {
-            nextPlatformUrls[id] = formData.get(
-              FieldNames.forSinglePlatformURL(id)
-            ) as string;
-          }
-        });
         formData.set(
           FieldNames.forPlatformUrls(),
           JSON.stringify(nextPlatformUrls)
@@ -106,10 +119,8 @@ export function CreateBusinessDialog({
 
                 <div className="grid grid-cols-[1fr_5fr] gap-2 items-center md:block md:space-y-1">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
+                  <PhoneInput
                     name={FieldNames.forPhone()}
-                    type="tel"
                     placeholder="e.g., (555) 555-1234"
                     className="text-sm md:text-base"
                   />
@@ -121,6 +132,7 @@ export function CreateBusinessDialog({
                     id="street-address"
                     name={FieldNames.forAddress()}
                     required
+                    autoComplete="street-address"
                     className="text-sm md:text-base"
                     placeholder="e.g., 123 Main St"
                   />
@@ -133,6 +145,7 @@ export function CreateBusinessDialog({
                       id="city"
                       name={FieldNames.forCity()}
                       required
+                      autoComplete="address-level2"
                       className="text-sm md:text-base"
                       placeholder="e.g., San Francisco"
                     />
@@ -144,6 +157,7 @@ export function CreateBusinessDialog({
                       id="state"
                       name={FieldNames.forState()}
                       required
+                      autoComplete="address-level1"
                       className="text-sm md:text-base"
                       placeholder="e.g., CA"
                     />
@@ -155,6 +169,7 @@ export function CreateBusinessDialog({
                       id="postal-code"
                       name={FieldNames.forZipCode()}
                       required
+                      autoComplete="postal-code"
                       className="text-sm md:text-base"
                       placeholder="e.g., 94101"
                     />
@@ -166,10 +181,11 @@ export function CreateBusinessDialog({
             <div className="border-t pt-2 md:pt-4 lg:pt-0 lg:border-t-0">
               <h2 className="text-sm md:text-lg font-medium mb-1">
                 Platform Profiles
+                <span className="text-red-500 ml-1">*</span>
               </h2>
               <p className="text-xs md:text-sm text-gray-500 mb-4">
-                Provide the direct URL to your business's page on each platform
-                if available.
+                Provide the direct URL to your business's page on at least one
+                platform.
               </p>
 
               <div className="space-y-3">
@@ -195,11 +211,19 @@ export function CreateBusinessDialog({
                         type="text"
                         className="text-sm md:text-base"
                         placeholder={`https://${platform.name.toLowerCase()}.com/your-business`}
+                        onChange={() => setPlatformError(null)}
                       />
                     </div>
                   );
                 })}
               </div>
+
+              {platformError && (
+                <div className="flex items-center gap-2 mt-3 text-red-500 text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>{platformError}</span>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

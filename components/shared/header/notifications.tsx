@@ -1,14 +1,20 @@
 "use client";
 import { Bell, BellDot, Check, Loader2Icon, MapPin, Store, X } from "lucide-react";
-import React, { useCallback, useEffect, useTransition } from "react";
+import Link from "next/link";
+import React, { useCallback, useEffect, useTransition, useState } from "react";
 import { toast } from "sonner";
 
 import {
   acceptReviewRequest,
   rejectReviewRequest,
 } from "@/app/(protected)/home/actions";
+import { Paths } from "@/constants/paths";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import {
+  outgoingReviewsActions,
+  outgoingReviewsSelectors,
+} from "@/lib/redux/slices/outgoing-review";
 import {
   reviewRequestsActions,
   reviewRequestsSelectors,
@@ -29,11 +35,17 @@ import {
 
 interface ReviewRequestItemProps {
   data: ReviewRequest;
+  userId: string;
+  onCloseDialog?: () => void;
 }
-function ReviewRequestItem({ data }: ReviewRequestItemProps) {
+function ReviewRequestItem({ data, userId, onCloseDialog }: ReviewRequestItemProps) {
   const [isAccepting, startAccepting] = useTransition();
   const [isRejecting, startRejecting] = useTransition();
   const dispatch = useAppDispatch();
+  const page = useAppSelector(outgoingReviewsSelectors.selectPage);
+  const filteredStatus = useAppSelector(
+    outgoingReviewsSelectors.selectFilteredStatus
+  );
 
   const onAccept = useCallback(() => {
     startAccepting(async () => {
@@ -41,6 +53,14 @@ function ReviewRequestItem({ data }: ReviewRequestItemProps) {
         const result = await acceptReviewRequest(data.id);
         if (result.ok) {
           dispatch(reviewRequestsActions.updateStatus(result.data));
+          // Reload outgoing reviews so the new accepted item appears in the list
+          dispatch(
+            outgoingReviewsActions.fetchOutgoingReviewsThunk({
+              userId,
+              page,
+              filteredStatus,
+            })
+          );
         } else {
           toast.error(`Failed to accept review request`);
         }
@@ -48,7 +68,7 @@ function ReviewRequestItem({ data }: ReviewRequestItemProps) {
         toast.error(`Failed to accept review request`);
       }
     });
-  }, [data.id, dispatch]);
+  }, [data.id, dispatch, userId, page, filteredStatus]);
 
   const onReject = useCallback(() => {
     startRejecting(async () => {
@@ -78,7 +98,15 @@ function ReviewRequestItem({ data }: ReviewRequestItemProps) {
             <p className="text-sm text-green-800 dark:text-green-200">
               Complete your review to{" "}
               <span className="font-semibold">{data.business.business_name}</span>{" "}
-              in the <span className="font-medium">OUTGOING REVIEWS</span> section
+              in the{" "}
+              <Link
+                href={`${Paths.HOME}?tab=outgoing`}
+                className="font-medium underline underline-offset-2 hover:opacity-80"
+                onClick={onCloseDialog}
+              >
+                OUTGOING REVIEWS
+              </Link>{" "}
+              section
             </p>
           </div>
         </div>
@@ -145,6 +173,7 @@ interface NotificationsProps {
   userId: UserId;
 }
 export function Notifications({ userId }: NotificationsProps) {
+  const [dialogOpen, setDialogOpen] = useState(false);
   const status = useAppSelector(reviewRequestsSelectors.selectStatus);
   const requests = useAppSelector(reviewRequestsSelectors.selectData);
   const dispatch = useAppDispatch();
@@ -171,7 +200,12 @@ export function Notifications({ userId }: NotificationsProps) {
       content = hasRequests ? (
         <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
           {requests.map((item) => (
-            <ReviewRequestItem key={item.id} data={item} />
+            <ReviewRequestItem
+              key={item.id}
+              data={item}
+              userId={userId}
+              onCloseDialog={() => setDialogOpen(false)}
+            />
           ))}
         </div>
       ) : (
@@ -199,7 +233,7 @@ export function Notifications({ userId }: NotificationsProps) {
   }
 
   return (
-    <Dialog modal={false}>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen} modal={false}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"

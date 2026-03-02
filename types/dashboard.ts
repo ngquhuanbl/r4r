@@ -49,7 +49,12 @@ export type OutgoingReview = Pick<
     business: Pick<
       Tables<"businesses">,
       "id" | "business_name" | "address" | "city" | "state" | "zip_code"
-    >;
+    > & {
+      business_platforms?: Array<{
+        platform_id: number;
+        platform_url: string | null;
+      }>;
+    };
     platform: Pick<Tables<"platforms">, "id" | "name">;
     inviter_id: Tables<"review_invitations">["inviter_id"];
   };

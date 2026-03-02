@@ -1,6 +1,7 @@
 "use client";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { IncomingReviewsPanel } from "@/components/dashboard/YourReview/IncomingReviewPanel/Index";
 import { OutgoingReviewsPanel } from "@/components/dashboard/YourReview/OutgoingReviewPanel/Index";
@@ -13,7 +14,15 @@ import {
 import { cn } from "@/lib/utils";
 
 export function YourReview({ userId }: { userId: string }) {
+  const searchParams = useSearchParams();
   const [selectedTab, setSelectedTab] = useState(INCOMING_REVIEWS_TAB_ID);
+
+  // Open Outgoing tab when navigating from e.g. notifications link (?tab=outgoing)
+  useEffect(() => {
+    if (searchParams.get("tab") === "outgoing") {
+      setSelectedTab(OUTGOING_REVIEWS_TAB_ID);
+    }
+  }, [searchParams]);
 
   const isIncomingReviewsTabSelected = selectedTab === INCOMING_REVIEWS_TAB_ID;
   const isOutgoingReviewsTabSelected = selectedTab === OUTGOING_REVIEWS_TAB_ID;

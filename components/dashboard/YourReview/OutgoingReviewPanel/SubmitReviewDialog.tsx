@@ -1,5 +1,5 @@
-import { Loader2Icon, Send, Share2 } from "lucide-react";
-import { useCallback, useTransition } from "react";
+import { ExternalLink, Loader2Icon, Send, Share2 } from "lucide-react";
+import { useCallback, useMemo, useTransition } from "react";
 import { toast } from "sonner";
 
 import { submitOutgoingReview } from "@/app/(protected)/home/actions";
@@ -45,6 +45,16 @@ export function SubmitReviewDialog({
 
   const platformInfo = invitation.platform;
   const platformName = platformInfo.name;
+
+  // Resolve business page URL for this platform (if set)
+  const platformUrl = useMemo(() => {
+    const platforms = businessInfo.business_platforms;
+    if (!platforms) return null;
+    const match = platforms.find(
+      (p) => p.platform_id === platformInfo.id && p.platform_url?.trim()
+    );
+    return match?.platform_url?.trim() || null;
+  }, [businessInfo.business_platforms, platformInfo.id]);
 
   const [isSubmitting, startSubmitting] = useTransition();
 
@@ -135,10 +145,14 @@ export function SubmitReviewDialog({
       <DialogContent className="max-w-screen sm:max-w-[60%]">
         <DialogHeader>
           <DialogTitle>Submit review</DialogTitle>
-          <DialogDescription>
-            Please follow these steps to submit your review for{" "}
-            <span className="font-semibold">{businessName}</span> and help
-            foster authenticity in our network.
+          <DialogDescription asChild>
+            <div className="space-y-2">
+              <p>
+                Please follow these steps to submit your review for{" "}
+                <span className="font-semibold">{businessName}</span> and help
+                foster authenticity in our network.
+              </p>
+            </div>
           </DialogDescription>
         </DialogHeader>
         <Accordion type="multiple" className="w-full">
@@ -160,6 +174,17 @@ export function SubmitReviewDialog({
                 <span className="font-medium">{platformName}</span> first, then
                 move to the next steps
               </p>
+              {platformUrl && (
+                <a
+                  href={platformUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 w-fit px-3 py-2 rounded-md border border-sky-300 bg-sky-50 hover:bg-sky-100 text-sky-700 dark:border-sky-600 dark:bg-sky-950/50 dark:hover:bg-sky-900/50 dark:text-sky-300 text-sm font-medium"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open business page on {platformName}
+                </a>
+              )}
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="item-2">
@@ -201,6 +226,20 @@ export function SubmitReviewDialog({
             </AccordionTrigger>
             <AccordionContent className="flex flex-col gap-4 text-balance">
               <form action={onSubmit} className="flex flex-col gap-2 sm:gap-3">
+                {platformUrl && (
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    <a
+                      href={platformUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Open {businessName} on {platformName}
+                    </a>{" "}
+                    to find your review and copy its link.
+                  </p>
+                )}
                 <div>
                   <div className="grid gap-1 sm:gap-2">
                     <Label

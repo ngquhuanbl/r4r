@@ -339,7 +339,11 @@ export async function fetchOutgoingReviews(
 						address,
 						city,
 						state,
-						zip_code
+						zip_code,
+						business_platforms (
+							platform_id,
+							platform_url
+						)
 					),
 					platform:platforms!inner (
 						id,
