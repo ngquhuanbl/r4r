@@ -7,7 +7,7 @@ import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
 import { getUserOrRedirect } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Dashboard: Manage Business Reviews & Insights",
+  title: "Dashboard: Manage Business Reviews & Insights Hello",
   description: `Your personalized reputation management hub. View new reviews, insights for all your connected businesses.`,
 };
 
