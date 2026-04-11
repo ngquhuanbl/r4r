@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import fallbackBusinessAvatarSrc from "@/public/dashboard/fallback_business_avatar.jpg";
+import fallbackBusinessAvatarSrc from "@/public/dashboard/fallback_business_avatar.png";
 
 import type { DashboardLocation, StatIcon } from "./types";
 
