@@ -1,13 +1,4 @@
 import { NextStep, NextStepProvider } from "nextstepjs";
-
-import StepCard from "@/components/shared/CardStep";
-import { Footer } from "@/components/shared/footer";
-import { Header } from "@/components/shared/header";
-import { ONBOARDING_STEPS } from "@/constants/dashboard/onboarding";
-import { INCOMING_REVIEWS_PAGE_SIZE } from "@/constants/dashboard/ui";
-import { createClient } from "@/lib/supabase/server";
-import { unwrap } from "@/utils/api";
-
 import {
   fetchIncomingReviews,
   fetchOutgoingReviews,
@@ -15,9 +6,17 @@ import {
   fetchPlatforms,
   fetchReviewStatuses,
 } from "./home/actions";
-import { fetchMetrics } from "./metrics/actions";
-import { fetchBusinesses } from "./my-businesses/actions";
+
+import { Footer } from "@/components/shared/footer";
+import { Header } from "@/components/shared/header";
+import { INCOMING_REVIEWS_PAGE_SIZE } from "@/constants/dashboard/ui";
+import { ONBOARDING_STEPS } from "@/constants/dashboard/onboarding";
+import StepCard from "@/components/shared/CardStep";
 import { StoreProvider } from "./StoreProvider";
+import { createClient } from "@/lib/supabase/server";
+import { fetchBusinesses } from "./my-businesses/actions";
+import { fetchMetrics } from "./metrics/actions";
+import { unwrap } from "@/utils/api";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -65,14 +64,10 @@ export default async function Layout({ children }: LayoutProps) {
       <NextStepProvider>
         <NextStep steps={ONBOARDING_STEPS} cardComponent={StepCard}>
           <div className="flex flex-col min-h-screen">
-            <Header userId={user!.id} email={user!.email} />
+            <Header userId={user!.id} />
 
             {/* Page content */}
-            <main className="grow flex flex-col items-center py-6">
-              <div className="max-w-7xl px-4 pl-6 sm:px-6 lg:px-8 grow flex flex-col w-full gap-10">
-                {children}
-              </div>
-            </main>
+            <main className="grow flex flex-col items-center">{children}</main>
             <Footer />
           </div>
         </NextStep>

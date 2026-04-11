@@ -18,7 +18,7 @@ export default async function Page() {
   return (
     <>
       <PreloadResources />
-      <section className="hidden md:block">
+      <section className="hidden md:block w-full">
         <OnboardingBanner />
       </section>
       <section
