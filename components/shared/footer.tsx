@@ -2,11 +2,11 @@ import Logo from "@/components/shared/logo";
 
 export function Footer() {
   return (
-    <footer className="bg-primary dark:bg-sky-950 py-1 hidden md:block px-8">
-      <div className="max-w-7xl mx-auto flex items-center w-full justify-between px-5 md:px-8">
+    <footer className="bg-primary dark:bg-sky-950 hidden md:block">
+      <div className="flex items-center justify-between w-full px-5 md:px-16 py-5">
         <Logo style="mono" />
         <p className="text-white text-sm">
-          &copy; 2025 Review4Review. All rights reserved.
+          &copy; {new Date().getFullYear()} Review4Review. All rights reserved.
         </p>
       </div>
     </footer>
