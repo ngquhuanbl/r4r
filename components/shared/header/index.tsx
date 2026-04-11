@@ -1,16 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  BadgeCheckIcon,
-  BellIcon,
-  CreditCardIcon,
-  LogOutIcon,
-} from "lucide-react";
+import { BadgeCheckIcon, CreditCardIcon, LogOutIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -19,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { HamburgerMenu } from "./hamburger-menu";
 import Image from "next/image";
 import Link from "next/link";
-import { LogOutBtn } from "./log-out-btn";
 import Logo from "@/components/shared/logo";
 import { Notifications } from "./notifications";
 import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
@@ -33,7 +26,7 @@ interface HeaderProps {
 }
 export async function Header({ userId }: HeaderProps) {
   // TODO: use real user image when we have user profile set up
-  const imageURL = '';
+  const imageURL = "";
 
   const profileMenu = (
     <DropdownMenu>
