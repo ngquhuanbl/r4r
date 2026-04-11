@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   if (path === "/") {
-    return NextResponse.redirect(new URL(Paths.HOME, request.url));
+    return NextResponse.redirect(new URL(Paths.DASHBOARD, request.url));
   }
 
   if (path.startsWith("/businesses")) {

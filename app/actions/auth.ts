@@ -30,7 +30,7 @@ export async function signIn(formData: FormData) {
     return { ok: false, error: error.message || "Unexpected error" };
   }
 
-  return redirect(Paths.HOME);
+  return redirect(Paths.DASHBOARD);
 }
 
 export async function signUp(formData: FormData) {

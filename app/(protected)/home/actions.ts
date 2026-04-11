@@ -225,7 +225,7 @@ export async function confirmIncomingReview(
 
     if (invitationData) {
       // Revalidate paths for both business owner and reviewer
-      revalidatePath(Paths.HOME);
+      revalidatePath(Paths.DASHBOARD);
       revalidatePath(Paths.MY_BUSINESSES);
     }
   }
@@ -289,7 +289,7 @@ export async function rejectIncomingReview(
 
     if (invitationData) {
       // Revalidate paths for both business owner and reviewer
-      revalidatePath(Paths.HOME);
+      revalidatePath(Paths.DASHBOARD);
       revalidatePath(Paths.MY_BUSINESSES);
     }
   }
@@ -471,8 +471,8 @@ export async function submitOutgoingReview(
   }
 
   // Ensure all relevant paths are revalidated
-  revalidatePath(Paths.HOME, "layout");
-  revalidatePath(Paths.HOME, "page");
+  revalidatePath(Paths.DASHBOARD, "layout");
+  revalidatePath(Paths.DASHBOARD, "page");
   return {
     ok: true,
     data: updateData,
@@ -522,7 +522,7 @@ export async function acceptReviewRequest(
     });
   }
 
-  revalidatePath(Paths.HOME);
+  revalidatePath(Paths.DASHBOARD);
   return {
     ok: true,
     data: {
@@ -565,7 +565,7 @@ export async function rejectReviewRequest(
     return { ok: false, error };
   }
 
-  revalidatePath(Paths.HOME);
+  revalidatePath(Paths.DASHBOARD);
   return {
     ok: true,
     data: {
@@ -909,7 +909,7 @@ export async function acceptInvitation(
     });
   }
 
-  revalidatePath(Paths.HOME);
+  revalidatePath(Paths.DASHBOARD);
   return { success: true, data };
 }
 
@@ -943,7 +943,7 @@ export async function rejectInvitation(
     return { success: false, error };
   }
 
-  revalidatePath(Paths.HOME);
+  revalidatePath(Paths.DASHBOARD);
   return { success: true, data };
 }
 
@@ -997,8 +997,8 @@ export async function submitReview(
   }
 
   // Ensure all relevant paths are revalidated
-  revalidatePath(Paths.HOME, "layout");
-  revalidatePath(Paths.HOME, "page");
+  revalidatePath(Paths.DASHBOARD, "layout");
+  revalidatePath(Paths.DASHBOARD, "page");
   return { success: true, data, status_id: submittedStatus.id };
 }
 
@@ -1049,7 +1049,7 @@ export async function approveReview(reviewId: Tables<"reviews">["id"]) {
 
     if (invitationData) {
       // Revalidate paths for both business owner and reviewer
-      revalidatePath(Paths.HOME);
+      revalidatePath(Paths.DASHBOARD);
       revalidatePath(Paths.MY_BUSINESSES);
     }
   }
@@ -1103,7 +1103,7 @@ export async function denyReview(reviewId: Tables<"reviews">["id"]) {
 
     if (invitationData) {
       // Revalidate paths for both business owner and reviewer
-      revalidatePath(Paths.HOME);
+      revalidatePath(Paths.DASHBOARD);
       revalidatePath(Paths.MY_BUSINESSES);
     }
   }

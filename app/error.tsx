@@ -20,7 +20,7 @@ export default function NewPasswordPage() {
         </p>
         <div className="mt-6">
           <Button color="indigo" asChild>
-            <Link href={Paths.HOME}>Go to Homepage</Link>
+            <Link href={Paths.DASHBOARD}>Go to Homepage</Link>
           </Button>
         </div>
       </div>

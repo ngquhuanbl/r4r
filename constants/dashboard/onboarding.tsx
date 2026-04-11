@@ -170,7 +170,7 @@ export const ONBOARDING_STEPS: Tour[] = [
         icon: <>❇️</>,
         selector: "#" + ONBOARDING_STEP_IDS.LETS_START,
         showControls: true,
-        prevRoute: Paths.HOME,
+        prevRoute: Paths.DASHBOARD,
         pointerPadding: 10,
         pointerRadius: 10,
       },

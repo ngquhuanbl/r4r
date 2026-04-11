@@ -77,7 +77,7 @@ export const updateSession = async (request: NextRequest) => {
       // If has session, redirect to home
       if (user) {
         const url = request.nextUrl.clone();
-        url.pathname = Paths.HOME;
+        url.pathname = Paths.DASHBOARD;
         return NextResponse.redirect(url);
       }
     } else {
