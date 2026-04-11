@@ -1,23 +1,6 @@
 "use client";
-import { Bell, BellDot, Loader2Icon } from "lucide-react";
-import React, { useCallback, useEffect, useTransition } from "react";
-import { toast } from "sonner";
 
-import {
-  acceptReviewRequest,
-  rejectReviewRequest,
-} from "@/app/(protected)/home/actions";
-import { Button } from "@/components/ui/button";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import {
-  reviewRequestsActions,
-  reviewRequestsSelectors,
-  Status,
-} from "@/lib/redux/slices/review-request";
-import { ReviewRequest } from "@/types/dashboard";
-import { UserId } from "@/types/shared";
-import { ReviewRequestUtils } from "@/utils/review-request";
-import { getAddress } from "@/utils/shared";
+import { Bell, BellDot, Loader2Icon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +9,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import React, { useCallback, useEffect, useTransition } from "react";
+import {
+  Status,
+  reviewRequestsActions,
+  reviewRequestsSelectors,
+} from "@/lib/redux/slices/review-request";
+import {
+  acceptReviewRequest,
+  rejectReviewRequest,
+} from "@/app/(protected)/home/actions";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+
+import { Button } from "@/components/ui/button";
+import { ReviewRequest } from "@/types/dashboard";
+import { ReviewRequestUtils } from "@/utils/review-request";
+import { UserId } from "@/types/shared";
+import { getAddress } from "@/utils/shared";
+import { toast } from "sonner";
 
 interface ReviewRequestItemProps {
   data: ReviewRequest;
@@ -153,8 +154,28 @@ export function Notifications({ userId }: NotificationsProps) {
   return (
     <Dialog modal={false}>
       <DialogTrigger asChild>
-        <Button variant="ghost" aria-label="Review request notifications">
-          {hasRequests ? <BellDot /> : <Bell />}
+        <Button variant="ghost" aria-label="Review request notifications" size="icon" className="rounded-full">
+          {hasRequests ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="20px"
+              viewBox="0 -960 960 960"
+              width="20px"
+              fill="#334155"
+            >
+              <path d="M192-216v-72h48v-240q0-87 53.5-153T432-763v-53q0-20 14-34t34-14q20 0 34 14t14 34v53q85 16 138.5 82T720-528v240h48v72H192ZM479.79-96Q450-96 429-117.15T408-168h144q0 30-21.21 51t-51 21Z" />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="24px"
+              viewBox="0 -960 960 960"
+              width="24px"
+              fill="#334155"
+            >
+              <path d="M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160ZM480-80q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80Z" />
+            </svg>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent>

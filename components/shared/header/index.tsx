@@ -1,80 +1,91 @@
-import Image from "next/image";
-import Link from "next/link";
-
-import { signOut } from "@/app/actions/auth";
-import Logo from "@/components/shared/logo";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  BadgeCheckIcon,
+  BellIcon,
+  CreditCardIcon,
+  LogOutIcon,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
-import { NAV_LINKS } from "@/constants/nav-links";
-import userSrc from "@/public/shared/user.png";
-import { UserId } from "@/types/shared";
 
-import { AdminNavItem } from "./admin-nav-item";
+import { Button } from "@/components/ui/button";
 import { HamburgerMenu } from "./hamburger-menu";
+import Image from "next/image";
+import Link from "next/link";
 import { LogOutBtn } from "./log-out-btn";
+import Logo from "@/components/shared/logo";
 import { Notifications } from "./notifications";
+import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
 import { PageTitle } from "./page-title";
+import { UserId } from "@/types/shared";
+import fallbackAvatarSrc from "@/public/shared/user.png";
+import { signOut } from "@/app/actions/auth";
 
 interface HeaderProps {
   userId: UserId;
-  email?: string;
 }
-export async function Header({ userId, email }: HeaderProps) {
+export async function Header({ userId }: HeaderProps) {
+  // TODO: use real user image when we have user profile set up
+  const imageURL = '';
+
   const profileMenu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          aria-label="User profile"
-          className="w-6 h-6 md:w-8 md:h-8 rounded-full border-primary border sm:border-2 overflow-hidden"
-        >
-          <Image
-            src={userSrc}
-            width={64}
-            height={64}
-            className="w-6 h-6 md:w-8 md:h-8"
-            alt={""}
-          />
-        </button>
+        <Button variant="ghost" size="icon" className="rounded-full">
+          <Avatar>
+            <AvatarImage src={imageURL} alt="shadcn" />
+            <AvatarFallback>
+              <Image
+                src={fallbackAvatarSrc}
+                width={32}
+                height={32}
+                // className="w-6 h-6 md:w-8 md:h-8"
+                alt={""}
+              />
+            </AvatarFallback>
+          </Avatar>
+        </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" side="bottom">
-        <DropdownMenuLabel>{email || "My account"}</DropdownMenuLabel>
+      <DropdownMenuContent align="end">
+        <DropdownMenuGroup>
+          <DropdownMenuItem>
+            <BadgeCheckIcon />
+            Account
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <CreditCardIcon />
+            Billing
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <LogOutBtn onClick={signOut} />
+        <DropdownMenuItem onClick={signOut}>
+          <LogOutIcon />
+          Sign Out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
   return (
-    <header className="w-full px-5 md:px-8 py-2 max-w-7xl mx-auto">
+    <header className="w-full px-5 md:px-16 py-5">
       <div className="flex items-center justify-between pt-2 md:pt-0 md:w-full">
         <div className="flex md:hidden items-center gap-3">
           <HamburgerMenu />
         </div>
         <div className="hidden md:block">
-          <Logo />
+          <Link href="/" className="hover:cursor-pointer">
+            <Logo />
+          </Link>
         </div>
         <PageTitle />
         <div className="flex items-center gap-10">
-          <nav
-            id={ONBOARDING_STEP_IDS.NAV_BAR}
-            role="menu"
-            className="hidden md:flex md:items-center text-sm gap-10 list-none"
-          >
-            {NAV_LINKS.map(({ name, href }, index) => (
-              <li key={index} role="menuitem">
-                <Link href={href} className="font-medium hover:text-primary">
-                  {name}
-                </Link>
-              </li>
-            ))}
-            <AdminNavItem />
-          </nav>
-          <ul className="flex items-center gap-3 md:gap-10 text-sm">
+          <ul className="flex items-center gap-3 md:gap-3 text-sm">
             <li id={ONBOARDING_STEP_IDS.NOTIFICATIONS}>
               <Notifications userId={userId} />
             </li>

@@ -1,4 +1,5 @@
 "use client";
+
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 interface LogOutBtnProps {
@@ -7,6 +8,6 @@ interface LogOutBtnProps {
 
 export function LogOutBtn({ onClick }: LogOutBtnProps) {
   return (
-    <DropdownMenuItem onSelect={() => onClick()}>Log out</DropdownMenuItem>
+    <DropdownMenuItem variant="destructive" onSelect={() => onClick()}>Log out</DropdownMenuItem>
   );
 }
