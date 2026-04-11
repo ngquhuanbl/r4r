@@ -2,14 +2,20 @@
 import { revalidatePath } from "next/cache";
 
 import { Paths } from "@/constants/paths";
+import { uploadBusinessCoverPhoto } from "@/lib/supabase/business-cover-photo";
 import { createClient } from "@/lib/supabase/server";
+import { formatUsPhoneMask, normalizeUsPhoneDigits } from "@/lib/phone-us";
+import {
+  classifyPlatformUrl,
+  normalizePlatformUrlInput,
+} from "@/lib/validation/platform-urls";
 import { FetchedBusiness, PlatformURLs } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { APIResponse, UserId } from "@/types/shared";
 import { FieldNames } from "@/utils/my-business";
 
 export async function fetchBusinesses(
-  userId: UserId
+  userId: UserId,
 ): Promise<APIResponse<FetchedBusiness[]>> {
   try {
     const supabase = createClient();
@@ -24,6 +30,7 @@ export async function fetchBusinesses(
 				city,
 				state,
 				zip_code,
+				cover_image_url,
 				created_at,
 				updated_at,
 				platforms:business_platforms (
@@ -31,7 +38,7 @@ export async function fetchBusinesses(
 					platform_id,
 					platform_url
 				)
-				`
+				`,
       )
       .eq("user_id", userId);
 
@@ -61,7 +68,7 @@ export async function fetchBusinesses(
 
 export async function updateBusiness(
   businessId: Tables<"businesses">["id"],
-  formData: FormData
+  formData: FormData,
 ): Promise<APIResponse<FetchedBusiness>> {
   const supabase = createClient();
 
@@ -99,6 +106,7 @@ export async function updateBusiness(
 				city,
 				state,
 				zip_code,
+				cover_image_url,
 				created_at,
 				updated_at,
 				platforms:business_platforms (
@@ -106,7 +114,7 @@ export async function updateBusiness(
 					platform_id,
 					platform_url
 				)
-				`
+				`,
       )
       .single();
 
@@ -127,7 +135,7 @@ export async function updateBusiness(
   } of updateBusinessData.platforms) {
     if (platformId2BusinessPlatformIdMap.has(platform_id)) {
       console.log(
-        `Unexpected duplicated business platform: (businessId, ${businessId}) - (platformId, ${platform_id}) - (id, ${id})`
+        `Unexpected duplicated business platform: (businessId, ${businessId}) - (platformId, ${platform_id}) - (id, ${id})`,
       );
       return { ok: false, error: "Unexpected error" };
     }
@@ -146,7 +154,7 @@ export async function updateBusiness(
       [];
     for (const platform of platformsData) {
       const url = formData.get(
-        FieldNames.forSinglePlatformURL(platform.id)
+        FieldNames.forSinglePlatformURL(platform.id),
       ) as string;
 
       if (url && url.trim() !== "") {
@@ -180,10 +188,10 @@ export async function updateBusiness(
               `
       				platform_id,
       				platform_url
-      				`
+      				`,
             )
-            .maybeSingle()
-        )
+            .maybeSingle(),
+        ),
       );
 
       for (const { data, error } of result) {
@@ -205,13 +213,13 @@ export async function updateBusiness(
             platform_id,
             business_id: businessId,
             is_verified: false,
-          }))
+          })),
         )
         .select(
           `
 							platform_id,
 							platform_url
-							`
+							`,
         );
 
       if (error) {
@@ -233,8 +241,8 @@ export async function updateBusiness(
             .eq("business_id", businessId)
             .eq("platform_id", platform_id)
             .select("platform_id")
-            .maybeSingle()
-        )
+            .maybeSingle(),
+        ),
       );
       for (const { data, error } of result) {
         if (error) {
@@ -258,7 +266,7 @@ export async function updateBusiness(
 }
 
 export async function deleteBusiness(
-  businessId: Tables<"businesses">["id"]
+  businessId: Tables<"businesses">["id"],
 ): Promise<APIResponse<Pick<Tables<"businesses">, "id">>> {
   const supabase = createClient();
 
@@ -292,15 +300,14 @@ export async function deleteBusiness(
 
 export async function createBusiness(
   userId: UserId,
-  formData: FormData
+  formData: FormData,
 ): Promise<APIResponse<FetchedBusiness>> {
   const supabase = createClient();
 
-  // Try to parse the platform URLs JSON
   let platformUrls: PlatformURLs = {};
   try {
     const platformUrlsJson = formData.get(
-      FieldNames.forPlatformUrls()
+      FieldNames.forPlatformUrls(),
     ) as string;
     if (platformUrlsJson) {
       platformUrls = JSON.parse(platformUrlsJson);
@@ -309,17 +316,60 @@ export async function createBusiness(
     console.error("Error parsing platform URLs:", e);
   }
 
+  const { data: platformRows, error: platformsLookupError } = await supabase
+    .from("platforms")
+    .select("id, name");
+
+  if (platformsLookupError) {
+    console.error("Error loading platforms:", platformsLookupError);
+    return { ok: false, error: platformsLookupError };
+  }
+
+  const validatedPlatformUrls: PlatformURLs = {};
+  for (const [idStr, rawUrl] of Object.entries(platformUrls)) {
+    const url = String(rawUrl ?? "").trim();
+    if (!url) continue;
+    const platformId = parseInt(idStr, 10);
+    const row = platformRows?.find((p) => p.id === platformId);
+    if (!row) continue;
+    if (classifyPlatformUrl(url, row.name) === "valid") {
+      validatedPlatformUrls[platformId] = normalizePlatformUrlInput(url);
+    }
+  }
+
+  if (Object.keys(validatedPlatformUrls).length === 0) {
+    return {
+      ok: false,
+      error:
+        "At least one valid platform URL is required (Google Maps, Yelp, or TripAdvisor).",
+    };
+  }
+
+  const businessNameRaw = formData.get(FieldNames.forBusinessName()) as string;
+  const businessName = businessNameRaw?.trim() ?? "";
+  if (!businessName) {
+    return { ok: false, error: "Business name is required." };
+  }
+
+  const phoneRaw = (formData.get(FieldNames.forPhone()) as string) || "";
+  const phoneDigits = normalizeUsPhoneDigits(phoneRaw);
+  if (phoneDigits.length !== 10) {
+    return {
+      ok: false,
+      error: "Phone must be a valid 10-digit US number.",
+    };
+  }
+
   const businessData = {
-    business_name: formData.get(FieldNames.forBusinessName()) as string,
+    business_name: businessName,
     address: (formData.get(FieldNames.forAddress()) as string) || "",
     city: formData.get(FieldNames.forCity()) as string,
     state: formData.get(FieldNames.forState()) as string,
     zip_code: formData.get(FieldNames.forZipCode()) as string,
-    phone: (formData.get(FieldNames.forPhone()) as string) || "",
+    phone: formatUsPhoneMask(phoneDigits),
     user_id: userId,
   };
 
-  // 1. Insert the business
   const { data: newBusiness, error: businessError } = await supabase
     .from("businesses")
     .insert(businessData)
@@ -331,42 +381,63 @@ export async function createBusiness(
     return { ok: false, error: businessError };
   }
 
-  const createdBusiness: FetchedBusiness = {
-    ...newBusiness,
-    platform_urls: {},
-  };
-
-  // 2. If we have platform URLs, insert them into business_platforms
-  if (Object.keys(platformUrls).length > 0) {
-    const dataToInsert = Object.entries(platformUrls).map(
-      ([platformId, url]) => ({
-        business_id: newBusiness.id,
-        platform_id: parseInt(platformId),
-        platform_url: url,
-        is_verified: false,
-      })
-    );
-
-    const { data: platformData, error: platformError } = await supabase
-      .from("business_platforms")
-      .insert(dataToInsert)
-      .select(
-        `
-				platform_id,
-				platform_url
-				`
-      );
-
-    if (platformError) {
-      console.error("Error adding platform URLs:", platformError);
-      // We don't return error here as the business was created successfully
+  let coverImageUrl: string | null = newBusiness.cover_image_url ?? null;
+  const photoField = formData.get(FieldNames.forBusinessPhoto());
+  if (photoField instanceof File && photoField.size > 0) {
+    const uploaded = await uploadBusinessCoverPhoto(supabase, {
+      userId,
+      businessId: newBusiness.id,
+      file: photoField,
+    });
+    if (uploaded.ok) {
+      const { error: coverUpdateError } = await supabase
+        .from("businesses")
+        .update({ cover_image_url: uploaded.publicUrl })
+        .eq("id", newBusiness.id);
+      if (coverUpdateError) {
+        console.error("Error saving cover_image_url:", coverUpdateError);
+      } else {
+        coverImageUrl = uploaded.publicUrl;
+      }
     } else {
-      platformData.forEach(({ platform_id, platform_url }) => {
-        createdBusiness.platform_urls[platform_id] = platform_url;
-      });
+      console.error("Cover photo upload failed:", uploaded.message);
     }
   }
 
+  const createdBusiness: FetchedBusiness = {
+    ...newBusiness,
+    cover_image_url: coverImageUrl,
+    platform_urls: {},
+  };
+
+  const dataToInsert = Object.entries(validatedPlatformUrls).map(
+    ([platformId, url]) => ({
+      business_id: newBusiness.id,
+      platform_id: parseInt(platformId, 10),
+      platform_url: url,
+      is_verified: false,
+    }),
+  );
+
+  const { data: platformData, error: platformError } = await supabase
+    .from("business_platforms")
+    .insert(dataToInsert)
+    .select(
+      `
+			platform_id,
+			platform_url
+			`,
+    );
+
+  if (platformError) {
+    console.error("Error adding platform URLs:", platformError);
+  } else if (platformData) {
+    platformData.forEach(({ platform_id, platform_url }) => {
+      createdBusiness.platform_urls[platform_id] = platform_url;
+    });
+  }
+
   revalidatePath(Paths.MY_BUSINESSES);
+  revalidatePath(Paths.DASHBOARD);
   return { ok: true, data: createdBusiness };
 }

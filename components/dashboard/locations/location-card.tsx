@@ -22,7 +22,7 @@ function StatCell({ icon, label }: { icon: StatIcon; label: string }) {
         width="24px"
         fill="#334155"
       >
-        <path d="M440-160v-487L216-423l-56-57 320-320 320 320-56-57-224-224v487h-80Z" />
+        <path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z" />
       </svg>
     ) : (
       <svg

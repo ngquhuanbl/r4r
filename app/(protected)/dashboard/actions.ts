@@ -24,6 +24,7 @@ export async function fetchBusinesses(
 				city,
 				state,
 				zip_code,
+				cover_image_url,
 				created_at,
 				updated_at,
 				platforms:business_platforms (
@@ -99,6 +100,7 @@ export async function updateBusiness(
 				city,
 				state,
 				zip_code,
+				cover_image_url,
 				created_at,
 				updated_at,
 				platforms:business_platforms (

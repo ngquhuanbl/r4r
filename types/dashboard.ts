@@ -20,6 +20,7 @@ export type FetchedBusiness = Pick<
   | "zip_code"
   | "phone"
   | "created_at"
+  | "cover_image_url"
 > & {
   platform_urls: PlatformURLs;
 };

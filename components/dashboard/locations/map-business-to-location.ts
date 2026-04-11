@@ -14,8 +14,8 @@ export function mapBusinessToLocation(
     name: b.business_name,
     status: ready ? "ready" : "full",
     address: getAddress(b),
-    imageSrc: null,
-    imageAlt: "",
+    imageSrc: b.cover_image_url,
+    imageAlt: b.business_name ? `${b.business_name} storefront` : "",
     left:
       index % 2 === 0
         ? { icon: "down", label: "3 to verify" }

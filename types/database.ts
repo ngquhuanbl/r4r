@@ -67,6 +67,7 @@ export type Database = {
           address: string;
           business_name: string;
           city: string;
+          cover_image_url: string | null;
           created_at: string;
           id: number;
           phone: string | null;
@@ -79,6 +80,7 @@ export type Database = {
           address: string;
           business_name: string;
           city: string;
+          cover_image_url?: string | null;
           created_at?: string;
           id?: number;
           phone?: string | null;
@@ -91,6 +93,7 @@ export type Database = {
           address?: string;
           business_name?: string;
           city?: string;
+          cover_image_url?: string | null;
           created_at?: string;
           id?: number;
           phone?: string | null;

@@ -1,16 +1,41 @@
+"use client";
+
 import { Loader2Icon } from "lucide-react";
-import { useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 
 import { createBusiness } from "@/app/(protected)/my-businesses/actions";
+import { DASHBOARD_ACCENT } from "@/components/dashboard/locations/constants";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
+import {
+  formatUsPhoneMask,
+  isCompleteUsPhone,
+  normalizeUsPhoneDigits,
+} from "@/lib/phone-us";
+import { cn } from "@/lib/utils";
+import {
+  classifyPlatformUrl,
+  normalizePlatformUrlInput,
+} from "@/lib/validation/platform-urls";
 import { FetchedBusiness, PlatformURLs } from "@/types/dashboard";
 import { ErrorUtils } from "@/utils/error";
 import { FieldNames } from "@/utils/my-business";
 
-import { Platform } from "../dashboard/Platform";
+import {
+  AddressSection,
+  type AddressFields,
+} from "./create-business/address-section";
+import { BusinessImageField } from "./create-business/business-image-field";
+import { PlatformUrlRow } from "./create-business/platform-url-row";
+import { sortPlatformsBySpec } from "./create-business/sort-platforms";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -23,6 +48,7 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { Separator } from "../ui/separator";
 
 interface CreateBusinessDialogProps {
   open: boolean;
@@ -30,190 +56,266 @@ interface CreateBusinessDialogProps {
   onCreatedData?: (data: FetchedBusiness) => void;
 }
 
+function emptyAddress(): AddressFields {
+  return { street: "", line2: "", city: "", state: "", zip: "" };
+}
+
 export function CreateBusinessDialog({
   open,
   onOpenChange,
   onCreatedData,
 }: CreateBusinessDialogProps) {
-  const [isUpdating, startUpdating] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const platforms = useAppSelector(platformsSelectors.selectData);
   const userId = useAppSelector(authSelectors.selectUserId);
 
-  const onSubmit = (formData: FormData) => {
-    startUpdating(async () => {
-      try {
-        const nextPlatformUrls: PlatformURLs = {};
-        platforms.forEach(({ id }) => {
-          const value = formData.get(FieldNames.forSinglePlatformURL(id));
-          if (value !== null) {
-            nextPlatformUrls[id] = formData.get(
-              FieldNames.forSinglePlatformURL(id)
-            ) as string;
-          }
-        });
-        formData.set(
-          FieldNames.forPlatformUrls(),
-          JSON.stringify(nextPlatformUrls)
-        );
+  const [businessName, setBusinessName] = useState("");
+  const [addressFields, setAddressFields] =
+    useState<AddressFields>(emptyAddress);
+  const [phoneDigits, setPhoneDigits] = useState("");
+  const [platformUrls, setPlatformUrls] = useState<Record<number, string>>({});
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-        const result = await createBusiness(userId, formData);
-        if (result.ok) {
-          toast.success(`Create business successfully`);
-          if (onCreatedData) {
-            onCreatedData(result.data);
-          }
-        } else {
-          throw result.error;
-        }
-      } catch (e) {
-        toast.error(`Failed to create business`, {
-          description: ErrorUtils.serializeError(e),
-        });
+  const sortedPlatforms = useMemo(
+    () => sortPlatformsBySpec(platforms),
+    [platforms],
+  );
+
+  useEffect(() => {
+    if (!platforms.length) return;
+    setPlatformUrls((prev) => {
+      const next = { ...prev };
+      for (const p of platforms) {
+        if (next[p.id] === undefined) next[p.id] = "";
       }
+      return next;
     });
-  };
+  }, [platforms]);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
+
+  useEffect(() => {
+    if (!open) {
+      setBusinessName("");
+      setAddressFields(emptyAddress());
+      setPhoneDigits("");
+      setPlatformUrls({});
+      setImageFile(null);
+      setPreviewUrl(null);
+    }
+  }, [open]);
+
+  const setField = useCallback((patch: Partial<AddressFields>) => {
+    setAddressFields((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const hasValidPlatform = useMemo(() => {
+    return sortedPlatforms.some((p) => {
+      const u = platformUrls[p.id] ?? "";
+      return classifyPlatformUrl(u, p.name) === "valid";
+    });
+  }, [sortedPlatforms, platformUrls]);
+
+  const canSubmit = useMemo(() => {
+    const a = addressFields;
+    return (
+      businessName.trim().length > 0 &&
+      a.street.trim().length > 0 &&
+      a.city.trim().length > 0 &&
+      a.state.trim().length > 0 &&
+      a.zip.trim().length > 0 &&
+      isCompleteUsPhone(phoneDigits) &&
+      hasValidPlatform
+    );
+  }, [businessName, addressFields, phoneDigits, hasValidPlatform]);
+
+  const buildFormData = useCallback((): FormData => {
+    const fd = new FormData();
+    fd.set(FieldNames.forBusinessName(), businessName.trim());
+    const line1 = addressFields.street.trim();
+    const addr = addressFields.line2.trim()
+      ? `${line1}, ${addressFields.line2.trim()}`
+      : line1;
+    fd.set(FieldNames.forAddress(), addr);
+    fd.set(FieldNames.forCity(), addressFields.city.trim());
+    fd.set(FieldNames.forState(), addressFields.state.trim().toUpperCase());
+    fd.set(FieldNames.forZipCode(), addressFields.zip.trim());
+    fd.set(FieldNames.forPhone(), formatUsPhoneMask(phoneDigits));
+
+    const urls: PlatformURLs = {};
+    for (const p of sortedPlatforms) {
+      const raw = (platformUrls[p.id] ?? "").trim();
+      if (classifyPlatformUrl(raw, p.name) === "valid") {
+        urls[p.id] = normalizePlatformUrlInput(raw);
+      }
+    }
+    fd.set(FieldNames.forPlatformUrls(), JSON.stringify(urls));
+    if (imageFile) {
+      fd.append(FieldNames.forBusinessPhoto(), imageFile);
+    }
+    return fd;
+  }, [businessName, addressFields, phoneDigits, platformUrls, sortedPlatforms, imageFile]);
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!canSubmit || isPending) return;
+      startTransition(async () => {
+        try {
+          const formData = buildFormData();
+          const result = await createBusiness(userId, formData);
+          if (result.ok) {
+            toast.success("Business created successfully");
+            onOpenChange(false);
+            onCreatedData?.(result.data);
+          } else {
+            throw result.error;
+          }
+        } catch (e) {
+          toast.error("Failed to create business", {
+            description: ErrorUtils.serializeError(e),
+          });
+        }
+      });
+    },
+    [
+      buildFormData,
+      canSubmit,
+      isPending,
+      userId,
+      onOpenChange,
+      onCreatedData,
+    ],
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-screen sm:max-w-[50%]">
-        <form action={onSubmit}>
+      <DialogContent className="max-h-[min(90vh,840px)] w-full max-w-2xl overflow-y-auto sm:max-w-2xl">
+        <form onSubmit={handleSubmit} className="space-y-0">
           <DialogHeader>
-            <DialogTitle>Create business</DialogTitle>
+            <DialogTitle>Create Business Profile</DialogTitle>
             <DialogDescription>
-              Provide details of your business profile here.
+              Identity, location, phone, and at least one platform link are
+              required. <br />
+              Add an optional storefront photo when you&apos;re ready.
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-2 space-y-2 md:space-y-6 lg:flex lg:space-y-0 lg:gap-4">
-            <div>
-              <h2 className="text-sm md:text-lg font-medium mb-1">
-                Business information
-              </h2>
-              <p className="text-xs md:text-sm text-gray-500 mb-4">
-                This information helps us accurately identify and categorize
-                your location.
-              </p>
-              <div className="space-y-3">
-                <div className="grid grid-cols-[1fr_5fr] gap-2 items-center md:block md:space-y-1">
-                  <Label htmlFor="business-name">Business Name</Label>
-                  <Input
-                    id="business-name"
-                    name={FieldNames.forBusinessName()}
-                    required
-                    placeholder="e.g., The Corner Bistro"
-                    className="text-sm md:text-base"
-                  />
-                </div>
 
-                <div className="grid grid-cols-[1fr_5fr] gap-2 items-center md:block md:space-y-1">
-                  <Label htmlFor="phone">Phone Number</Label>
+          <div className="space-y-8 py-5">
+            <section className="space-y-3">
+              <h3 className="text-base font-medium leading-none">Identity</h3>
+              <div className="space-y-1.5">
+                <Label htmlFor="business-name">Business name <span className="text-destructive">*</span></Label>
+                <Input
+                  id="business-name"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="e.g. Pizza Palace"
+                  autoComplete="organization"
+                  className="text-sm "
+                  required
+                />
+              </div>
+            </section>
+
+            <Separator />
+
+            <AddressSection fields={addressFields} onFieldsChange={setField} />
+
+            <Separator />
+
+            <section className="space-y-3">
+              <h3 className="text-base font-medium leading-none">Phone <span className="text-destructive">*</span></h3>
+              <div className="flex max-w-md items-stretch gap-2">
+                <span
+                  className="flex shrink-0 items-center rounded-md border border-input bg-muted px-3 text-sm text-muted-foreground"
+                  aria-hidden
+                >
+                  +1
+                </span>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Label htmlFor="phone" className="sr-only">
+                    Phone number <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="phone"
-                    name={FieldNames.forPhone()}
                     type="tel"
-                    placeholder="e.g., (555) 555-1234"
-                    className="text-sm md:text-base"
-                  />
-                </div>
-
-                <div className="grid grid-cols-[1fr_5fr] gap-2 items-center md:block md:space-y-1">
-                  <Label htmlFor="street-address">Street Address</Label>
-                  <Input
-                    id="street-address"
-                    name={FieldNames.forAddress()}
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    value={formatUsPhoneMask(phoneDigits)}
+                    onChange={(e) =>
+                      setPhoneDigits(normalizeUsPhoneDigits(e.target.value))
+                    }
+                    placeholder="(555) 123-4567"
+                    className="text-sm "
                     required
-                    className="text-sm md:text-base"
-                    placeholder="e.g., 123 Main St"
                   />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <Label htmlFor="city">City</Label>
-                    <Input
-                      id="city"
-                      name={FieldNames.forCity()}
-                      required
-                      className="text-sm md:text-base"
-                      placeholder="e.g., San Francisco"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="state">State</Label>
-                    <Input
-                      id="state"
-                      name={FieldNames.forState()}
-                      required
-                      className="text-sm md:text-base"
-                      placeholder="e.g., CA"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label htmlFor="postal-code">ZIP Code</Label>
-                    <Input
-                      id="postal-code"
-                      name={FieldNames.forZipCode()}
-                      required
-                      className="text-sm md:text-base"
-                      placeholder="e.g., 94101"
-                    />
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    US number — 10 digits required.
+                  </p>
                 </div>
               </div>
-            </div>
+            </section>
 
-            <div className="border-t pt-2 md:pt-4 lg:pt-0 lg:border-t-0">
-              <h2 className="text-sm md:text-lg font-medium mb-1">
-                Platform Profiles
-              </h2>
-              <p className="text-xs md:text-sm text-gray-500 mb-4">
-                Provide the direct URL to your business's page on each platform
-                if available.
-              </p>
+            <Separator />
 
-              <div className="space-y-3">
-                {platforms.map((platform) => {
-                  const fieldName = FieldNames.forSinglePlatformURL(
-                    platform.id
-                  );
-                  return (
-                    <div
-                      key={platform.id}
-                      className="grid grid-cols-[2fr_5fr] gap-2 items-center md:block md:space-y-1"
-                    >
-                      <Label
-                        htmlFor={fieldName}
-                        className="flex items-center gap-2"
-                      >
-                        <Platform name={platform.name} />
-                        <p className="text-sm">{platform.name}</p>
-                      </Label>
-                      <Input
-                        id={fieldName}
-                        name={fieldName}
-                        type="text"
-                        className="text-sm md:text-base"
-                        placeholder={`https://${platform.name.toLowerCase()}.com/your-business`}
-                      />
-                    </div>
-                  );
-                })}
+            <section className="space-y-3">
+              <div>
+                <h3 className="text-base font-medium leading-none">
+                  Platforms (1 required) <span className="text-destructive">*</span>
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Paste a valid link for at least one platform. We validate the
+                  domain in real time.
+                </p>
               </div>
-            </div>
+              <div className="space-y-4">
+                {sortedPlatforms.map((p) => (
+                  <PlatformUrlRow
+                    key={p.id}
+                    platform={p}
+                    value={platformUrls[p.id] ?? ""}
+                    onChange={(v) =>
+                      setPlatformUrls((prev) => ({ ...prev, [p.id]: v }))
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+
+            <Separator />
+
+            <BusinessImageField
+              file={imageFile}
+              previewUrl={previewUrl}
+              onFileChange={setImageFile}
+            />
           </div>
-          <DialogFooter>
-            <div className="flex justify-end space-x-2 pt-2 md:pt-4 border-t lg:border-t-0">
-              <DialogClose asChild>
-                <Button variant="outline" disabled={isUpdating}>
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button type="submit" disabled={isUpdating}>
-                {isUpdating && <Loader2Icon className="animate-spin" />}
-                Create new business
+
+          <DialogFooter className="gap-2 border-t pt-4 sm:justify-end">
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" disabled={isPending}>
+                Cancel
               </Button>
-            </div>
+            </DialogClose>
+            <Button
+              type="submit"
+              disabled={!canSubmit || isPending}
+              className={cn("font-medium text-white")}
+              style={{ backgroundColor: DASHBOARD_ACCENT }}
+            >
+              {isPending && <Loader2Icon className="animate-spin" />}
+              Save
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

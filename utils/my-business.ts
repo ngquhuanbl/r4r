@@ -29,4 +29,8 @@ export namespace FieldNames {
   export function forPlatformUrls() {
     return "platform-urls";
   }
+  /** Multipart field for optional storefront image on create */
+  export function forBusinessPhoto() {
+    return "business-photo";
+  }
 }
