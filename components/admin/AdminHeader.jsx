@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Paths } from '@/constants/paths';
 import Link from 'next/link';
 
 export default function AdminHeader() {
@@ -9,7 +10,7 @@ export default function AdminHeader() {
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
       <div className="flex gap-2">
         <Button asChild variant="outline" size="sm">
-          <Link href="/home">Back to Dashboard</Link>
+          <Link href={Paths.DASHBOARD}>Back to Dashboard</Link>
         </Button>
       </div>
     </div>

@@ -75,7 +75,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the a
 ```
 /app                   # Next.js App Router files
   /(protected)         # Protected routes (requires authentication)
-    /home              # Dashboard page
+    /dashboard         # Default dashboard (locations grid)
+    /home              # Legacy page (redirects to /dashboard; server actions still live here)
     /businesses        # Business management
     /invitations       # Invitation management
   /login               # Authentication pages
