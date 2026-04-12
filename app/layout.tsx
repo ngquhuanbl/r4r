@@ -3,6 +3,7 @@ import "./globals.css";
 import { GeistSans } from "geist/font/sans";
 import { Toaster } from "sonner";
 
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -36,20 +37,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
           "min-h-screen font-sans antialiased",
           GeistSans.className
         )}
       >
-        <div
-          id="main-container"
-          className="flex flex-col min-h-screen text-black dark:text-white bg-white dark:bg-black"
-        >
-          <Toaster />
-          {children}
-        </div>
+        <ThemeProvider>
+          <div
+            id="main-container"
+            className="flex flex-col min-h-screen text-foreground bg-background"
+          >
+            <Toaster />
+            {children}
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

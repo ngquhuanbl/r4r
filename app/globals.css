@@ -36,14 +36,6 @@
     --radius: 0.5rem;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --background: 200 50% 3%;
-      --btn-background: 200 10% 9%;
-      --btn-background-hover: 200 10% 12%;
-      --foreground: 200 20% 96%;
-    }
-  }
   .dark {
     --background: 20 14.3% 4.1%;
     --foreground: 60 9.1% 97.8%;

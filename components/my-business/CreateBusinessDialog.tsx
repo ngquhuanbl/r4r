@@ -60,6 +60,8 @@ function emptyAddress(): AddressFields {
   return { street: "", line2: "", city: "", state: "", zip: "" };
 }
 
+const hasMapsKey = Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
+
 export function CreateBusinessDialog({
   open,
   onOpenChange,
@@ -70,6 +72,8 @@ export function CreateBusinessDialog({
   const userId = useAppSelector(authSelectors.selectUserId);
 
   const [businessName, setBusinessName] = useState("");
+  const [manualAddress, setManualAddress] = useState(!hasMapsKey);
+  const [addressSearch, setAddressSearch] = useState("");
   const [addressFields, setAddressFields] =
     useState<AddressFields>(emptyAddress);
   const [phoneDigits, setPhoneDigits] = useState("");
@@ -106,6 +110,8 @@ export function CreateBusinessDialog({
   useEffect(() => {
     if (!open) {
       setBusinessName("");
+      setManualAddress(!hasMapsKey);
+      setAddressSearch("");
       setAddressFields(emptyAddress());
       setPhoneDigits("");
       setPlatformUrls({});
@@ -229,7 +235,16 @@ export function CreateBusinessDialog({
 
             <Separator />
 
-            <AddressSection fields={addressFields} onFieldsChange={setField} />
+            <AddressSection
+              manualMode={manualAddress}
+              onManualModeChange={setManualAddress}
+              addressSearch={addressSearch}
+              onAddressSearchChange={setAddressSearch}
+              fields={addressFields}
+              onFieldsChange={setField}
+              placesDisabled={!hasMapsKey}
+              dialogOpen={open}
+            />
 
             <Separator />
 

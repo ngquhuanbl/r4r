@@ -1,5 +1,10 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BadgeCheckIcon, CreditCardIcon, LogOutIcon } from "lucide-react";
+import Link from "next/link";
+
+import { signOut } from "@/app/actions/auth";
+import Logo from "@/components/shared/logo";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,16 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-import { Button } from "@/components/ui/button";
-import { HamburgerMenu } from "./hamburger-menu";
-import Link from "next/link";
-import Logo from "@/components/shared/logo";
-import { Notifications } from "./notifications";
 import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
-import { PageTitle } from "./page-title";
 import { UserId } from "@/types/shared";
-import { signOut } from "@/app/actions/auth";
+
+import { HamburgerMenu } from "./hamburger-menu";
+import { Notifications } from "./notifications";
+import { PageTitle } from "./page-title";
+import { Theme } from "./theme";
 
 interface HeaderProps {
   userId: UserId;
@@ -79,6 +81,9 @@ export async function Header({ userId }: HeaderProps) {
         <PageTitle />
         <div className="flex items-center gap-10">
           <ul className="flex items-center gap-3 md:gap-3 text-sm">
+            <li>
+              <Theme />
+            </li>
             <li id={ONBOARDING_STEP_IDS.NOTIFICATIONS}>
               <Notifications userId={userId} />
             </li>

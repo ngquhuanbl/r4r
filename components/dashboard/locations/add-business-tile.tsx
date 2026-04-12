@@ -4,7 +4,7 @@ export function AddBusinessTile({ onClick }: { onClick: () => void }) {
       <button
         type="button"
         onClick={onClick}
-        className="group flex h-full min-h-0 w-full flex-1 flex-col items-center justify-center rounded-lg border-2 border-dashed border-subdued bg-white text-neutral-500 transition-colors hover:border-primary hover:bg-sky-50/50"
+        className="group flex h-full min-h-0 w-full flex-1 flex-col items-center justify-center rounded-lg border-2 border-dashed border-subdued bg-card text-muted-foreground transition-colors hover:border-primary hover:bg-accent/60"
         aria-label="Add a new business"
       >
         <span className="relative inline-flex">
