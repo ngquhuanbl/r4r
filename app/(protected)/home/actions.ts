@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { Paths } from "@/constants/paths";
+import { Paths, businessPath } from "@/constants/paths";
 import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -219,7 +219,7 @@ export async function confirmIncomingReview(
   if (reviewData) {
     const { data: invitationData } = await supabase
       .from("review_invitations")
-      .select("invitee_id, inviter_id")
+      .select("invitee_id, inviter_id, business_id")
       .eq("id", reviewData.invitation_id)
       .single();
 
@@ -227,6 +227,9 @@ export async function confirmIncomingReview(
       // Revalidate paths for both business owner and reviewer
       revalidatePath(Paths.DASHBOARD);
       revalidatePath(Paths.MY_BUSINESSES);
+      if (invitationData.business_id != null) {
+        revalidatePath(businessPath(invitationData.business_id));
+      }
     }
   }
 
@@ -283,7 +286,7 @@ export async function rejectIncomingReview(
   if (reviewData) {
     const { data: invitationData } = await supabase
       .from("review_invitations")
-      .select("invitee_id, inviter_id")
+      .select("invitee_id, inviter_id, business_id")
       .eq("id", reviewData.invitation_id)
       .single();
 
@@ -291,6 +294,9 @@ export async function rejectIncomingReview(
       // Revalidate paths for both business owner and reviewer
       revalidatePath(Paths.DASHBOARD);
       revalidatePath(Paths.MY_BUSINESSES);
+      if (invitationData.business_id != null) {
+        revalidatePath(businessPath(invitationData.business_id));
+      }
     }
   }
 
@@ -314,7 +320,9 @@ export async function fetchOutgoingReviews(
   userId: UserId,
   page: number,
   pageSize: number,
-  statusId?: Tables<"businesses">["id"]
+  reviewStatusId?: Tables<"review_statuses">["id"],
+  /** Reserved: `review_invitations.business_id` is the inviter’s business; outgoing rows (invitee=user) cannot be scoped to an owned business without schema changes. */
+  _businessId?: Tables<"businesses">["id"],
 ): Promise<APIResponse<FetchedReviewsResponse<OutgoingReview>>> {
   const supabase = createClient();
 
@@ -351,9 +359,11 @@ export async function fetchOutgoingReviews(
       )
       .eq("invitation.invitee_id", userId);
 
-    // Filter
-    if (statusId !== undefined) {
-      query = query.eq("status.id", statusId);
+    void _businessId;
+
+    // Filter by review status
+    if (reviewStatusId !== undefined) {
+      query = query.eq("status.id", reviewStatusId);
     }
 
     // Pagination
@@ -385,9 +395,10 @@ export async function fetchOutgoingReviews(
       )
       .eq("invitation.invitee_id", userId);
 
-    // Filter
-    if (statusId !== undefined) {
-      query = query.eq("status.id", statusId);
+    void _businessId;
+
+    if (reviewStatusId !== undefined) {
+      query = query.eq("status.id", reviewStatusId);
     }
 
     return query;

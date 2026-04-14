@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
+import { PROTECTED_CONTENT_SHELL_CLASS } from "@/constants/layout";
 import { UserId } from "@/types/shared";
 
 import { HamburgerMenu } from "./hamburger-menu";
@@ -68,27 +69,29 @@ export async function Header({ userId }: HeaderProps) {
     </DropdownMenu>
   );
   return (
-    <header className="w-full px-5 md:px-16 py-5">
-      <div className="flex items-center justify-between pt-2 md:pt-0 md:w-full">
-        <div className="flex md:hidden items-center gap-3">
-          <HamburgerMenu />
-        </div>
-        <div className="hidden md:block">
-          <Link href="/" className="hover:cursor-pointer">
-            <Logo />
-          </Link>
-        </div>
-        <PageTitle />
-        <div className="flex items-center gap-10">
-          <ul className="flex items-center gap-3 md:gap-3 text-sm">
-            <li>
-              <Theme />
-            </li>
-            <li id={ONBOARDING_STEP_IDS.NOTIFICATIONS}>
-              <Notifications userId={userId} />
-            </li>
-            <li>{profileMenu}</li>
-          </ul>
+    <header className="w-full">
+      <div className={`${PROTECTED_CONTENT_SHELL_CLASS} py-5`}>
+        <div className="flex w-full items-center justify-between pt-2 md:pt-0">
+          <div className="flex items-center gap-3 md:hidden">
+            <HamburgerMenu />
+          </div>
+          <div className="hidden md:block">
+            <Link href="/" className="hover:cursor-pointer">
+              <Logo />
+            </Link>
+          </div>
+          <PageTitle />
+          <div className="flex items-center gap-10">
+            <ul className="flex items-center gap-3 text-sm md:gap-3">
+              <li>
+                <Theme />
+              </li>
+              <li id={ONBOARDING_STEP_IDS.NOTIFICATIONS}>
+                <Notifications userId={userId} />
+              </li>
+              <li>{profileMenu}</li>
+            </ul>
+          </div>
         </div>
       </div>
     </header>

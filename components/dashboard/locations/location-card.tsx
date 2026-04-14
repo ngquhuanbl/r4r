@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import {
   Card,
@@ -7,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { businessPath } from "@/constants/paths";
 
 import fallbackBusinessAvatarSrc from "@/public/dashboard/fallback_business_avatar.png";
 import fallbackBusinessAvatarDarkSrc from "@/public/dashboard/fallback_business_avatar--dark.png";
@@ -48,9 +50,13 @@ function StatCell({ icon, label }: { icon: StatIcon; label: string }) {
 
 export function LocationCard({ location }: { location: DashboardLocation }) {
   return (
+    <Link
+      href={businessPath(location.id)}
+      className="block rounded-lg outline-none transition hover:opacity-[0.98] focus-visible:ring-2 focus-visible:ring-ring"
+    >
     <Card
       role="article"
-      className="flex flex-col overflow-hidden rounded-lg shadow-sm"
+      className="flex h-full flex-col overflow-hidden rounded-lg shadow-sm"
     >
       <CardHeader className="gap-1 space-y-1 px-6 pb-3 pt-4">
         <div className="flex items-start justify-between gap-3">
@@ -126,5 +132,6 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
         <StatCell icon={location.right.icon} label={location.right.label} />
       </CardFooter>
     </Card>
+    </Link>
   );
 }

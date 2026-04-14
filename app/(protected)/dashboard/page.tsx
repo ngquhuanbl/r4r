@@ -13,7 +13,7 @@ export default function Page() {
   return (
     <>
       <PreloadResources />
-      <section className="w-full min-w-0 self-stretch px-16 py-7 pb-16 grow flex">
+      <section className="flex w-full min-w-0 flex-1 flex-col py-7 pb-16">
         <DashboardLocationsGrid />
       </section>
     </>

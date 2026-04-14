@@ -10,6 +10,7 @@ import {
 import { Footer } from "@/components/shared/footer";
 import { Header } from "@/components/shared/header";
 import { INCOMING_REVIEWS_PAGE_SIZE } from "@/constants/dashboard/ui";
+import { PROTECTED_CONTENT_SHELL_CLASS } from "@/constants/layout";
 import { ONBOARDING_STEPS } from "@/constants/dashboard/onboarding";
 import StepCard from "@/components/shared/CardStep";
 import { StoreProvider } from "./StoreProvider";
@@ -66,8 +67,13 @@ export default async function Layout({ children }: LayoutProps) {
           <div className="flex flex-col min-h-screen">
             <Header userId={user!.id} />
 
-            {/* Page content */}
-            <main className="grow flex flex-col items-center">{children}</main>
+            <main className="flex min-h-0 w-full flex-1 flex-col">
+              <div
+                className={`${PROTECTED_CONTENT_SHELL_CLASS} flex min-h-0 flex-1 flex-col`}
+              >
+                {children}
+              </div>
+            </main>
             <Footer />
           </div>
         </NextStep>
