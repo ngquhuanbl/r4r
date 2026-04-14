@@ -52,11 +52,11 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
   return (
     <Link
       href={businessPath(location.id)}
-      className="block rounded-lg outline-none transition hover:opacity-[0.98] focus-visible:ring-2 focus-visible:ring-ring"
+      className="group block rounded-lg outline-none transition-transform duration-200 ease-out hover:-translate-y-1 active:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
     <Card
       role="article"
-      className="flex h-full flex-col overflow-hidden rounded-lg shadow-sm"
+      className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[box-shadow,border-color] duration-200 ease-out group-hover:border-primary/25 group-hover:shadow-md"
     >
       <CardHeader className="gap-1 space-y-1 px-6 pb-3 pt-4">
         <div className="flex items-start justify-between gap-3">
