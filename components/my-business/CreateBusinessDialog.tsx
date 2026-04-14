@@ -62,6 +62,9 @@ function emptyAddress(): AddressFields {
 
 const hasMapsKey = Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 
+/** TODO: re-enable Places search — set to false and restore manual/toggle behavior tied to `hasMapsKey`. */
+const ADDRESS_SEARCH_TEMPORARILY_DISABLED = true;
+
 export function CreateBusinessDialog({
   open,
   onOpenChange,
@@ -72,7 +75,8 @@ export function CreateBusinessDialog({
   const userId = useAppSelector(authSelectors.selectUserId);
 
   const [businessName, setBusinessName] = useState("");
-  const [manualAddress, setManualAddress] = useState(!hasMapsKey);
+  // TODO: when ADDRESS_SEARCH_TEMPORARILY_DISABLED is false, use !hasMapsKey again for default
+  const [manualAddress, setManualAddress] = useState(true);
   const [addressSearch, setAddressSearch] = useState("");
   const [addressFields, setAddressFields] =
     useState<AddressFields>(emptyAddress);
@@ -110,7 +114,7 @@ export function CreateBusinessDialog({
   useEffect(() => {
     if (!open) {
       setBusinessName("");
-      setManualAddress(!hasMapsKey);
+      setManualAddress(true);
       setAddressSearch("");
       setAddressFields(emptyAddress());
       setPhoneDigits("");
@@ -243,6 +247,9 @@ export function CreateBusinessDialog({
               fields={addressFields}
               onFieldsChange={setField}
               placesDisabled={!hasMapsKey}
+              addressSearchTemporarilyDisabled={
+                ADDRESS_SEARCH_TEMPORARILY_DISABLED
+              }
               dialogOpen={open}
             />
 

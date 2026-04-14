@@ -27,6 +27,8 @@ type AddressSectionProps = {
   /** When Places is unavailable (no API key), only manual fields are shown */
   placesDisabled: boolean;
   dialogOpen: boolean;
+  /** When true, hides search + toggle without treating it as "no API key" (temporary manual-only). */
+  addressSearchTemporarilyDisabled?: boolean;
 };
 
 export function AddressSection({
@@ -38,6 +40,7 @@ export function AddressSection({
   onFieldsChange,
   placesDisabled,
   dialogOpen,
+  addressSearchTemporarilyDisabled = false,
 }: AddressSectionProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listenerRef = useRef<google.maps.MapsEventListener | null>(null);
@@ -56,7 +59,7 @@ export function AddressSection({
   );
 
   useEffect(() => {
-    if (!dialogOpen || manualMode || placesDisabled) {
+    if (!dialogOpen || manualMode || placesDisabled || addressSearchTemporarilyDisabled) {
       if (listenerRef.current && typeof window !== "undefined" && window.google?.maps?.event) {
         google.maps.event.removeListener(listenerRef.current);
         listenerRef.current = null;
@@ -104,11 +107,13 @@ export function AddressSection({
     dialogOpen,
     manualMode,
     placesDisabled,
+    addressSearchTemporarilyDisabled,
     applyParsed,
     onAddressSearchChange,
   ]);
 
-  const showSearch = !manualMode && !placesDisabled;
+  const showSearch =
+    !manualMode && !placesDisabled && !addressSearchTemporarilyDisabled;
 
   return (
     <div className="space-y-4">
@@ -116,10 +121,13 @@ export function AddressSection({
         <div>
           <h3 className="text-base font-medium leading-none">Location</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            US address required. Search or enter manually.
+            US address required.
+            {addressSearchTemporarilyDisabled
+              ? " Enter your address below."
+              : " Search or enter manually."}
           </p>
         </div>
-        {!placesDisabled ? (
+        {!placesDisabled && !addressSearchTemporarilyDisabled ? (
           <Button
             type="button"
             variant="link"
@@ -149,7 +157,7 @@ export function AddressSection({
         </div>
       )}
 
-      {placesDisabled && (
+      {placesDisabled && !addressSearchTemporarilyDisabled && (
         <p className="text-xs text-muted-foreground">
           Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to enable address search, or fill
           the fields below.
