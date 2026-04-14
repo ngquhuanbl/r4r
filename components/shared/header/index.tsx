@@ -14,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
-import { PROTECTED_CONTENT_SHELL_CLASS } from "@/constants/layout";
 import { UserId } from "@/types/shared";
 
 import { HamburgerMenu } from "./hamburger-menu";
@@ -70,7 +69,7 @@ export async function Header({ userId }: HeaderProps) {
   );
   return (
     <header className="w-full">
-      <div className={`${PROTECTED_CONTENT_SHELL_CLASS} py-5`}>
+      <div className="mx-auto w-full max-w-7xl px-4 py-5 md:px-8 lg:px-16">
         <div className="flex w-full items-center justify-between pt-2 md:pt-0">
           <div className="flex items-center gap-3 md:hidden">
             <HamburgerMenu />
