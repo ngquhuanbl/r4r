@@ -84,13 +84,15 @@ export async function fetchIncomingReviews(
 				created_at,
 				invitation:review_invitations!inner (
 					business:businesses!inner (
-						id
+						id,
+						business_name
 					),
 					platform:platforms!inner (
 						id,
 						name
 					),
-					inviter_id
+					inviter_id,
+					invitee_id
 				)
 				`
       )
@@ -168,10 +170,53 @@ export async function fetchIncomingReviews(
     };
   }
 
+  const rawRows = dataResult.data ?? [];
+  let enriched: IncomingReview[] = rawRows.map((row) => ({
+    ...(row as IncomingReview),
+    invitation: {
+      ...(row as IncomingReview).invitation,
+      invitee_business_name: null,
+    },
+  }));
+
+  const inviteeIds: UserId[] = [];
+  const seenInvitee = new Set<string>();
+  for (const r of enriched) {
+    const uid = r.invitation.invitee_id;
+    if (uid && !seenInvitee.has(uid)) {
+      seenInvitee.add(uid);
+      inviteeIds.push(uid);
+    }
+  }
+  if (inviteeIds.length > 0) {
+    const { data: bizRows } = await supabase
+      .from("businesses")
+      .select("user_id, business_name, created_at")
+      .in("user_id", inviteeIds)
+      .order("created_at", { ascending: true });
+
+    const nameByUser = new Map<UserId, string>();
+    for (const row of bizRows ?? []) {
+      const uid = row.user_id as UserId;
+      if (!nameByUser.has(uid)) {
+        nameByUser.set(uid, row.business_name);
+      }
+    }
+
+    enriched = enriched.map((r) => ({
+      ...r,
+      invitation: {
+        ...r.invitation,
+        invitee_business_name:
+          nameByUser.get(r.invitation.invitee_id as UserId) ?? null,
+      },
+    }));
+  }
+
   return {
     ok: true,
     data: {
-      data: dataResult.data,
+      data: enriched,
       total_results: countResult.count!,
     },
   };
@@ -347,7 +392,11 @@ export async function fetchOutgoingReviews(
 						address,
 						city,
 						state,
-						zip_code
+						zip_code,
+						business_platforms (
+							platform_id,
+							platform_url
+						)
 					),
 					platform:platforms!inner (
 						id,

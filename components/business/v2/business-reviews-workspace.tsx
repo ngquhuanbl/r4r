@@ -11,9 +11,9 @@ import {
   fetchOutgoingReviews,
 } from "@/app/(protected)/home/actions";
 import { Platform } from "@/components/dashboard/Platform";
-import { VerifyReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/VerifyReviewDialog";
 import { ViewReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/ViewReviewDialog";
-import { SubmitReviewDialog } from "@/components/dashboard/YourReview/OutgoingReviewPanel/SubmitReviewDialog";
+import { SubmitReviewDialog } from "@/components/business/v2/submit-review-dialog";
+import { VerifyReviewDialog } from "@/components/business/v2/verify-review-dialog";
 import { ViewOutgoingReviewDialog } from "@/components/dashboard/YourReview/OutgoingReviewPanel/ViewReviewDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

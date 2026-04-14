@@ -16,6 +16,7 @@ import {
 import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
 import { UserId } from "@/types/shared";
 
+import { BusinessHeaderSwitcher } from "./business-header-switcher";
 import { HamburgerMenu } from "./hamburger-menu";
 import { Notifications } from "./notifications";
 import { PageTitle } from "./page-title";
@@ -70,17 +71,20 @@ export async function Header({ userId }: HeaderProps) {
   return (
     <header className="w-full">
       <div className="mx-auto w-full max-w-7xl px-4 py-5 md:px-8 lg:px-16">
-        <div className="flex w-full items-center justify-between pt-2 md:pt-0">
-          <div className="flex items-center gap-3 md:hidden">
-            <HamburgerMenu />
+        <div className="flex w-full items-center justify-between gap-2 pt-2 md:gap-4 md:pt-0">
+          <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
+            <div className="md:hidden">
+              <HamburgerMenu />
+            </div>
+            <div className="hidden shrink-0 md:block">
+              <Link href="/" className="hover:cursor-pointer">
+                <Logo />
+              </Link>
+            </div>
+            <BusinessHeaderSwitcher />
+            <PageTitle />
           </div>
-          <div className="hidden md:block">
-            <Link href="/" className="hover:cursor-pointer">
-              <Logo />
-            </Link>
-          </div>
-          <PageTitle />
-          <div className="flex items-center gap-10">
+          <div className="flex shrink-0 items-center gap-3 md:gap-10">
             <ul className="flex items-center gap-3 text-sm md:gap-3">
               <li>
                 <Theme />

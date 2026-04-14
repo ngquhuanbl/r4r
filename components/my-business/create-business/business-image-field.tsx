@@ -94,7 +94,8 @@ export function BusinessImageField({
             </div>
             <div className="flex flex-1 flex-wrap items-center gap-2">
               <span className="truncate text-xs text-muted-foreground">
-                {file?.name ?? "Image selected"}
+                {file?.name ??
+                  (previewUrl ? "Current storefront photo" : "Image selected")}
               </span>
               <Button
                 type="button"

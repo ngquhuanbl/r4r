@@ -31,13 +31,12 @@ export type IncomingReview = Pick<
 > & {
   status: Pick<Tables<"review_statuses">, "id" | "name">;
   invitation: {
-    business: Pick<
-      Tables<"businesses">,
-      // "id" | "business_name" | "address" | "city" | "state" | "zip_code"
-      "id"
-    >;
+    business: Pick<Tables<"businesses">, "id" | "business_name">;
     platform: Pick<Tables<"platforms">, "id" | "name">;
     inviter_id: Tables<"review_invitations">["inviter_id"];
+    invitee_id: Tables<"review_invitations">["invitee_id"];
+    /** Partner (reviewer) business name; first business row per invitee user, by created_at. */
+    invitee_business_name: string | null;
   };
 };
 
@@ -50,7 +49,12 @@ export type OutgoingReview = Pick<
     business: Pick<
       Tables<"businesses">,
       "id" | "business_name" | "address" | "city" | "state" | "zip_code"
-    >;
+    > & {
+      business_platforms: Pick<
+        Tables<"business_platforms">,
+        "platform_id" | "platform_url"
+      >[];
+    };
     platform: Pick<Tables<"platforms">, "id" | "name">;
     inviter_id: Tables<"review_invitations">["inviter_id"];
   };

@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 
-import { Paths } from "@/constants/paths";
+import { Paths, businessPath } from "@/constants/paths";
 import { uploadBusinessCoverPhoto } from "@/lib/supabase/business-cover-photo";
 import { createClient } from "@/lib/supabase/server";
 import { formatUsPhoneMask, normalizeUsPhoneDigits } from "@/lib/phone-us";
@@ -166,7 +166,7 @@ export async function updateBusiness(
           });
         } else {
           updateList.push({
-            id: platform.id,
+            id,
             platform_url: url.trim(),
           });
         }
@@ -255,11 +255,39 @@ export async function updateBusiness(
     }
   }
 
+  let coverImageUrl: string | null = updateBusinessData.cover_image_url ?? null;
+  const photoField = formData.get(FieldNames.forBusinessPhoto());
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (photoField instanceof File && photoField.size > 0 && user) {
+    const uploaded = await uploadBusinessCoverPhoto(supabase, {
+      userId: user.id,
+      businessId,
+      file: photoField,
+    });
+    if (uploaded.ok) {
+      const { error: coverUpdateError } = await supabase
+        .from("businesses")
+        .update({ cover_image_url: uploaded.publicUrl })
+        .eq("id", businessId);
+      if (!coverUpdateError) {
+        coverImageUrl = uploaded.publicUrl;
+      } else {
+        console.error("Error saving cover_image_url:", coverUpdateError);
+      }
+    } else {
+      console.error("Cover photo upload failed:", uploaded.message);
+    }
+  }
+
   revalidatePath(Paths.MY_BUSINESSES);
+  revalidatePath(businessPath(businessId));
   return {
     ok: true,
     data: {
       ...updateBusinessData,
+      cover_image_url: coverImageUrl,
       platform_urls: updatedPlatformURLs,
     },
   };

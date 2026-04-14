@@ -29,6 +29,9 @@ interface ManageBusinessDialogProps {
   onOpenChange: (opened: boolean) => void;
   data: FetchedBusiness;
   onUpdatedData?: (data: FetchedBusiness) => void;
+  /** Override default “Manage business” title (e.g. business page v2). */
+  dialogTitle?: string;
+  dialogDescription?: string;
 }
 
 export function ManageBusinessDialog({
@@ -36,12 +39,13 @@ export function ManageBusinessDialog({
   onOpenChange,
   data,
   onUpdatedData,
+  dialogTitle = "Manage business",
+  dialogDescription = "Make changes to your business profile here. Click save when you're done.",
 }: ManageBusinessDialogProps) {
   const [isUpdating, startUpdating] = useTransition();
   const platforms = useAppSelector(platformsSelectors.selectData);
 
   const onSubmit = (formData: FormData) => {
-    console.log("here");
     startUpdating(async () => {
       try {
         const nextBusinessName =
@@ -96,14 +100,11 @@ export function ManageBusinessDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-screen sm:max-w-[50%]">
+      <DialogContent className="max-h-[min(90vh,840px)] max-w-screen overflow-y-auto sm:max-w-2xl">
         <form action={onSubmit}>
           <DialogHeader>
-            <DialogTitle>Manage business</DialogTitle>
-            <DialogDescription>
-              Make changes to your business profile here. Click save when
-              you&apos;re done.
-            </DialogDescription>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogDescription}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2 mt-2 md:space-y-6 lg:flex lg:space-y-0 lg:gap-4">
             <div>

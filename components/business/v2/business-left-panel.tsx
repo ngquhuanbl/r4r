@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, Info, Pencil, UserPlus } from "lucide-react";
+import { useState } from "react";
 
 import { Platform } from "@/components/dashboard/Platform";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import { sortPlatformsBySpec } from "@/components/my-business/create-business/so
 import { useAppSelector } from "@/lib/redux/hooks";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
 
+import { CapacityUpgradeDialog } from "./capacity-upgrade-dialog";
+import { EditBusinessProfileDialog } from "./edit-business-profile-dialog";
 import { ReviewSnapshotChart } from "./review-snapshot-chart";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
 
@@ -38,10 +41,12 @@ export function BusinessLeftPanel({
   business,
   snapshot,
   ctaState = "ready",
+  onBusinessUpdated,
 }: {
   business: FetchedBusiness;
   snapshot: BusinessReviewSnapshot;
   ctaState?: ConnectCtaState;
+  onBusinessUpdated?: () => void;
 }) {
   const platformList = useAppSelector(platformsSelectors.selectData);
   const ordered = sortPlatformsBySpec(platformList);
@@ -59,6 +64,9 @@ export function BusinessLeftPanel({
         : "LET'S CONNECT";
 
   const ctaDisabled = ctaState === "connected" || ctaState === "searching";
+
+  const [capacityOpen, setCapacityOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -101,8 +109,9 @@ export function BusinessLeftPanel({
             )}
             <button
               type="button"
-              className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-foreground shadow border"
-              aria-label="Edit business image"
+              className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full border bg-background/90 text-foreground shadow"
+              aria-label="Edit business profile"
+              onClick={() => setEditOpen(true)}
             >
               <Pencil className="h-4 w-4" />
             </button>
@@ -179,11 +188,33 @@ export function BusinessLeftPanel({
           <span className="text-muted-foreground">
             {slotsUsed}/{slotsTotal} available connections
           </span>
+          <button
+            type="button"
+            className="text-xs font-medium text-primary underline underline-offset-2 hover:text-primary/90"
+            onClick={() => setCapacityOpen(true)}
+          >
+            Upgrade
+          </button>
           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
             Ready
           </span>
         </div>
       </div>
+
+      <CapacityUpgradeDialog
+        open={capacityOpen}
+        onOpenChange={setCapacityOpen}
+        businessName={business.business_name}
+      />
+      <EditBusinessProfileDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        data={business}
+        onUpdatedData={() => {
+          onBusinessUpdated?.();
+          setEditOpen(false);
+        }}
+      />
 
       <div className="rounded-lg border border-border/60 bg-card/30 p-3">
         <p className="mb-2 text-center text-xs font-medium text-muted-foreground">

@@ -22,6 +22,7 @@ import { IncomingReview, UpdatedReviewStatus } from "@/types/dashboard";
 import { ErrorUtils } from "@/utils/error";
 import { getAddress } from "@/utils/shared";
 
+/** Dashboard / home incoming tab. For the business page workspace, use `@/components/business/v2/verify-review-dialog`. */
 interface VerifyReviewDialogProps {
   open: boolean;
   data: IncomingReview;
