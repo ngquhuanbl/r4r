@@ -1,5 +1,31 @@
 import type { User } from "@supabase/supabase-js";
 
+const OAUTH_SKIP_FINISH_PROFILE = new Set(["google", "azure"]);
+
+/**
+ * Magic-link / email users must set display name; Google & Microsoft SSO skip (spec).
+ */
+export function needsFinishProfile(user: User): boolean {
+  const identities = user.identities ?? [];
+  if (
+    identities.some((i) => OAUTH_SKIP_FINISH_PROFILE.has(i.provider ?? ""))
+  ) {
+    return false;
+  }
+
+  const meta = user.user_metadata as Record<string, unknown> | undefined;
+  if (meta?.profile_completed === true) {
+    return false;
+  }
+
+  const dn = meta?.display_name;
+  if (typeof dn === "string" && dn.trim().length >= 2) {
+    return false;
+  }
+
+  return true;
+}
+
 export function getDisplayName(user: User): string {
   const m = user.user_metadata as Record<string, unknown> | undefined;
   if (m?.display_name && typeof m.display_name === "string" && m.display_name.trim()) {

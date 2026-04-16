@@ -70,22 +70,22 @@ export const updateSession = async (request: NextRequest) => {
 
     const path = request.nextUrl.pathname;
     const regexForAuthRoutes =
-      /^\/(sign-in|sign-up|forgot-password|new-password)($|\/)/;
-    const isAuthRoute = regexForAuthRoutes.test(path);
+      /^\/(login|sign-in\/password|forgot-password|new-password)($|\/)/;
+    const isAuthEntryRoute = regexForAuthRoutes.test(path);
+    /** OAuth/magic-link callback and legal stubs must not require a session first. */
+    const isPublicPath =
+      /^\/(auth\/callback|terms|privacy)($|\/)/.test(path);
 
-    if (isAuthRoute) {
-      // If has session, redirect to home
+    if (isAuthEntryRoute) {
       if (user) {
         const url = request.nextUrl.clone();
         url.pathname = Paths.DASHBOARD;
         return NextResponse.redirect(url);
       }
-    } else {
-      if (!user) {
-        const url = request.nextUrl.clone();
-        url.pathname = Paths.SIGN_IN;
-        return NextResponse.redirect(url);
-      }
+    } else if (!isPublicPath && !user) {
+      const url = request.nextUrl.clone();
+      url.pathname = Paths.LOGIN;
+      return NextResponse.redirect(url);
     }
 
     return response;

@@ -70,6 +70,9 @@ export async function saveProfileIdentity(
   if (!displayName) {
     return { ok: false, error: "Display name is required." };
   }
+  if (displayName.length < 2) {
+    return { ok: false, error: "Display name must be at least 2 characters." };
+  }
 
   const avatar = formData.get("avatar");
   const removeCustomAvatar = formData.get("removeCustomAvatar") === "true";
@@ -90,6 +93,9 @@ export async function saveProfileIdentity(
     ...existing,
     display_name: displayName,
   };
+  if (displayName.length >= 2) {
+    nextMeta.profile_completed = true;
+  }
   if (avatarPatch !== undefined) {
     if (avatarPatch === null) {
       delete nextMeta.avatar_url;
@@ -118,7 +124,7 @@ export async function deleteAccount(): Promise<{ ok: false; error: string } | vo
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect(Paths.SIGN_IN);
+    redirect(Paths.LOGIN);
   }
 
   let admin: ReturnType<typeof createServiceRoleClient>;
@@ -150,5 +156,5 @@ export async function deleteAccount(): Promise<{ ok: false; error: string } | vo
   }
 
   await supabase.auth.signOut();
-  redirect(Paths.SIGN_IN);
+  redirect(Paths.LOGIN);
 }

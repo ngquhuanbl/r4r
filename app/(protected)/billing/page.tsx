@@ -40,7 +40,7 @@ export default async function BillingPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(Paths.SIGN_IN);
+    redirect(Paths.LOGIN);
   }
 
   const businessesRes = await fetchBusinesses(user.id);

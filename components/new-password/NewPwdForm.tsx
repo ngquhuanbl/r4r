@@ -63,7 +63,7 @@ export function NewPwdForm() {
         setTimeout(() => {
           const params = new URLSearchParams();
           params.append(SignInSearchParams.NEW_PWD, "1");
-          router.replace(`${Paths.SIGN_IN}?${params.toString()}`);
+          router.replace(`${Paths.LOGIN}?${params.toString()}`);
         }, 1e3);
       }
     });

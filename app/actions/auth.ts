@@ -62,7 +62,7 @@ export async function signUp(formData: FormData) {
 export const signOut = async () => {
   const supabase = createClient();
   await supabase.auth.signOut();
-  return redirect(Paths.SIGN_IN);
+  return redirect(Paths.LOGIN);
 };
 
 export const sendResetPwdURL = async (

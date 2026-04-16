@@ -15,6 +15,12 @@ if (supabaseUrl) {
 }
 
 const nextConfig = {
+  async redirects() {
+    return [
+      { source: "/sign-in", destination: "/login", permanent: true },
+      { source: "/sign-up", destination: "/login", permanent: true },
+    ];
+  },
   images: {
     remotePatterns: [
       {

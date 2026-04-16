@@ -27,7 +27,7 @@ export default function ResetPasswordPage() {
         </p>
         <ForgotPwdForm />
         <Link
-          href={Paths.SIGN_IN}
+          href={Paths.LOGIN}
           className="flex items-center gap-2 text-sm text-primary hover:text-sky-900"
         >
           <ArrowLeft /> Back to Sign in

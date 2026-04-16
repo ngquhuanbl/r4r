@@ -1,6 +1,10 @@
 export enum Paths {
+  /** Canonical auth entry (unified login / magic link). */
+  LOGIN = "/login",
+  /** Legacy URL; use Next.js redirects to {@link Paths.LOGIN}. */
   SIGN_IN = "/sign-in",
   SIGN_UP = "/sign-up",
+  AUTH_CALLBACK = "/auth/callback",
   DASHBOARD = "/dashboard",
   MY_BUSINESSES = "/my-businesses", // V1
   ACCOUNT = "/account",

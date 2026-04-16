@@ -19,7 +19,7 @@ export default async function AccountPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(Paths.SIGN_IN);
+    redirect(Paths.LOGIN);
   }
 
   const { data: prefs } = await supabase
