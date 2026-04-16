@@ -33,6 +33,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "graph.microsoft.com",
+      },
       // Any Supabase project ref (*.supabase.co) — works even if env was missing at config eval time
       {
         protocol: "https",

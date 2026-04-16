@@ -276,12 +276,38 @@ export type Database = {
           }
         ];
       };
+      user_preferences: {
+        Row: {
+          notify_new_connection: boolean;
+          notify_weekly_summary: boolean;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          notify_new_connection?: boolean;
+          notify_weekly_summary?: boolean;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          notify_new_connection?: boolean;
+          notify_weekly_summary?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      delete_user_account_data: {
+        Args: {
+          target_user_id: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

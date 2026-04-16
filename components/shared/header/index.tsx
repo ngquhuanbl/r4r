@@ -1,5 +1,6 @@
 import { BadgeCheckIcon, CreditCardIcon, LogOutIcon } from "lucide-react";
 import Link from "next/link";
+import type { User } from "@supabase/supabase-js";
 
 import { signOut } from "@/app/actions/auth";
 import Logo from "@/components/shared/logo";
@@ -13,8 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Paths } from "@/constants/paths";
 import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
-import { UserId } from "@/types/shared";
+import { getAvatarUrl, getDisplayName } from "@/lib/account/profile";
 
 import { BusinessHeaderSwitcher } from "./business-header-switcher";
 import { HamburgerMenu } from "./hamburger-menu";
@@ -23,18 +25,22 @@ import { PageTitle } from "./page-title";
 import { Theme } from "./theme";
 
 interface HeaderProps {
-  userId: UserId;
+  user: User;
 }
-export async function Header({ userId }: HeaderProps) {
-  // TODO: use real user image when we have user profile set up
-  const imageURL = "";
+
+const billingEnabled =
+  process.env.NEXT_PUBLIC_BILLING_ENABLED === "true";
+
+export async function Header({ user }: HeaderProps) {
+  const imageURL = getAvatarUrl(user) ?? "";
+  const displayName = getDisplayName(user);
 
   const profileMenu = (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full">
           <Avatar>
-            <AvatarImage src={imageURL} alt="shadcn" />
+            <AvatarImage src={imageURL} alt={displayName} />
             <AvatarFallback>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -51,19 +57,29 @@ export async function Header({ userId }: HeaderProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <BadgeCheckIcon />
-            Account
+          <DropdownMenuItem asChild>
+            <Link
+              href={Paths.ACCOUNT}
+              className="flex cursor-pointer items-center gap-2"
+            >
+              <BadgeCheckIcon />
+              Account
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <CreditCardIcon />
-            Billing
-          </DropdownMenuItem>
+          {billingEnabled ? (
+            <DropdownMenuItem disabled className="opacity-60">
+              <CreditCardIcon />
+              Billing
+            </DropdownMenuItem>
+          ) : null}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={signOut}>
+        <DropdownMenuItem
+          onClick={signOut}
+          className="text-destructive focus:text-destructive"
+        >
           <LogOutIcon />
-          Sign Out
+          Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -90,7 +106,7 @@ export async function Header({ userId }: HeaderProps) {
                 <Theme />
               </li>
               <li id={ONBOARDING_STEP_IDS.NOTIFICATIONS}>
-                <Notifications userId={userId} />
+                <Notifications userId={user.id} />
               </li>
               <li>{profileMenu}</li>
             </ul>
