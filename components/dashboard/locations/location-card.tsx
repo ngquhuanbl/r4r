@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Loader2Icon } from "lucide-react";
 
 import {
   Card,
@@ -82,7 +83,14 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
             <CardTitle className="text-xl font-semibold leading-tight text-card-foreground">
               {location.name}
             </CardTitle>
-            {location.status === "ready" ? (
+            {location.status === "loading" ? (
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-muted/50 text-muted-foreground"
+                aria-label="Loading connection status"
+              >
+                <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
+              </span>
+            ) : location.status === "ready" ? (
               <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
                 Ready
               </span>

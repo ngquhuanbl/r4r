@@ -1,6 +1,6 @@
 "use server";
 
-import { countActiveConnectionsForBusiness } from "@/lib/billing/check-slots";
+import { countSlotsUsedForBusiness } from "@/lib/billing/check-slots";
 import { createClient } from "@/lib/supabase/server";
 import { ReviewStatusNames } from "@/constants/shared";
 import type { FetchedBusiness } from "@/types/dashboard";
@@ -207,7 +207,7 @@ export async function fetchBusinessBillingContext(
       .select("subscription_current_period_end")
       .eq("user_id", userId)
       .maybeSingle(),
-    countActiveConnectionsForBusiness(supabase, businessId),
+    countSlotsUsedForBusiness(supabase, businessId),
   ]);
 
   return {

@@ -23,6 +23,7 @@ import { NoBusinessesEmptyState } from "./no-businesses-empty-state";
 const zeroCounts = (): BusinessActionCounts => ({
   incomingAction: 0,
   outgoingAction: 0,
+  connectionFull: false,
 });
 
 export function DashboardLocationsGrid() {
@@ -66,10 +67,7 @@ export function DashboardLocationsGrid() {
   const locations = useMemo(
     () =>
       myBusinesses.map((b) =>
-        mapBusinessToLocation(
-          b,
-          actionByBusiness[b.id] ?? zeroCounts(),
-        ),
+        mapBusinessToLocation(b, actionByBusiness[b.id]),
       ),
     [myBusinesses, actionByBusiness],
   );

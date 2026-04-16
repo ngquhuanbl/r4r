@@ -11,7 +11,9 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
+import { startConnectionMatch } from "@/app/(protected)/business/[id]/connection-actions";
 import { Platform } from "@/components/dashboard/Platform";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -40,6 +42,7 @@ import {
 import { EditBusinessProfileDialog } from "./edit-business-profile-dialog";
 import { ReviewSnapshotChart } from "./review-snapshot-chart";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
+import type { UserId } from "@/types/shared";
 
 import fallbackLight from "@/public/dashboard/fallback_business_avatar.png";
 import fallbackDark from "@/public/dashboard/fallback_business_avatar--dark.png";
@@ -59,16 +62,16 @@ function tierFromBilling(
 }
 
 export function BusinessLeftPanel({
+  userId,
   business,
   snapshot,
   billingContext,
-  ctaState = "ready",
   onBusinessUpdated,
 }: {
+  userId: UserId;
   business: FetchedBusiness;
   snapshot: BusinessReviewSnapshot;
   billingContext: BusinessBillingSidebarContext;
-  ctaState?: ConnectCtaState;
   onBusinessUpdated?: () => void;
 }) {
   const platformList = useAppSelector(platformsSelectors.selectData);
@@ -78,8 +81,10 @@ export function BusinessLeftPanel({
   const { businessBilling, subscriptionPeriodEnd, slotsUsed } = billingContext;
   const slotsTotal =
     businessBilling?.slot_limit ?? TIER_SLOT_LIMIT[TIER_STARTER];
-  const progressPct =
-    slotsTotal > 0 ? Math.min(100, (slotsUsed / slotsTotal) * 100) : 0;
+  const slotsAvailable = Math.max(0, slotsTotal - slotsUsed);
+  /** Bar fill = share of capacity still available (100% = all slots free). */
+  const availableSlotsProgressPct =
+    slotsTotal > 0 ? Math.min(100, (slotsAvailable / slotsTotal) * 100) : 0;
   const nextRenewalLabel = subscriptionPeriodEnd
     ? new Date(subscriptionPeriodEnd).toLocaleDateString(undefined, {
         month: "long",
@@ -90,17 +95,48 @@ export function BusinessLeftPanel({
   const currentTier = tierFromBilling(businessBilling);
   const atMaxTier = currentTier === TIER_MOMENTUM;
 
-  const ctaLabel =
-    ctaState === "searching"
-      ? "Searching…"
-      : ctaState === "connected"
-        ? "Connected"
-        : "LET'S CONNECT";
+  const isFull = slotsAvailable <= 0;
 
-  const ctaDisabled = ctaState === "connected" || ctaState === "searching";
-
+  const [searching, setSearching] = useState(false);
   const [capacityOpen, setCapacityOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+
+  const ctaLabel = searching ? "Searching…" : "LET'S CONNECT";
+
+  const ctaDisabled = searching;
+
+  const onConnectClick = async () => {
+    if (searching) return;
+    if (isFull) {
+      setCapacityOpen(true);
+      return;
+    }
+    setSearching(true);
+    try {
+      const res = await startConnectionMatch(userId, business.id);
+      if (!res.ok) {
+        toast.error("Could not start matching", {
+          description:
+            typeof res.error === "string" ? res.error : String(res.error),
+        });
+        return;
+      }
+      if ("matched" in res.data && res.data.matched === false) {
+        toast.error(
+          "All partners are currently busy. Please try again in a few minutes.",
+        );
+        return;
+      }
+      toast.success(
+        "Match found! Check your Outgoing tab to start your review.",
+      );
+      onBusinessUpdated?.();
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSearching(false);
+    }
+  };
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -188,6 +224,7 @@ export function BusinessLeftPanel({
         type="button"
         size="lg"
         disabled={ctaDisabled}
+        onClick={() => void onConnectClick()}
         className={cn(
           "h-12 w-full rounded-lg text-sm font-semibold uppercase tracking-wide",
           DASHBOARD_PRIMARY_BUTTON_CLASSNAME,
@@ -219,30 +256,37 @@ export function BusinessLeftPanel({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs" side="left">
-                  Each slot allows 1 active review exchange at a time. Upgrade
-                  for higher throughput.
+                  Each slot allows one active connection at a time. The bar shows
+                  how much capacity is still available. Upgrade for more slots.
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
           <div className="flex items-center justify-between gap-2">
             <Progress
-              value={progressPct}
+              value={availableSlotsProgressPct}
               className="h-2.5 flex-1 bg-primary/15 shadow-inner"
             />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
               <span className="font-medium tabular-nums text-foreground">
-                {slotsUsed}
+                {slotsAvailable}
                 <span className="font-normal text-muted-foreground">
-                  /{slotsTotal}
+                  {" "}
+                  of {slotsTotal}
                 </span>
               </span>
-              <span className="text-muted-foreground">active connections</span>
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
-                Ready
-              </span>
+              <span className="text-muted-foreground">slots available</span>
+              {isFull ? (
+                <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600 dark:bg-red-950/40 dark:text-red-400">
+                  Full
+                </span>
+              ) : (
+                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                  Ready
+                </span>
+              )}
             </div>
             <button
               type="button"

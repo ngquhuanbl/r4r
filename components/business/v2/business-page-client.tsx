@@ -30,6 +30,7 @@ export function BusinessPageClient({
     <div className="grid w-full grid-cols-1 gap-8 pt-8 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start lg:gap-x-10 lg:gap-y-0">
       <div className="min-w-0 lg:max-w-sm">
         <BusinessLeftPanel
+          userId={userId}
           business={business}
           snapshot={snapshot}
           billingContext={billingContext}

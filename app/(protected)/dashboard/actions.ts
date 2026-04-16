@@ -1,6 +1,10 @@
 "use server";
 
 import { ReviewStatusNames } from "@/constants/shared";
+import {
+  countSlotsUsedForBusiness,
+  getSlotLimitForBusiness,
+} from "@/lib/billing/check-slots";
 import { createClient } from "@/lib/supabase/server";
 import type { APIResponse, UserId } from "@/types/shared";
 import type { Tables } from "@/types/database";
@@ -8,6 +12,8 @@ import type { Tables } from "@/types/database";
 export type BusinessActionCounts = {
   incomingAction: number;
   outgoingAction: number;
+  /** True when active slots used >= plan limit (same rules as business page capacity). */
+  connectionFull: boolean;
 };
 
 /**
@@ -28,7 +34,11 @@ export async function fetchDashboardBusinessActionCounts(
     Object.fromEntries(
       businessIds.map((id) => [
         id,
-        { incomingAction: 0, outgoingAction: 0 },
+        {
+          incomingAction: 0,
+          outgoingAction: 0,
+          connectionFull: false,
+        },
       ]),
     ) as Record<number, BusinessActionCounts>;
 
@@ -95,7 +105,21 @@ export async function fetchDashboardBusinessActionCounts(
     data[id] = {
       incomingAction: incomingByBiz.get(id) ?? 0,
       outgoingAction: outgoingByBiz.get(id) ?? 0,
+      connectionFull: false,
     };
+  }
+
+  const capacityRows = await Promise.all(
+    businessIds.map(async (id) => {
+      const [limit, used] = await Promise.all([
+        getSlotLimitForBusiness(supabase, id),
+        countSlotsUsedForBusiness(supabase, id),
+      ]);
+      return { id, connectionFull: used >= limit };
+    }),
+  );
+  for (const row of capacityRows) {
+    data[row.id].connectionFull = row.connectionFull;
   }
 
   return { ok: true, data };

@@ -1,4 +1,4 @@
-export type LocationStatus = "ready" | "full";
+export type LocationStatus = "ready" | "full" | "loading";
 
 /** Left column: incoming reviews needing verify (SUBMITTED). Right: outgoing needing submit (DRAFT), per owned business when `invitee_business_id` is set. */
 export type DashboardLocation = {

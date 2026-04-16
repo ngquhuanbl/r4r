@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { Paths, businessPath } from "@/constants/paths";
 import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
+import { tryCompleteConnectionForReview } from "@/lib/connections/complete-connection";
 import { createClient } from "@/lib/supabase/server";
 import {
   FetchedReviewsResponse,
@@ -278,6 +279,8 @@ export async function confirmIncomingReview(
     }
   }
 
+  await tryCompleteConnectionForReview(supabase, reviewId);
+
   return {
     ok: true,
     data: {
@@ -344,6 +347,8 @@ export async function rejectIncomingReview(
       }
     }
   }
+
+  await tryCompleteConnectionForReview(supabase, reviewId);
 
   return {
     ok: true,
@@ -542,6 +547,8 @@ export async function submitOutgoingReview(
     console.error("Error submitting review:", updateError);
     return { ok: false, error: updateError };
   }
+
+  await tryCompleteConnectionForReview(supabase, reviewId);
 
   // Ensure all relevant paths are revalidated
   revalidatePath(Paths.DASHBOARD, "layout");

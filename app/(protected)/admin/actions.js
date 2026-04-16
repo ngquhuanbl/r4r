@@ -100,13 +100,44 @@ export async function createBusinessConnection(inviterBusinessId, inviteeBusines
   const invitee = businesses.find(b => b.id === parseInt(inviteeBusinessId));
 
   const { assertBusinessHasAvailableSlot } = await import('@/lib/billing/check-slots');
-  const slotCheck = await assertBusinessHasAvailableSlot(
-    supabase,
-    typeof inviterBusinessId === 'number' ? inviterBusinessId : parseInt(String(inviterBusinessId), 10),
-  );
-  if (!slotCheck.ok) {
-    return { success: false, error: slotCheck.error };
+  const inviterIdNum =
+    typeof inviterBusinessId === 'number'
+      ? inviterBusinessId
+      : parseInt(String(inviterBusinessId), 10);
+  const inviteeIdNum =
+    typeof inviteeBusinessId === 'number'
+      ? inviteeBusinessId
+      : parseInt(String(inviteeBusinessId), 10);
+
+  const slotInviter = await assertBusinessHasAvailableSlot(supabase, inviterIdNum);
+  if (!slotInviter.ok) {
+    return { success: false, error: slotInviter.error };
   }
+  const slotInvitee = await assertBusinessHasAvailableSlot(supabase, inviteeIdNum);
+  if (!slotInvitee.ok) {
+    return { success: false, error: slotInvitee.error };
+  }
+
+  const low = Math.min(inviterIdNum, inviteeIdNum);
+  const high = Math.max(inviterIdNum, inviteeIdNum);
+
+  const { data: connRow, error: connErr } = await supabase
+    .from('connections')
+    .insert({
+      business_a_id: low,
+      business_b_id: high,
+      initiator_business_id: inviterIdNum,
+      status: 'active',
+    })
+    .select('id')
+    .single();
+
+  if (connErr || !connRow) {
+    console.error('Error creating connection row:', connErr);
+    return { success: false, error: connErr || 'Could not create connection' };
+  }
+
+  const connectionId = connRow.id;
 
   if (!inviter || !invitee) {
     return { success: false, error: 'One or both businesses not found' };
@@ -151,6 +182,7 @@ export async function createBusinessConnection(inviterBusinessId, inviteeBusines
           inviter_id: inviter.user_id,
           invitee_id: invitee.user_id,
           invitee_business_id: inviteeBusinessId,
+          connection_id: connectionId,
           status_id: pendingStatus.id,
           message: message || '',
         });

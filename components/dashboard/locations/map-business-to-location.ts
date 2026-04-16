@@ -6,12 +6,25 @@ import type { DashboardLocation } from "./types";
 
 export function mapBusinessToLocation(
   b: FetchedBusiness,
-  counts: BusinessActionCounts,
+  counts: BusinessActionCounts | undefined,
 ): DashboardLocation {
+  if (!counts) {
+    return {
+      id: String(b.id),
+      name: b.business_name,
+      status: "loading",
+      address: getAddress(b),
+      imageSrc: b.cover_image_url,
+      imageAlt: b.business_name ? `${b.business_name} storefront` : "",
+      left: { count: 0 },
+      right: { count: 0 },
+    };
+  }
+
   return {
     id: String(b.id),
     name: b.business_name,
-    status: "ready",
+    status: counts.connectionFull ? "full" : "ready",
     address: getAddress(b),
     imageSrc: b.cover_image_url,
     imageAlt: b.business_name ? `${b.business_name} storefront` : "",

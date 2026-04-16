@@ -142,6 +142,58 @@ export type Database = {
           },
         ];
       };
+      connections: {
+        Row: {
+          business_a_id: number;
+          business_b_id: number;
+          completed_at: string | null;
+          created_at: string;
+          id: number;
+          initiator_business_id: number;
+          status: string;
+        };
+        Insert: {
+          business_a_id: number;
+          business_b_id: number;
+          completed_at?: string | null;
+          created_at?: string;
+          id?: number;
+          initiator_business_id: number;
+          status?: string;
+        };
+        Update: {
+          business_a_id?: number;
+          business_b_id?: number;
+          completed_at?: string | null;
+          created_at?: string;
+          id?: number;
+          initiator_business_id?: number;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "connections_business_a_id_fkey";
+            columns: ["business_a_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "connections_business_b_id_fkey";
+            columns: ["business_b_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "connections_initiator_business_id_fkey";
+            columns: ["initiator_business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       invitation_statuses: {
         Row: {
           description: string;
@@ -187,6 +239,7 @@ export type Database = {
       review_invitations: {
         Row: {
           business_id: number;
+          connection_id: number | null;
           created_at: string;
           id: number;
           invitee_business_id: number | null;
@@ -199,6 +252,7 @@ export type Database = {
         };
         Insert: {
           business_id: number;
+          connection_id?: number | null;
           created_at?: string;
           id?: number;
           invitee_business_id?: number | null;
@@ -211,6 +265,7 @@ export type Database = {
         };
         Update: {
           business_id?: number;
+          connection_id?: number | null;
           created_at?: string;
           id?: number;
           invitee_business_id?: number | null;
@@ -222,6 +277,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "review_invitations_connection_id_fkey";
+            columns: ["connection_id"];
+            isOneToOne: false;
+            referencedRelation: "connections";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "review_invitations_business_id_fkey";
             columns: ["business_id"];
