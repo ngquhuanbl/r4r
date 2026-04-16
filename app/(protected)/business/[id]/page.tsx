@@ -8,6 +8,7 @@ import type { BusinessReviewSnapshot } from "@/types/business-page";
 import type { Tables } from "@/types/database";
 
 import {
+  fetchBusinessBillingContext,
   fetchBusinessReviewSnapshot,
   getBusinessForUser,
 } from "./actions";
@@ -52,9 +53,10 @@ export default async function BusinessPage({ params }: PageProps) {
     notFound();
   }
 
-  const [snapshotRes, statusesRes] = await Promise.all([
+  const [snapshotRes, statusesRes, billingContext] = await Promise.all([
     fetchBusinessReviewSnapshot(user.id, business.id),
     fetchReviewStatuses(),
+    fetchBusinessBillingContext(user.id, business.id),
   ]);
 
   const snapshot = snapshotRes.ok ? snapshotRes.data : emptySnapshot();
@@ -66,6 +68,7 @@ export default async function BusinessPage({ params }: PageProps) {
       business={business}
       snapshot={snapshot}
       reviewStatuses={reviewStatuses}
+      billingContext={billingContext}
     />
   );
 }

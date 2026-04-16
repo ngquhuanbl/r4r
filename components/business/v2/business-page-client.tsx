@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
+import type { BusinessBillingSidebarContext } from "@/app/(protected)/business/[id]/actions";
 import type { FetchedBusiness } from "@/types/dashboard";
 import type { Tables } from "@/types/database";
 import type { UserId } from "@/types/shared";
@@ -15,11 +16,13 @@ export function BusinessPageClient({
   business,
   snapshot,
   reviewStatuses,
+  billingContext,
 }: {
   userId: UserId;
   business: FetchedBusiness;
   snapshot: BusinessReviewSnapshot;
   reviewStatuses: Tables<"review_statuses">[];
+  billingContext: BusinessBillingSidebarContext;
 }) {
   const router = useRouter();
 
@@ -29,6 +32,7 @@ export function BusinessPageClient({
         <BusinessLeftPanel
           business={business}
           snapshot={snapshot}
+          billingContext={billingContext}
           onBusinessUpdated={() => router.refresh()}
         />
       </div>

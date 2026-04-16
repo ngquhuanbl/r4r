@@ -87,11 +87,16 @@ module.exports = {
   				to: {
   					height: '0'
   				}
-  			}
+  			},
+  			'sparkle-nudge': {
+  				'0%, 100%': { transform: 'rotate(-7deg) scale(1)' },
+  				'50%': { transform: 'rotate(7deg) scale(1.06)' },
+  			},
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'sparkle-nudge': 'sparkle-nudge 2.5s ease-in-out infinite',
   		}
   	}
   },

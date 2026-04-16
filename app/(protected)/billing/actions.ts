@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
+import { stripeErrorToUserMessage } from "@/lib/billing/stripe-errors";
 import {
   getPriceIdForTier,
   TIER_STARTER,
@@ -114,63 +115,68 @@ export async function changeBusinessTier(
 
   const existingItemId = bb?.stripe_subscription_item_id ?? null;
 
-  if (tier === TIER_STARTER) {
+  try {
+    if (tier === TIER_STARTER) {
+      if (existingItemId) {
+        await stripe.subscriptionItems.del(existingItemId, {
+          proration_behavior: "create_prorations",
+        });
+        if (subscriptionId) {
+          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          await syncStripeSubscriptionToDatabase(sub);
+        }
+      }
+      revalidatePath(Paths.BILLING);
+      return { ok: true };
+    }
+
+    const priceId = getPriceIdForTier(tier);
+    if (!priceId) {
+      return {
+        ok: false,
+        error:
+          "Stripe Price IDs are not configured (STRIPE_PRICE_VELOCITY / STRIPE_PRICE_MOMENTUM).",
+      };
+    }
+
+    if (!subscriptionId) {
+      const sub = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [
+          {
+            price: priceId,
+            metadata: { business_id: String(businessId) },
+          },
+        ],
+        metadata: { supabase_user_id: user.id },
+        collection_method: "charge_automatically",
+      });
+      await syncStripeSubscriptionToDatabase(sub);
+      revalidatePath(Paths.BILLING);
+      return { ok: true };
+    }
+
     if (existingItemId) {
-      await stripe.subscriptionItems.del(existingItemId, {
+      await stripe.subscriptionItems.update(existingItemId, {
+        price: priceId,
         proration_behavior: "create_prorations",
       });
-      if (subscriptionId) {
-        const sub = await stripe.subscriptions.retrieve(subscriptionId);
-        await syncStripeSubscriptionToDatabase(sub);
-      }
+    } else {
+      await stripe.subscriptionItems.create({
+        subscription: subscriptionId,
+        price: priceId,
+        metadata: { business_id: String(businessId) },
+      });
     }
-    revalidatePath(Paths.BILLING);
-    return { ok: true };
-  }
 
-  const priceId = getPriceIdForTier(tier);
-  if (!priceId) {
-    return {
-      ok: false,
-      error:
-        "Stripe Price IDs are not configured (STRIPE_PRICE_VELOCITY / STRIPE_PRICE_MOMENTUM).",
-    };
-  }
-
-  if (!subscriptionId) {
-    const sub = await stripe.subscriptions.create({
-      customer: customerId,
-      items: [
-        {
-          price: priceId,
-          metadata: { business_id: String(businessId) },
-        },
-      ],
-      metadata: { supabase_user_id: user.id },
-      collection_method: "charge_automatically",
-    });
+    const sub = await stripe.subscriptions.retrieve(subscriptionId);
     await syncStripeSubscriptionToDatabase(sub);
     revalidatePath(Paths.BILLING);
     return { ok: true };
+  } catch (err) {
+    console.error("changeBusinessTier:", err);
+    return { ok: false, error: stripeErrorToUserMessage(err) };
   }
-
-  if (existingItemId) {
-    await stripe.subscriptionItems.update(existingItemId, {
-      price: priceId,
-      proration_behavior: "create_prorations",
-    });
-  } else {
-    await stripe.subscriptionItems.create({
-      subscription: subscriptionId,
-      price: priceId,
-      metadata: { business_id: String(businessId) },
-    });
-  }
-
-  const sub = await stripe.subscriptions.retrieve(subscriptionId);
-  await syncStripeSubscriptionToDatabase(sub);
-  revalidatePath(Paths.BILLING);
-  return { ok: true };
 }
 
 export async function createBillingPortalSession(): Promise<
@@ -188,13 +194,18 @@ export async function createBillingPortalSession(): Promise<
   const ensured = await ensureStripeCustomer();
   if (!ensured.ok) return ensured;
 
-  const stripe = getStripe();
-  const session = await stripe.billingPortal.sessions.create({
-    customer: ensured.customerId,
-    return_url: `${appOrigin()}${Paths.BILLING}`,
-  });
+  try {
+    const stripe = getStripe();
+    const session = await stripe.billingPortal.sessions.create({
+      customer: ensured.customerId,
+      return_url: `${appOrigin()}${Paths.BILLING}`,
+    });
 
-  return { ok: true, url: session.url };
+    return { ok: true, url: session.url };
+  } catch (err) {
+    console.error("createBillingPortalSession:", err);
+    return { ok: false, error: stripeErrorToUserMessage(err) };
+  }
 }
 
 export type BillingInvoiceRow = {

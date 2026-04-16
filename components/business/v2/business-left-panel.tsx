@@ -2,7 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, Info, Pencil, UserPlus } from "lucide-react";
+import {
+  ChevronLeft,
+  Info,
+  Pencil,
+  Sparkles,
+  UserPlus,
+  Zap,
+} from "lucide-react";
 import { useState } from "react";
 
 import { Platform } from "@/components/dashboard/Platform";
@@ -17,12 +24,19 @@ import {
 import { DASHBOARD_PRIMARY_BUTTON_CLASSNAME } from "@/components/dashboard/locations/constants";
 import { cn } from "@/lib/utils";
 import { Paths } from "@/constants/paths";
+import type { BusinessBillingSidebarContext } from "@/app/(protected)/business/[id]/actions";
 import type { FetchedBusiness } from "@/types/dashboard";
 import { sortPlatformsBySpec } from "@/components/my-business/create-business/sort-platforms";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
+import { ManageSubscriptionDialog } from "@/components/billing/manage-subscription-dialog";
+import {
+  TIER_MOMENTUM,
+  TIER_SLOT_LIMIT,
+  TIER_STARTER,
+  type BillingTier,
+} from "@/lib/billing/tiers";
 
-import { CapacityUpgradeDialog } from "./capacity-upgrade-dialog";
 import { EditBusinessProfileDialog } from "./edit-business-profile-dialog";
 import { ReviewSnapshotChart } from "./review-snapshot-chart";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
@@ -37,14 +51,23 @@ function formatPhone(phone: string | null) {
 
 export type ConnectCtaState = "ready" | "searching" | "connected" | "full";
 
+function tierFromBilling(
+  billing: BusinessBillingSidebarContext["businessBilling"],
+): BillingTier {
+  if (!billing) return TIER_STARTER;
+  return billing.tier as BillingTier;
+}
+
 export function BusinessLeftPanel({
   business,
   snapshot,
+  billingContext,
   ctaState = "ready",
   onBusinessUpdated,
 }: {
   business: FetchedBusiness;
   snapshot: BusinessReviewSnapshot;
+  billingContext: BusinessBillingSidebarContext;
   ctaState?: ConnectCtaState;
   onBusinessUpdated?: () => void;
 }) {
@@ -52,9 +75,20 @@ export function BusinessLeftPanel({
   const ordered = sortPlatformsBySpec(platformList);
   const cover = business.cover_image_url;
 
-  const slotsUsed = 2;
-  const slotsTotal = 5;
-  const progressPct = (slotsUsed / slotsTotal) * 100;
+  const { businessBilling, subscriptionPeriodEnd, slotsUsed } = billingContext;
+  const slotsTotal =
+    businessBilling?.slot_limit ?? TIER_SLOT_LIMIT[TIER_STARTER];
+  const progressPct =
+    slotsTotal > 0 ? Math.min(100, (slotsUsed / slotsTotal) * 100) : 0;
+  const nextRenewalLabel = subscriptionPeriodEnd
+    ? new Date(subscriptionPeriodEnd).toLocaleDateString(undefined, {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
+  const currentTier = tierFromBilling(businessBilling);
+  const atMaxTier = currentTier === TIER_MOMENTUM;
 
   const ctaLabel =
     ctaState === "searching"
@@ -163,48 +197,92 @@ export function BusinessLeftPanel({
         {ctaLabel}
       </Button>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <Progress value={progressPct} className="h-2 flex-1" />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground hover:text-foreground"
-                  aria-label="About connection capacity"
-                >
-                  <Info className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs" side="left">
-                Each slot allows 1 active review exchange at a time. Upgrade for
-                higher throughput.
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-muted-foreground">
-            {slotsUsed}/{slotsTotal} available connections
-          </span>
-          <button
-            type="button"
-            className="text-xs font-medium text-primary underline underline-offset-2 hover:text-primary/90"
-            onClick={() => setCapacityOpen(true)}
-          >
-            Upgrade
-          </button>
-          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
-            Ready
-          </span>
+      <div className="animate-in relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/[0.09] via-card/80 to-violet-500/[0.07] p-3 shadow-sm ring-1 ring-primary/10 dark:border-primary/25 dark:from-primary/[0.12] dark:via-card/60 dark:to-violet-500/10 dark:ring-primary/15">
+        <div
+          className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-gradient-to-br from-amber-400/25 to-primary/20 blur-2xl dark:from-amber-400/15"
+          aria-hidden
+        />
+        <div className="relative space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary/90">
+              Connection capacity
+            </p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-background/80 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/30 hover:text-foreground"
+                    aria-label="About connection capacity"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs" side="left">
+                  Each slot allows 1 active review exchange at a time. Upgrade
+                  for higher throughput.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <Progress
+              value={progressPct}
+              className="h-2.5 flex-1 bg-primary/15 shadow-inner"
+            />
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+              <span className="font-medium tabular-nums text-foreground">
+                {slotsUsed}
+                <span className="font-normal text-muted-foreground">
+                  /{slotsTotal}
+                </span>
+              </span>
+              <span className="text-muted-foreground">active connections</span>
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                Ready
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCapacityOpen(true)}
+              className={cn(
+                "group relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden rounded-full px-3.5 py-2 text-xs font-semibold shadow-md transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                atMaxTier
+                  ? "border border-primary/25 bg-background/90 text-primary hover:border-primary/40 hover:bg-muted/80 dark:bg-background/50"
+                  : "bg-gradient-to-r from-sky-600 via-primary to-cyan-600 text-primary-foreground shadow-primary/25 hover:scale-[1.03] hover:shadow-lg hover:brightness-110 active:scale-[0.98] dark:from-sky-500 dark:via-primary dark:to-cyan-500",
+              )}
+            >
+              {!atMaxTier ? (
+                <span
+                  className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+                  aria-hidden
+                />
+              ) : null}
+              {atMaxTier ? (
+                <Zap className="relative h-3.5 w-3.5" aria-hidden />
+              ) : (
+                <Sparkles
+                  className="relative h-3.5 w-3.5 animate-sparkle-nudge"
+                  aria-hidden
+                />
+              )}
+              <span className="relative">
+                {atMaxTier ? "Your plan" : "Upgrade"}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <CapacityUpgradeDialog
+      <ManageSubscriptionDialog
         open={capacityOpen}
         onOpenChange={setCapacityOpen}
+        businessId={business.id}
         businessName={business.business_name}
+        currentTier={currentTier}
+        nextRenewalLabel={nextRenewalLabel}
       />
       <EditBusinessProfileDialog
         open={editOpen}

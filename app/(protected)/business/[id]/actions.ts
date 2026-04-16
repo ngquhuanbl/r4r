@@ -1,5 +1,6 @@
 "use server";
 
+import { countActiveConnectionsForBusiness } from "@/lib/billing/check-slots";
 import { createClient } from "@/lib/supabase/server";
 import { ReviewStatusNames } from "@/constants/shared";
 import type { FetchedBusiness } from "@/types/dashboard";
@@ -180,5 +181,38 @@ export async function fetchBusinessReviewSnapshot(
         other: Math.max(0, to - gv - gr),
       },
     },
+  };
+}
+
+export type BusinessBillingSidebarContext = {
+  businessBilling: Tables<"business_billing"> | null;
+  subscriptionPeriodEnd: string | null;
+  slotsUsed: number;
+};
+
+/** Billing row, renewal date, and active connection count for the workspace sidebar. */
+export async function fetchBusinessBillingContext(
+  userId: UserId,
+  businessId: Tables<"businesses">["id"],
+): Promise<BusinessBillingSidebarContext> {
+  const supabase = createClient();
+  const [{ data: bb }, { data: ub }, slotsUsed] = await Promise.all([
+    supabase
+      .from("business_billing")
+      .select("*")
+      .eq("business_id", businessId)
+      .maybeSingle(),
+    supabase
+      .from("user_billing")
+      .select("subscription_current_period_end")
+      .eq("user_id", userId)
+      .maybeSingle(),
+    countActiveConnectionsForBusiness(supabase, businessId),
+  ]);
+
+  return {
+    businessBilling: bb,
+    subscriptionPeriodEnd: ub?.subscription_current_period_end ?? null,
+    slotsUsed,
   };
 }

@@ -10,6 +10,7 @@ import {
   createBillingPortalSession,
   type BillingInvoiceRow,
 } from "@/app/(protected)/billing/actions";
+import { stripeErrorToUserMessage } from "@/lib/billing/stripe-errors";
 import {
   TIER_LABELS,
   TIER_MONTHLY_USD,
@@ -81,10 +82,16 @@ export function BillingPageClient({
     try {
       const res = await createBillingPortalSession();
       if (!res.ok) {
-        toast.error(res.error);
+        toast.error("Could not open payment settings", {
+          description: res.error,
+        });
         return;
       }
       window.location.href = res.url;
+    } catch (e) {
+      toast.error("Could not open payment settings", {
+        description: stripeErrorToUserMessage(e),
+      });
     } finally {
       setPortalLoading(false);
     }
