@@ -67,9 +67,14 @@ export async function Header({ user }: HeaderProps) {
             </Link>
           </DropdownMenuItem>
           {billingEnabled ? (
-            <DropdownMenuItem disabled className="opacity-60">
-              <CreditCardIcon />
-              Billing
+            <DropdownMenuItem asChild>
+              <Link
+                href={Paths.BILLING}
+                className="flex cursor-pointer items-center gap-2"
+              >
+                <CreditCardIcon />
+                Billing
+              </Link>
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuGroup>

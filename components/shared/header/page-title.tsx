@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 
 const EXTRA_TITLES: { href: string; name: string }[] = [
   { href: Paths.ACCOUNT, name: "Account" },
+  { href: Paths.BILLING, name: "Billing" },
 ];
 
 export const PageTitle = () => {

@@ -104,6 +104,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      business_billing: {
+        Row: {
+          business_id: number;
+          cancel_at_period_end: boolean;
+          current_period_end: string | null;
+          slot_limit: number;
+          stripe_subscription_item_id: string | null;
+          tier: number;
+          updated_at: string;
+        };
+        Insert: {
+          business_id: number;
+          cancel_at_period_end?: boolean;
+          current_period_end?: string | null;
+          slot_limit?: number;
+          stripe_subscription_item_id?: string | null;
+          tier?: number;
+          updated_at?: string;
+        };
+        Update: {
+          business_id?: number;
+          cancel_at_period_end?: boolean;
+          current_period_end?: string | null;
+          slot_limit?: number;
+          stripe_subscription_item_id?: string | null;
+          tier?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "business_billing_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: true;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       invitation_statuses: {
         Row: {
           description: string;
@@ -292,6 +330,30 @@ export type Database = {
         Update: {
           notify_new_connection?: boolean;
           notify_weekly_summary?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      user_billing: {
+        Row: {
+          stripe_customer_id: string;
+          stripe_subscription_id: string | null;
+          subscription_current_period_end: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          stripe_customer_id: string;
+          stripe_subscription_id?: string | null;
+          subscription_current_period_end?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          stripe_customer_id?: string;
+          stripe_subscription_id?: string | null;
+          subscription_current_period_end?: string | null;
           updated_at?: string;
           user_id?: string;
         };

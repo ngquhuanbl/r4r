@@ -4,6 +4,7 @@ export enum Paths {
   DASHBOARD = "/dashboard",
   MY_BUSINESSES = "/my-businesses", // V1
   ACCOUNT = "/account",
+  BILLING = "/billing",
   FORGOT_PWD = "/forgot-password",
   NEW_PWD = "/new-password",
   ADMIN = "/admin",

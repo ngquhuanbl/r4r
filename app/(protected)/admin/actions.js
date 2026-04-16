@@ -99,6 +99,15 @@ export async function createBusinessConnection(inviterBusinessId, inviteeBusines
   const inviter = businesses.find(b => b.id === parseInt(inviterBusinessId));
   const invitee = businesses.find(b => b.id === parseInt(inviteeBusinessId));
 
+  const { assertBusinessHasAvailableSlot } = await import('@/lib/billing/check-slots');
+  const slotCheck = await assertBusinessHasAvailableSlot(
+    supabase,
+    typeof inviterBusinessId === 'number' ? inviterBusinessId : parseInt(String(inviterBusinessId), 10),
+  );
+  if (!slotCheck.ok) {
+    return { success: false, error: slotCheck.error };
+  }
+
   if (!inviter || !invitee) {
     return { success: false, error: 'One or both businesses not found' };
   }
