@@ -1,28 +1,21 @@
+import type { BusinessActionCounts } from "@/app/(protected)/dashboard/actions";
 import { FetchedBusiness } from "@/types/dashboard";
 import { getAddress } from "@/utils/shared";
 
 import type { DashboardLocation } from "./types";
 
-/** Placeholder stats until dashboard metrics are wired to the API */
 export function mapBusinessToLocation(
   b: FetchedBusiness,
-  index: number,
+  counts: BusinessActionCounts,
 ): DashboardLocation {
-  const ready = index % 3 !== 1;
   return {
     id: String(b.id),
     name: b.business_name,
-    status: ready ? "ready" : "full",
+    status: "ready",
     address: getAddress(b),
     imageSrc: b.cover_image_url,
     imageAlt: b.business_name ? `${b.business_name} storefront` : "",
-    left:
-      index % 2 === 0
-        ? { icon: "down", label: "3 to verify" }
-        : { icon: "up", label: "1 to submit" },
-    right:
-      index % 2 === 0
-        ? { icon: "up", label: "1 to submit" }
-        : { icon: "down", label: "3 to verify" },
+    left: { count: counts.incomingAction },
+    right: { count: counts.outgoingAction },
   };
 }

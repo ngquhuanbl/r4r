@@ -144,7 +144,7 @@ export function BusinessReviewsWorkspace({
       statusFilter === REVIEW_STATUS_FILTER_ALL_OPTION.id
         ? undefined
         : (statusFilter as Tables<"review_statuses">["id"]),
-      undefined,
+      businessId,
     );
     if (!res.ok) {
       toast.error("Failed to load outgoing reviews", { description: res.error });
@@ -152,7 +152,7 @@ export function BusinessReviewsWorkspace({
     }
     setOutgoing(res.data.data);
     setOutgoingTotal(res.data.total_results);
-  }, [userId, outgoingPage, statusFilter]);
+  }, [userId, businessId, outgoingPage, statusFilter]);
 
   useEffect(() => {
     if (tab !== "incoming") return;

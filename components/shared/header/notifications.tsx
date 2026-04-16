@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import React, { useCallback, useEffect, useTransition } from "react";
+import React, { useCallback, useEffect, useState, useTransition } from "react";
 import {
   Status,
   reviewRequestsActions,
@@ -20,8 +20,17 @@ import {
   rejectReviewRequest,
 } from "@/app/(protected)/home/actions";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
+import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ReviewRequest } from "@/types/dashboard";
 import { ReviewRequestUtils } from "@/utils/review-request";
 import { UserId } from "@/types/shared";
@@ -35,21 +44,51 @@ function ReviewRequestItem({ data }: ReviewRequestItemProps) {
   const [isAccepting, startAccepting] = useTransition();
   const [isRejecting, startRejecting] = useTransition();
   const dispatch = useAppDispatch();
+  const myBusinesses = useAppSelector(myBusinessesSelectors.selectData);
+  const [inviteeBusinessId, setInviteeBusinessId] = useState<string>("");
+
+  useEffect(() => {
+    if (myBusinesses.length && !inviteeBusinessId) {
+      setInviteeBusinessId(String(myBusinesses[0].id));
+    }
+  }, [myBusinesses, inviteeBusinessId]);
 
   const onAccept = useCallback(() => {
     startAccepting(async () => {
       try {
-        const result = await acceptReviewRequest(data.id);
+        if (myBusinesses.length === 0) {
+          toast.error("Add a business before accepting");
+          return;
+        }
+        const chosen =
+          myBusinesses.length > 1
+            ? Number.parseInt(inviteeBusinessId, 10)
+            : myBusinesses[0].id;
+        if (myBusinesses.length > 1 && Number.isNaN(chosen)) {
+          toast.error("Choose which of your businesses this review is for");
+          return;
+        }
+        const result = await acceptReviewRequest(data.id, chosen);
         if (result.ok) {
           dispatch(reviewRequestsActions.updateStatus(result.data));
         } else {
-          toast.error(`Failed to accept review request`);
+          toast.error("Failed to accept review request", {
+            description:
+              typeof result.error === "string"
+                ? result.error
+                : String(result.error),
+          });
         }
       } catch (e) {
         toast.error(`Failed to accept review request`);
       }
     });
-  }, [data.id, dispatch]);
+  }, [
+    data.id,
+    dispatch,
+    inviteeBusinessId,
+    myBusinesses,
+  ]);
 
   const onReject = useCallback(() => {
     startRejecting(async () => {
@@ -88,6 +127,26 @@ function ReviewRequestItem({ data }: ReviewRequestItemProps) {
       <p className="text-xs mt-1 mb-2">
         {getAddress(data.business)} | {data.business.phone}
       </p>
+      {myBusinesses.length > 1 ? (
+        <div className="mb-2 space-y-1">
+          <Label className="text-xs">Your business for this review</Label>
+          <Select
+            value={inviteeBusinessId}
+            onValueChange={setInviteeBusinessId}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Select business" />
+            </SelectTrigger>
+            <SelectContent>
+              {myBusinesses.map((b) => (
+                <SelectItem key={b.id} value={String(b.id)}>
+                  {b.business_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      ) : null}
       <div className="flex gap-2">
         <Button onClick={onAccept} disabled={isLoading}>
           {isAccepting && <Loader2Icon className="animate-spin" />}

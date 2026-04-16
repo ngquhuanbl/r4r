@@ -83,7 +83,7 @@ export async function fetchIncomingReviews(
 				),
 				created_at,
 				invitation:review_invitations!inner (
-					business:businesses!inner (
+					business:businesses!review_invitations_business_id_fkey (
 						id,
 						business_name
 					),
@@ -126,7 +126,7 @@ export async function fetchIncomingReviews(
 						name
 					),
 					invitation:review_invitations!inner (
-						business:businesses!inner (
+						business:businesses!review_invitations_business_id_fkey (
 							id
 						),
 						inviter_id
@@ -366,8 +366,11 @@ export async function fetchOutgoingReviews(
   page: number,
   pageSize: number,
   reviewStatusId?: Tables<"review_statuses">["id"],
-  /** Reserved: `review_invitations.business_id` is the inviter’s business; outgoing rows (invitee=user) cannot be scoped to an owned business without schema changes. */
-  _businessId?: Tables<"businesses">["id"],
+  /**
+   * When set, only outgoing reviews whose invitation is attributed to this owned business
+   * (`review_invitations.invitee_business_id`). Omit for account-wide lists (e.g. /home).
+   */
+  inviteeOwnedBusinessId?: Tables<"businesses">["id"],
 ): Promise<APIResponse<FetchedReviewsResponse<OutgoingReview>>> {
   const supabase = createClient();
 
@@ -386,7 +389,7 @@ export async function fetchOutgoingReviews(
 				),
 				created_at,
 				invitation:review_invitations!inner (
-					business:businesses!inner (
+					business:businesses!review_invitations_business_id_fkey (
 						id,
 						business_name,
 						address,
@@ -408,7 +411,12 @@ export async function fetchOutgoingReviews(
       )
       .eq("invitation.invitee_id", userId);
 
-    void _businessId;
+    if (inviteeOwnedBusinessId !== undefined) {
+      query = query.eq(
+        "invitation.invitee_business_id",
+        inviteeOwnedBusinessId,
+      );
+    }
 
     // Filter by review status
     if (reviewStatusId !== undefined) {
@@ -434,7 +442,7 @@ export async function fetchOutgoingReviews(
 						name
 					),
 					invitation:review_invitations!inner (
-						business:businesses!inner (
+						business:businesses!review_invitations_business_id_fkey (
 							id
 						),
 						inviter_id
@@ -444,7 +452,12 @@ export async function fetchOutgoingReviews(
       )
       .eq("invitation.invitee_id", userId);
 
-    void _businessId;
+    if (inviteeOwnedBusinessId !== undefined) {
+      query = query.eq(
+        "invitation.invitee_business_id",
+        inviteeOwnedBusinessId,
+      );
+    }
 
     if (reviewStatusId !== undefined) {
       query = query.eq("status.id", reviewStatusId);
@@ -539,10 +552,77 @@ export async function submitOutgoingReview(
   };
 }
 
+type ServerClient = ReturnType<typeof createClient>;
+
+async function resolveInviteeBusinessIdForAccept(
+  supabase: ServerClient,
+  invitationId: Tables<"review_invitations">["id"],
+  inviteeBusinessId: Tables<"businesses">["id"] | undefined,
+): Promise<
+  | { ok: true; businessId: Tables<"businesses">["id"] }
+  | { ok: false; error: string }
+> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, error: "Not authenticated" };
+  }
+
+  const { data: inv, error: invErr } = await supabase
+    .from("review_invitations")
+    .select("id, invitee_id")
+    .eq("id", invitationId)
+    .maybeSingle();
+
+  if (invErr || !inv) {
+    return { ok: false, error: invErr?.message ?? "Invitation not found" };
+  }
+  if (inv.invitee_id !== user.id) {
+    return { ok: false, error: "Forbidden" };
+  }
+
+  const { data: owned } = await supabase
+    .from("businesses")
+    .select("id")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true });
+
+  const ids = (owned ?? []).map((b) => b.id);
+
+  if (inviteeBusinessId !== undefined) {
+    if (!ids.includes(inviteeBusinessId)) {
+      return { ok: false, error: "Choose one of your businesses" };
+    }
+    return { ok: true, businessId: inviteeBusinessId };
+  }
+
+  if (ids.length === 0) {
+    return { ok: false, error: "Add a business before accepting" };
+  }
+  if (ids.length === 1) {
+    return { ok: true, businessId: ids[0]! };
+  }
+  return {
+    ok: false,
+    error: "Choose which of your businesses this review is for",
+  };
+}
+
 export async function acceptReviewRequest(
-  invitationId: Tables<"review_invitations">["id"]
+  invitationId: Tables<"review_invitations">["id"],
+  inviteeBusinessId?: Tables<"businesses">["id"],
 ): Promise<APIResponse<UpdatedReviewRequestsStatus>> {
   const supabase = createClient();
+
+  const resolved = await resolveInviteeBusinessIdForAccept(
+    supabase,
+    invitationId,
+    inviteeBusinessId,
+  );
+  if (!resolved.ok) {
+    return { ok: false, error: resolved.error };
+  }
 
   // Get the ACCEPTED status ID
   const { data: acceptedStatus, error: statusError } = await supabase
@@ -556,10 +636,13 @@ export async function acceptReviewRequest(
     return { ok: false, error: statusError };
   }
 
-  // Update the invitation status
+  // Update the invitation status and invitee-owned business context
   const { data, error } = await supabase
     .from("review_invitations")
-    .update({ status_id: acceptedStatus.id })
+    .update({
+      status_id: acceptedStatus.id,
+      invitee_business_id: resolved.businessId,
+    })
     .eq("id", invitationId)
     .select();
 
@@ -583,6 +666,7 @@ export async function acceptReviewRequest(
   }
 
   revalidatePath(Paths.DASHBOARD);
+  revalidatePath(businessPath(resolved.businessId));
   return {
     ok: true,
     data: {
@@ -665,7 +749,7 @@ export async function fetchPendingReviewRequests(
       `
       id,
       message,
-      business:businesses!inner (
+      business:businesses!review_invitations_business_id_fkey (
         id,
         business_name,
         address,
@@ -927,9 +1011,19 @@ export async function fetchPendingReviews(userId: UserId) {
 
 // Accept an invitation
 export async function acceptInvitation(
-  invitationId: Tables<"review_invitations">["id"]
+  invitationId: Tables<"review_invitations">["id"],
+  inviteeBusinessId?: Tables<"businesses">["id"],
 ) {
   const supabase = createClient();
+
+  const resolved = await resolveInviteeBusinessIdForAccept(
+    supabase,
+    invitationId,
+    inviteeBusinessId,
+  );
+  if (!resolved.ok) {
+    return { success: false, error: resolved.error };
+  }
 
   // Get the ACCEPTED status ID
   const { data: acceptedStatus, error: statusError } = await supabase
@@ -946,7 +1040,10 @@ export async function acceptInvitation(
   // Update the invitation status
   const { data, error } = await supabase
     .from("review_invitations")
-    .update({ status_id: acceptedStatus.id })
+    .update({
+      status_id: acceptedStatus.id,
+      invitee_business_id: resolved.businessId,
+    })
     .eq("id", invitationId)
     .select();
 
@@ -970,6 +1067,7 @@ export async function acceptInvitation(
   }
 
   revalidatePath(Paths.DASHBOARD);
+  revalidatePath(businessPath(resolved.businessId));
   return { success: true, data };
 }
 

@@ -1,7 +1,6 @@
 export type LocationStatus = "ready" | "full";
 
-export type StatIcon = "up" | "down";
-
+/** Left column: incoming reviews needing verify (SUBMITTED). Right: outgoing needing submit (DRAFT), per owned business when `invitee_business_id` is set. */
 export type DashboardLocation = {
   id: string;
   name: string;
@@ -9,6 +8,6 @@ export type DashboardLocation = {
   address: string;
   imageSrc: string | null;
   imageAlt: string;
-  left: { icon: StatIcon; label: string };
-  right: { icon: StatIcon; label: string };
+  left: { count: number };
+  right: { count: number };
 };

@@ -189,6 +189,7 @@ export type Database = {
           business_id: number;
           created_at: string;
           id: number;
+          invitee_business_id: number | null;
           invitee_id: string;
           inviter_id: string;
           message: string | null;
@@ -200,6 +201,7 @@ export type Database = {
           business_id: number;
           created_at?: string;
           id?: number;
+          invitee_business_id?: number | null;
           invitee_id: string;
           inviter_id: string;
           message?: string | null;
@@ -211,6 +213,7 @@ export type Database = {
           business_id?: number;
           created_at?: string;
           id?: number;
+          invitee_business_id?: number | null;
           invitee_id?: string;
           inviter_id?: string;
           message?: string | null;
@@ -222,6 +225,13 @@ export type Database = {
           {
             foreignKeyName: "review_invitations_business_id_fkey";
             columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "review_invitations_invitee_business_id_fkey";
+            columns: ["invitee_business_id"];
             isOneToOne: false;
             referencedRelation: "businesses";
             referencedColumns: ["id"];

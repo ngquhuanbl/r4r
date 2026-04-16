@@ -150,6 +150,7 @@ export async function createBusinessConnection(inviterBusinessId, inviteeBusines
           platform_id: platform.platform_id,
           inviter_id: inviter.user_id,
           invitee_id: invitee.user_id,
+          invitee_business_id: inviteeBusinessId,
           status_id: pendingStatus.id,
           message: message || '',
         });
