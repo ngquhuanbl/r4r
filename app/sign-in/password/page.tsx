@@ -30,7 +30,7 @@ export default function SignInWithPasswordPage() {
           href={Paths.LOGIN}
           className="text-sm text-primary underline-offset-4 hover:underline"
         >
-          Back to log in
+          Sign in without password
         </Link>
       </div>
     </div>

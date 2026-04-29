@@ -51,9 +51,9 @@ export default function SignInForm() {
   return (
     <form
       action={onSubmit}
-      className="flex flex-col gap-4 items-center sm:items-start w-full"
+      className="flex flex-col gap-4 items-center w-full"
     >
-      <div className="w-full">
+      <div className="w-full flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
           placeholder="Enter your email"
@@ -65,7 +65,7 @@ export default function SignInForm() {
           autoComplete="email"
         />
       </div>
-      <div className="w-full">
+      <div className="w-full flex flex-col gap-2">
         <Label htmlFor="pwd">Password</Label>
         <Input
           type="password"
@@ -82,7 +82,7 @@ export default function SignInForm() {
       >
         Forgot your password?
       </Link>
-      <Button className="mt-4 bg-primary w-full sm:w-max" disabled={isPending}>
+      <Button className="mt-2 bg-primary w-full" disabled={isPending}>
         {isPending && <Loader2Icon className="animate-spin" />}
         Sign in
       </Button>

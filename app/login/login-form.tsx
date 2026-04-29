@@ -38,22 +38,8 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-function MicrosoftIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 23 23" aria-hidden>
-      <path fill="#f25022" d="M1 1h10v10H1z" />
-      <path fill="#00a4ef" d="M12 1h10v10H12z" />
-      <path fill="#7fba00" d="M1 12h10v10H1z" />
-      <path fill="#ffb900" d="M12 12h10v10H12z" />
-    </svg>
-  );
-}
-
 const oauthBtnClass =
   "flex w-full items-center justify-center gap-3 rounded-md border border-neutral-300 bg-white py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-neutral-50 dark:border-border dark:bg-card dark:hover:bg-muted";
-
-/** Set to true once Azure OAuth is configured in Supabase. */
-const MICROSOFT_LOGIN_ENABLED = false;
 
 export function LoginForm() {
   const [view, setView] = useState<"form" | "checkEmail">("form");
@@ -61,7 +47,7 @@ export function LoginForm() {
   const [pending, startTransition] = useTransition();
   const [oauthPending, setOauthPending] = useState<string | null>(null);
 
-  const onOAuth = (provider: "google" | "azure") => {
+  const onOAuth = (provider: "google") => {
     setOauthPending(provider);
     startTransition(async () => {
       const res = await signInWithOAuthProvider(provider);
@@ -151,35 +137,6 @@ export function LoginForm() {
           )}
           Continue with Google
         </button>
-        {MICROSOFT_LOGIN_ENABLED ? (
-          <button
-            type="button"
-            className={oauthBtnClass}
-            disabled={!!oauthPending || pending}
-            onClick={() => onOAuth("azure")}
-          >
-            {oauthPending === "azure" ? (
-              <Loader2Icon className="h-5 w-5 animate-spin" />
-            ) : (
-              <MicrosoftIcon className="h-5 w-5" />
-            )}
-            Continue with Microsoft
-          </button>
-        ) : (
-          <div className="flex flex-col gap-1.5">
-            <div
-              className={`${oauthBtnClass} cursor-not-allowed opacity-60 dark:opacity-50`}
-              aria-disabled
-            >
-              <MicrosoftIcon className="h-5 w-5 opacity-80" />
-              Continue with Microsoft
-            </div>
-            <p className="text-center text-xs text-muted-foreground">
-              Microsoft sign-in isn&apos;t available yet—we&apos;re finishing Azure
-              setup.
-            </p>
-          </div>
-        )}
       </div>
 
       <div className="relative my-6">
