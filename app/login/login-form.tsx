@@ -71,8 +71,17 @@ export function LoginForm() {
         });
         return;
       }
+      toast.success("Magic link sent", {
+        description: `Check ${email.trim()} for your secure login link.`,
+      });
       setView("checkEmail");
     });
+  };
+
+  const onMagicLinkSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (pending || !email.trim()) return;
+    onMagicLink();
   };
 
   if (view === "checkEmail") {
@@ -148,7 +157,7 @@ export function LoginForm() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={onMagicLinkSubmit}>
         <div className="space-y-2">
           <Label htmlFor="login-email">Email address</Label>
           <Input
@@ -160,13 +169,13 @@ export function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
             disabled={pending}
+            required
           />
         </div>
         <Button
-          type="button"
+          type="submit"
           className="w-full"
           disabled={pending || !email.trim()}
-          onClick={() => void onMagicLink()}
         >
           {pending && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
           Continue with Email
@@ -174,7 +183,7 @@ export function LoginForm() {
         <p className="text-center text-xs text-muted-foreground">
           We&apos;ll send a magic link to your inbox for a passwordless sign-in.
         </p>
-      </div>
+      </form>
 
       <p className="mt-6 text-center text-xs text-muted-foreground">
         By continuing, you agree to our{" "}

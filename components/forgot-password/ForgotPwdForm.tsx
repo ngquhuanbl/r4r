@@ -52,7 +52,7 @@ export function ForgotPwdForm() {
         type="email"
         required
         name="email"
-        className="md:w-[30vh]"
+        className="md:w-[20vw]"
         placeholder="Please enter your email"
       />
       <Button type="submit" disabled={isLoading}>

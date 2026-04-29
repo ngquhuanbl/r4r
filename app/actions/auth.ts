@@ -6,6 +6,42 @@ import { Paths } from "@/constants/paths";
 import { createClient } from "@/lib/supabase/server";
 import { APIResponse } from "@/types/shared";
 
+/** Supabase Auth errors are class instances — must not be returned to Client Components raw. */
+function plainAuthFailure(error: unknown): {
+  message: string;
+  code?: string;
+  status?: number;
+} {
+  if (error && typeof error === "object") {
+    const e = error as {
+      message?: string;
+      status?: number;
+      code?: string;
+      name?: string;
+    };
+    let message =
+      typeof e.message === "string" && e.message.trim().length > 0
+        ? e.message
+        : "Unexpected error";
+
+    if (
+      e.code === "over_email_send_rate_limit" ||
+      message.toLowerCase().includes("rate limit")
+    ) {
+      message =
+        "Too many emails sent. Please wait a few minutes and try again.";
+    }
+
+    return {
+      message,
+      ...(typeof e.code === "string" ? { code: e.code } : {}),
+      ...(typeof e.status === "number" ? { status: e.status } : {}),
+    };
+  }
+
+  return { message: "Unexpected error" };
+}
+
 export async function signIn(formData: FormData) {
   const supabase = createClient();
 
@@ -78,7 +114,7 @@ export const sendResetPwdURL = async (
 
   if (error) {
     console.error(`Failed to send reset pwd url:`, error);
-    return { ok: false, error };
+    return { ok: false, error: plainAuthFailure(error) };
   }
 
   return {
@@ -100,7 +136,7 @@ export const updatePwd = async (
 
   if (error) {
     console.error(`Failed to update password:`, error);
-    return { ok: false, error };
+    return { ok: false, error: plainAuthFailure(error) };
   }
 
   return {

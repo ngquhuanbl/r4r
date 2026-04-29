@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import businessWithReviewIllustration from "@/public/dashboard/business_with_review.png";
+import businessWithReviewIllustrationDark from "@/public/dashboard/business_with_review--dark.png";
+
 import { Plus } from "lucide-react";
 
 import { DASHBOARD_PRIMARY_BUTTON_CLASSNAME } from "./constants";
@@ -11,8 +13,8 @@ import { DASHBOARD_PRIMARY_BUTTON_CLASSNAME } from "./constants";
 export function NoBusinessesEmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div className="my-auto w-full min-w-0 self-stretch font-inter">
-      <div className="flex flex-col items-start">
-        <div className="flex flex-col gap-3">
+      <div className="flex flex-col items-center">
+        <div className="flex flex-col gap-3 text-center">
           <h2 className="text-4xl font-normal tracking-tight text-foreground sm:text-5xl">
             Start by adding your first business
           </h2>
@@ -20,16 +22,6 @@ export function NoBusinessesEmptyState({ onAdd }: { onAdd: () => void }) {
             Connect with other businesses and grow your reputation through
             verified reviews.
           </p>
-        </div>
-        <div className="relative aspect-[16/9] w-full max-w-lg">
-          <Image
-            src={businessWithReviewIllustration}
-            alt=""
-            fill
-            className="object-contain object-center"
-            sizes="(max-width: 768px) 100vw, 448px"
-            priority
-          />
         </div>
         <Button
           type="button"
@@ -42,6 +34,24 @@ export function NoBusinessesEmptyState({ onAdd }: { onAdd: () => void }) {
           <Plus className="h-4 w-4" aria-hidden />
           Add Your First Business
         </Button>
+        <div className="relative aspect-[16/9] w-full max-w-lg mt-3">
+          <Image
+            src={businessWithReviewIllustration}
+            alt=""
+            fill
+            className="object-contain object-center dark:hidden"
+            sizes="(max-width: 768px) 100vw, 448px"
+            priority
+          />
+          <Image
+            src={businessWithReviewIllustrationDark}
+            alt=""
+            fill
+            className="hidden object-contain object-center dark:block"
+            sizes="(max-width: 768px) 100vw, 448px"
+            priority
+          />
+        </div>
       </div>
     </div>
   );

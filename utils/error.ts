@@ -4,7 +4,11 @@ export namespace ErrorUtils {
   }
   export function serializeError(e: any) {
     if (typeof e === "string") return e;
-    if (typeof e === "object") return e.message || "Unexpected error";
+    if (e && typeof e === "object") {
+      if (typeof e.message === "string" && e.message.trim().length > 0) {
+        return e.message;
+      }
+    }
     return "Unexpected error";
   }
 }
