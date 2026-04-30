@@ -42,15 +42,54 @@ export function getDisplayName(user: User): string {
   return "User";
 }
 
-/** Resolved avatar URL for UI (custom upload or OAuth picture). */
+function firstNonEmptyString(
+  obj: Record<string, unknown> | undefined,
+  keys: string[],
+): string | undefined {
+  if (!obj) return undefined;
+  for (const key of keys) {
+    const v = obj[key];
+    if (typeof v === "string" && v.trim().length > 0) {
+      return v.trim();
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Resolved avatar URL for UI (custom upload or OAuth picture).
+ * Custom `avatar_url` in metadata wins. Google/Microsoft often put the photo only on
+ * `identities[].identity_data` until merged into `user_metadata`; we read both.
+ */
 export function getAvatarUrl(user: User): string | undefined {
   const m = user.user_metadata as Record<string, unknown> | undefined;
-  if (m?.avatar_url && typeof m.avatar_url === "string" && m.avatar_url.length > 0) {
-    return m.avatar_url;
+  const fromMeta = firstNonEmptyString(m, [
+    "avatar_url",
+    "picture",
+    "picture_url",
+    "photo_url",
+  ]);
+  if (fromMeta) return fromMeta;
+
+  for (const identity of user.identities ?? []) {
+    let data = identity.identity_data as
+      | Record<string, unknown>
+      | string
+      | undefined;
+    if (typeof data === "string") {
+      try {
+        data = JSON.parse(data) as Record<string, unknown>;
+      } catch {
+        data = undefined;
+      }
+    }
+    const fromIdentity = firstNonEmptyString(
+      data && typeof data === "object" ? data : undefined,
+      ["avatar_url", "picture", "picture_url", "photo_url"],
+    );
+    if (fromIdentity) return fromIdentity;
   }
-  if (m?.picture && typeof m.picture === "string" && m.picture.length > 0) {
-    return m.picture;
-  }
+
   return undefined;
 }
 

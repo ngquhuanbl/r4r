@@ -2,12 +2,12 @@ import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 
 import Logo from "@/components/shared/logo";
-import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
+// import { ONBOARDING_STEP_IDS } from "@/constants/dashboard/ui";
 import { getAvatarUrl, getDisplayName } from "@/lib/account/profile";
 
 import { BusinessHeaderSwitcher } from "./business-header-switcher";
 import { HamburgerMenu } from "./hamburger-menu";
-import { Notifications } from "./notifications";
+// import { Notifications } from "./notifications";
 import { PageTitle } from "./page-title";
 import { ProfileMenu } from "./profile-menu";
 import { Theme } from "./theme";
@@ -44,9 +44,9 @@ export async function Header({ user }: HeaderProps) {
               <li>
                 <Theme />
               </li>
-              <li id={ONBOARDING_STEP_IDS.NOTIFICATIONS}>
+              {/* <li id={ONBOARDING_STEP_IDS.NOTIFICATIONS}>
                 <Notifications userId={user.id} />
-              </li>
+              </li> */}
               <li>
                 <ProfileMenu
                   imageURL={imageURL}
