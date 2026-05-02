@@ -145,10 +145,8 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
               >
                 <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
               </span>
-            ) : location.status === "ready" ? (
-              <ConnectionStatusBadge status="ready" />
             ) : (
-              <ConnectionStatusBadge status="full" />
+              <ConnectionStatusBadge status={location.status} />
             )}
           </div>
           <div className="flex items-center gap-2 text-base text-muted-foreground">
