@@ -185,6 +185,11 @@ export function CreateBusinessDialog({
           const result = await createBusiness(userId, formData);
           if (result.ok) {
             toast.success("Business created successfully");
+            if (result.coverPhotoWarning) {
+              toast.warning("Storefront photo not saved", {
+                description: result.coverPhotoWarning,
+              });
+            }
             onOpenChange(false);
             onCreatedData?.(result.data);
           } else {

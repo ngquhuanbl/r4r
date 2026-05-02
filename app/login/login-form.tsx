@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Paths } from "@/constants/paths";
+import { cn } from "@/lib/utils";
 import { ErrorUtils } from "@/utils/error";
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -44,14 +45,15 @@ const oauthBtnClass =
 export function LoginForm() {
   const [view, setView] = useState<"form" | "checkEmail">("form");
   const [email, setEmail] = useState("");
-  const [pending, startTransition] = useTransition();
-  const [oauthPending, setOauthPending] = useState<string | null>(null);
+  const [magicLinkPending, startMagicLinkTransition] = useTransition();
+  const [oauthPending, startOAuthTransition] = useTransition();
+
+  /** True while either sign-in path is in flight — disable the other controls. */
+  const authBusy = magicLinkPending || oauthPending;
 
   const onOAuth = (provider: "google") => {
-    setOauthPending(provider);
-    startTransition(async () => {
+    startOAuthTransition(async () => {
       const res = await signInWithOAuthProvider(provider);
-      setOauthPending(null);
       if (!res.ok) {
         toast.error("Could not start sign-in", {
           description: ErrorUtils.serializeError(res.error),
@@ -63,7 +65,7 @@ export function LoginForm() {
   };
 
   const onMagicLink = () => {
-    startTransition(async () => {
+    startMagicLinkTransition(async () => {
       const res = await sendMagicLink(email);
       if (!res.ok) {
         toast.error("Could not send link", {
@@ -80,7 +82,7 @@ export function LoginForm() {
 
   const onMagicLinkSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (pending || !email.trim()) return;
+    if (authBusy || !email.trim()) return;
     onMagicLink();
   };
 
@@ -105,9 +107,9 @@ export function LoginForm() {
             type="button"
             className="text-sm text-primary underline-offset-4 hover:underline"
             onClick={() => void onMagicLink()}
-            disabled={pending}
+            disabled={authBusy}
           >
-            {pending ? (
+            {magicLinkPending ? (
               <span className="inline-flex items-center gap-2">
                 <Loader2Icon className="h-4 w-4 animate-spin" />
                 Sending…
@@ -136,10 +138,10 @@ export function LoginForm() {
         <button
           type="button"
           className={oauthBtnClass}
-          disabled={!!oauthPending || pending}
+          disabled={authBusy}
           onClick={() => onOAuth("google")}
         >
-          {oauthPending === "google" ? (
+          {oauthPending ? (
             <Loader2Icon className="h-5 w-5 animate-spin" />
           ) : (
             <GoogleIcon className="h-5 w-5" />
@@ -168,16 +170,18 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
-            disabled={pending}
+            disabled={authBusy}
             required
           />
         </div>
         <Button
           type="submit"
           className="w-full"
-          disabled={pending || !email.trim()}
+          disabled={authBusy || !email.trim()}
         >
-          {pending && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+          {magicLinkPending && (
+            <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+          )}
           Continue with Email
         </Button>
         <p className="text-center text-xs text-muted-foreground">
@@ -200,7 +204,12 @@ export function LoginForm() {
       <p className="mt-4 text-center text-sm">
         <Link
           href={`${Paths.SIGN_IN}/password`}
-          className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          tabIndex={authBusy ? -1 : undefined}
+          aria-disabled={authBusy}
+          className={cn(
+            "text-muted-foreground underline-offset-4 hover:text-foreground hover:underline",
+            authBusy && "pointer-events-none opacity-50",
+          )}
         >
           Sign in with password
         </Link>

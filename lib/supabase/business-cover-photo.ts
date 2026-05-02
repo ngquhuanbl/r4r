@@ -1,10 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database";
+import { validateBusinessCoverImageFile } from "@/lib/validation/business-cover-image";
 
 const BUCKET = "business-photos";
-const MAX_BYTES = 5 * 1024 * 1024;
-const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function extensionForMime(type: string): string {
   if (type === "image/png") return "png";
@@ -22,14 +21,9 @@ export async function uploadBusinessCoverPhoto(
 ): Promise<{ ok: true; publicUrl: string } | { ok: false; message: string }> {
   const { userId, businessId, file } = params;
 
-  if (!ALLOWED.has(file.type)) {
-    return {
-      ok: false,
-      message: "Image must be JPEG, PNG, or WebP.",
-    };
-  }
-  if (file.size > MAX_BYTES) {
-    return { ok: false, message: "Image must be 5MB or smaller." };
+  const validated = validateBusinessCoverImageFile(file);
+  if (!validated.ok) {
+    return { ok: false, message: validated.message };
   }
 
   const ext = extensionForMime(file.type);

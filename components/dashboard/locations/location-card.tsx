@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Loader2Icon } from "lucide-react";
@@ -9,12 +11,65 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { businessPath } from "@/constants/paths";
+import { cn } from "@/lib/utils";
 
 import fallbackBusinessAvatarSrc from "@/public/dashboard/fallback_business_avatar.png";
 import fallbackBusinessAvatarDarkSrc from "@/public/dashboard/fallback_business_avatar--dark.png";
 
 import type { DashboardLocation } from "./types";
+
+function ConnectionStatusBadge({ status }: { status: "ready" | "full" }) {
+  const ready = status === "ready";
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className={cn(
+              "shrink-0 cursor-default rounded-full px-2.5 py-1 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              ready
+                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
+                : "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400",
+            )}
+            tabIndex={0}
+          >
+            {ready ? "Ready" : "Full"}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          className="max-w-[min(15rem,calc(100vw-2rem))] flex-col items-stretch gap-0 px-3 py-2.5 text-left text-xs leading-snug"
+        >
+          <div className="flex flex-col gap-1">
+            <p className="font-semibold leading-tight text-background">
+              {ready ? "Slots available" : "At capacity"}
+            </p>
+            <p className="text-[11px] leading-relaxed text-background/80">
+              {ready ? (
+                <>
+                  You can accept new connections here. Each slot is one live
+                  exchange.
+                </>
+              ) : (
+                <>
+                  Every plan slot is in use. Finish a connection or upgrade to
+                  open more.
+                </>
+              )}
+            </p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 function verifyLabel(n: number) {
   if (n === 0) return "0 to verify";
@@ -91,13 +146,9 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
                 <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
               </span>
             ) : location.status === "ready" ? (
-              <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
-                Ready
-              </span>
+              <ConnectionStatusBadge status="ready" />
             ) : (
-              <span className="shrink-0 rounded-full bg-red-50 px-2.5 py-1 text-sm font-semibold text-red-600 dark:bg-red-950/40 dark:text-red-400">
-                Full
-              </span>
+              <ConnectionStatusBadge status="full" />
             )}
           </div>
           <div className="flex items-center gap-2 text-base text-muted-foreground">
@@ -109,7 +160,7 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
               className="shrink-0 text-muted-foreground"
               fill="currentColor"
             >
-              <path d="M536.5-503.5Q560-527 560-560t-23.5-56.5Q513-640 480-640t-56.5 23.5Q400-593 400-560t23.5 56.5Q447-480 480-480t56.5-23.5ZM480-80Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0-100-79.5-217.5T480-80Z" />
+              <path d="M536.5-503.5Q560-527 560-560t-23.5-56.5Q513-640 480-640t-56.5 23.5Q400-593 400-560t23.5 56.5Q447-480 480-480t56.5-23.5ZM480-80Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z" />
             </svg>
             <span>{location.address}</span>
           </div>

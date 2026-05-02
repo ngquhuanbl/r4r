@@ -12,6 +12,11 @@ import {
 import { FetchedBusiness, PlatformURLs } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { APIResponse, UserId } from "@/types/shared";
+
+/** Create/update business — optional warning when profile saved but cover upload failed. */
+export type BusinessMutationResponse =
+  | { ok: true; data: FetchedBusiness; coverPhotoWarning?: string }
+  | { ok: false; error: unknown };
 import { FieldNames } from "@/utils/my-business";
 
 export async function fetchBusinesses(
@@ -69,7 +74,7 @@ export async function fetchBusinesses(
 export async function updateBusiness(
   businessId: Tables<"businesses">["id"],
   formData: FormData,
-): Promise<APIResponse<FetchedBusiness>> {
+): Promise<BusinessMutationResponse> {
   const supabase = createClient();
 
   const { data: platformsData, error: platformsError } = await supabase
@@ -256,6 +261,7 @@ export async function updateBusiness(
   }
 
   let coverImageUrl: string | null = updateBusinessData.cover_image_url ?? null;
+  let coverPhotoWarning: string | undefined;
   const photoField = formData.get(FieldNames.forBusinessPhoto());
   const {
     data: { user },
@@ -275,9 +281,12 @@ export async function updateBusiness(
         coverImageUrl = uploaded.publicUrl;
       } else {
         console.error("Error saving cover_image_url:", coverUpdateError);
+        coverPhotoWarning =
+          "Photo uploaded but could not be saved to your profile. Try again.";
       }
     } else {
       console.error("Cover photo upload failed:", uploaded.message);
+      coverPhotoWarning = uploaded.message;
     }
   }
 
@@ -290,6 +299,7 @@ export async function updateBusiness(
       cover_image_url: coverImageUrl,
       platform_urls: updatedPlatformURLs,
     },
+    ...(coverPhotoWarning !== undefined ? { coverPhotoWarning } : {}),
   };
 }
 
@@ -329,7 +339,7 @@ export async function deleteBusiness(
 export async function createBusiness(
   userId: UserId,
   formData: FormData,
-): Promise<APIResponse<FetchedBusiness>> {
+): Promise<BusinessMutationResponse> {
   const supabase = createClient();
 
   let platformUrls: PlatformURLs = {};
@@ -410,6 +420,7 @@ export async function createBusiness(
   }
 
   let coverImageUrl: string | null = newBusiness.cover_image_url ?? null;
+  let coverPhotoWarning: string | undefined;
   const photoField = formData.get(FieldNames.forBusinessPhoto());
   if (photoField instanceof File && photoField.size > 0) {
     const uploaded = await uploadBusinessCoverPhoto(supabase, {
@@ -424,11 +435,14 @@ export async function createBusiness(
         .eq("id", newBusiness.id);
       if (coverUpdateError) {
         console.error("Error saving cover_image_url:", coverUpdateError);
+        coverPhotoWarning =
+          "Photo uploaded but could not be saved to your profile. Try again.";
       } else {
         coverImageUrl = uploaded.publicUrl;
       }
     } else {
       console.error("Cover photo upload failed:", uploaded.message);
+      coverPhotoWarning = uploaded.message;
     }
   }
 
@@ -467,5 +481,9 @@ export async function createBusiness(
 
   revalidatePath(Paths.MY_BUSINESSES);
   revalidatePath(Paths.DASHBOARD);
-  return { ok: true, data: createdBusiness };
+  return {
+    ok: true,
+    data: createdBusiness,
+    ...(coverPhotoWarning !== undefined ? { coverPhotoWarning } : {}),
+  };
 }

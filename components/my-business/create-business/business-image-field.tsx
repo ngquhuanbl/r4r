@@ -3,10 +3,15 @@
 import { ImagePlus, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useId, useRef } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import {
+  BUSINESS_COVER_IMAGE_ACCEPT,
+  validateBusinessCoverImageFile,
+} from "@/lib/validation/business-cover-image";
 
 type BusinessImageFieldProps = {
   file: File | null;
@@ -26,12 +31,17 @@ export function BusinessImageField({
   const onPick = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
-      if (!f || !f.type.startsWith("image/")) {
+      e.target.value = "";
+      if (!f) {
+        return;
+      }
+      const validated = validateBusinessCoverImageFile(f);
+      if (!validated.ok) {
+        toast.error("Invalid photo", { description: validated.message });
         onFileChange(null);
         return;
       }
       onFileChange(f);
-      e.target.value = "";
     },
     [onFileChange],
   );
@@ -44,7 +54,13 @@ export function BusinessImageField({
     (e: React.DragEvent) => {
       e.preventDefault();
       const f = e.dataTransfer.files?.[0];
-      if (f?.type.startsWith("image/")) onFileChange(f);
+      if (!f) return;
+      const validated = validateBusinessCoverImageFile(f);
+      if (!validated.ok) {
+        toast.error("Invalid photo", { description: validated.message });
+        return;
+      }
+      onFileChange(f);
     },
     [onFileChange],
   );
@@ -76,7 +92,7 @@ export function BusinessImageField({
           ref={inputRef}
           id={inputId}
           type="file"
-          accept="image/*"
+          accept={BUSINESS_COVER_IMAGE_ACCEPT}
           className="sr-only"
           onChange={onPick}
         />

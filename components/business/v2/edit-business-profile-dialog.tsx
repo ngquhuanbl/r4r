@@ -215,6 +215,11 @@ export function EditBusinessProfileDialog({
           const result = await updateBusiness(data.id, formData);
           if (result.ok) {
             toast.success("Business updated successfully");
+            if (result.coverPhotoWarning) {
+              toast.warning("Storefront photo not saved", {
+                description: result.coverPhotoWarning,
+              });
+            }
             onOpenChange(false);
             onUpdatedData?.(result.data);
           } else {

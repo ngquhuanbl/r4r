@@ -84,6 +84,11 @@ export function ManageBusinessDialog({
         const result = await updateBusiness(data.id, formData);
         if (result.ok) {
           toast.success(`Update business successfully`);
+          if (result.coverPhotoWarning) {
+            toast.warning("Storefront photo not saved", {
+              description: result.coverPhotoWarning,
+            });
+          }
           if (onUpdatedData) {
             onUpdatedData(result.data);
           }
