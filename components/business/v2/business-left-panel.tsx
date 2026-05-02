@@ -196,7 +196,7 @@ export function BusinessLeftPanel({
           {ordered.map((p) => {
             const url = business.platform_urls[p.id];
             if (!url) return null;
-            return <Platform key={p.id} name={p.name} />;
+            return <Platform key={p.id} name={p.name} href={url} />;
           })}
         </div>
 
@@ -252,11 +252,11 @@ export function BusinessLeftPanel({
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-background/80 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/30 hover:text-foreground"
                     aria-label="About connection capacity"
                   >
-                    <Info className="h-4 w-4" />
+                    <Info className="h-4 w-4" /> 
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs" side="left">
-                  Each slot allows one active connection at a time. The bar shows
+                <TooltipContent className="max-w-xs" side="top">
+                  Each slot allows one review exchange at a time. <br/> The bar shows
                   how much capacity is still available. Upgrade for more slots.
                 </TooltipContent>
               </Tooltip>
