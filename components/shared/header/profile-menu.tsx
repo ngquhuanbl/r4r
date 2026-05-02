@@ -1,7 +1,9 @@
 "use client";
 
-import { BadgeCheckIcon, CreditCardIcon, LogOutIcon } from "lucide-react";
+import { BadgeCheckIcon, CreditCardIcon, Loader2Icon, LogOutIcon } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import { signOut } from "@/app/actions/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +18,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Paths } from "@/constants/paths";
 
+function isNextRedirectError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string" &&
+    String((error as { digest: string }).digest).startsWith("NEXT_REDIRECT")
+  );
+}
+
 type Props = {
   imageURL: string;
   displayName: string;
@@ -23,6 +35,29 @@ type Props = {
 };
 
 export function ProfileMenu({ imageURL, displayName, billingEnabled }: Props) {
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    const toastId = toast.loading("Signing out…");
+    void (async () => {
+      try {
+        await signOut();
+        toast.dismiss(toastId);
+      } catch (err) {
+        if (isNextRedirectError(err)) {
+          return;
+        }
+        toast.dismiss(toastId);
+        toast.error("Could not sign out", {
+          description: "Please try again.",
+        });
+        setSigningOut(false);
+      }
+    })();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -68,11 +103,17 @@ export function ProfileMenu({ imageURL, displayName, billingEnabled }: Props) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => void signOut()}
-          className="text-destructive focus:text-destructive"
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className="text-destructive focus:text-destructive data-[disabled]:opacity-60"
+          
         >
-          <LogOutIcon />
-          Sign out
+          {signingOut ? (
+            <Loader2Icon className="animate-spin" aria-hidden />
+          ) : (
+            <LogOutIcon aria-hidden />
+          )}
+          {signingOut ? "Signing out…" : "Sign out"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
