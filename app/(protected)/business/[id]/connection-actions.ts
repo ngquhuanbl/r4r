@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { Paths, businessPath } from "@/constants/paths";
+import { Paths } from "@/constants/paths";
 import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
 import { assertBusinessHasAvailableSlot } from "@/lib/billing/check-slots";
 import { createClient } from "@/lib/supabase/server";
@@ -271,8 +271,9 @@ export async function startConnectionMatch(
   }
 
   revalidatePath(Paths.DASHBOARD);
-  revalidatePath(businessPath(businessId));
-  revalidatePath(businessPath(partnerBusinessId));
+  // Do not revalidate business profile URLs here: the user may be on that page;
+  // revalidation remounts client state and resets UI (e.g. reviews tab). Billing
+  // and lists are refreshed via client actions on the business page instead.
 
   return { ok: true, data: { connectionId } };
 }

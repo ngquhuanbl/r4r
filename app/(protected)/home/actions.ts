@@ -280,12 +280,11 @@ export async function confirmIncomingReview(
       .single();
 
     if (invitationData) {
-      // Revalidate paths for both business owner and reviewer
       revalidatePath(Paths.DASHBOARD);
       revalidatePath(Paths.MY_BUSINESSES);
-      if (invitationData.business_id != null) {
-        revalidatePath(businessPath(invitationData.business_id));
-      }
+      // Do not revalidate business profile URLs: the owner may be on that page;
+      // revalidation remounts client UI (e.g. reviews tab). Lists refresh via
+      // fetchIncomingReviews / client state on the business page.
     }
   }
 
@@ -349,12 +348,9 @@ export async function rejectIncomingReview(
       .single();
 
     if (invitationData) {
-      // Revalidate paths for both business owner and reviewer
       revalidatePath(Paths.DASHBOARD);
       revalidatePath(Paths.MY_BUSINESSES);
-      if (invitationData.business_id != null) {
-        revalidatePath(businessPath(invitationData.business_id));
-      }
+      // Do not revalidate business profile URLs (see confirmIncomingReview).
     }
   }
 

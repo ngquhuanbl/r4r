@@ -10,7 +10,7 @@ import {
   UserPlus,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { startConnectionMatch } from "@/app/(protected)/business/[id]/connection-actions";
@@ -201,12 +201,16 @@ export function BusinessLeftPanel({
   snapshot,
   billingContext,
   onBusinessUpdated,
+  onConnectionMatchFound,
 }: {
   userId: UserId;
   business: FetchedBusiness;
   snapshot: BusinessReviewSnapshot;
   billingContext: BusinessBillingSidebarContext;
+  /** Full page refresh (e.g. profile edits). */
   onBusinessUpdated?: () => void;
+  /** After a successful connection match: switch to Outgoing tab and reload that list only. */
+  onConnectionMatchFound?: () => void;
 }) {
   const platformList = useAppSelector(platformsSelectors.selectData);
   const ordered = sortPlatformsBySpec(platformList);
@@ -240,6 +244,18 @@ export function BusinessLeftPanel({
   const [capacityOpen, setCapacityOpen] = useState(false);
   const [capacityInfoOpen, setCapacityInfoOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [capacityAttention, setCapacityAttention] = useState(false);
+  const capacitySectionRef = useRef<HTMLDivElement>(null);
+  /** Browser `setTimeout` id (avoid Node `Timeout` vs `number` mismatch). */
+  const attentionTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (attentionTimeoutRef.current) {
+        clearTimeout(attentionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const ctaLabel = searching ? "Searching…" : "LET'S CONNECT";
 
@@ -248,7 +264,21 @@ export function BusinessLeftPanel({
   const onConnectClick = async () => {
     if (searching) return;
     if (isFull) {
-      setCapacityOpen(true);
+      const el = capacitySectionRef.current;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        window.setTimeout(() => {
+          el.focus({ preventScroll: true });
+        }, 350);
+      }
+      if (attentionTimeoutRef.current) {
+        clearTimeout(attentionTimeoutRef.current);
+      }
+      setCapacityAttention(true);
+      attentionTimeoutRef.current = window.setTimeout(() => {
+        setCapacityAttention(false);
+        attentionTimeoutRef.current = null;
+      }, 2600);
       return;
     }
     setSearching(true);
@@ -268,9 +298,9 @@ export function BusinessLeftPanel({
         return;
       }
       toast.success(
-        "Match found! Check your Outgoing tab to start your review.",
+        "Match found! Opening your Outgoing tab so you can start your review.",
       );
-      onBusinessUpdated?.();
+      onConnectionMatchFound?.();
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -360,14 +390,24 @@ export function BusinessLeftPanel({
         </div>
       </div>
 
+      {isFull ? (
+        <p id="connect-capacity-hint" className="sr-only">
+          Your plan slots are full. Connection capacity is explained in the
+          section below.
+        </p>
+      ) : null}
       <Button
         type="button"
         size="lg"
         disabled={ctaDisabled}
+        aria-disabled={isFull ? true : undefined}
+        aria-describedby={isFull ? "connect-capacity-hint" : undefined}
         onClick={() => void onConnectClick()}
         className={cn(
           "h-12 w-full rounded-lg text-sm font-semibold uppercase tracking-wide",
           DASHBOARD_PRIMARY_BUTTON_CLASSNAME,
+          isFull &&
+            "cursor-not-allowed opacity-50 hover:bg-[#007AFF] hover:opacity-50 dark:hover:bg-[#0A84FF]",
         )}
       >
         <UserPlus className="h-4 w-4" aria-hidden />
@@ -375,10 +415,15 @@ export function BusinessLeftPanel({
       </Button>
 
       <div
+        ref={capacitySectionRef}
+        id="business-connection-capacity"
+        tabIndex={-1}
         className={cn(
-          "animate-in relative overflow-hidden rounded-xl border p-3 shadow-sm ring-1",
+          "animate-in relative overflow-hidden rounded-xl border p-3 shadow-sm outline-none transition-[box-shadow,ring] duration-300 ring-1",
           capUi.card,
-          capUi.ring,
+          capacityAttention
+            ? "z-[1] ring-4 ring-red-500/70 ring-offset-2 ring-offset-background dark:ring-red-400/60"
+            : capUi.ring,
         )}
       >
         <div

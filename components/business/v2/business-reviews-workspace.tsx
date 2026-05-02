@@ -3,7 +3,14 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -267,14 +274,21 @@ type WorkspaceProps = {
   reviewStatuses: Tables<"review_statuses">[];
 };
 
+export type BusinessReviewsWorkspaceHandle = {
+  /** After a connection match: show Outgoing tab and reload that list only (no full page refresh). */
+  afterConnectionMatch: () => void;
+};
+
 /**
  * Fetches lists via server actions (isolated from global Redux filters used on /home).
  */
-export function BusinessReviewsWorkspace({
-  userId,
-  businessId,
-  reviewStatuses,
-}: WorkspaceProps) {
+export const BusinessReviewsWorkspace = forwardRef<
+  BusinessReviewsWorkspaceHandle,
+  WorkspaceProps
+>(function BusinessReviewsWorkspace(
+  { userId, businessId, reviewStatuses },
+  ref,
+) {
   const [tab, setTab] = useState<"incoming" | "outgoing">("incoming");
   const [statusFilter, setStatusFilter] = useState<number>(
     REVIEW_STATUS_FILTER_ALL_OPTION.id,
@@ -286,6 +300,8 @@ export function BusinessReviewsWorkspace({
   const [outgoing, setOutgoing] = useState<OutgoingReview[]>([]);
   const [outgoingTotal, setOutgoingTotal] = useState(0);
   const [outgoingPage, setOutgoingPage] = useState(1);
+  /** Bumps when we need to refetch outgoing while already on that tab (e.g. new match). */
+  const [outgoingReloadNonce, setOutgoingReloadNonce] = useState(0);
 
   const [loading, setLoading] = useState(true);
 
@@ -365,12 +381,17 @@ export function BusinessReviewsWorkspace({
     return () => {
       cancelled = true;
     };
-  }, [tab, loadOutgoing]);
+  }, [tab, loadOutgoing, outgoingReloadNonce]);
 
-  const refresh = useCallback(async () => {
-    if (tab === "incoming") await loadIncoming();
-    else await loadOutgoing();
-  }, [tab, loadIncoming, loadOutgoing]);
+  useImperativeHandle(ref, () => ({
+    afterConnectionMatch: () => {
+      setStatusFilter(REVIEW_STATUS_FILTER_ALL_OPTION.id);
+      setIncomingPage(1);
+      setOutgoingPage(1);
+      setTab("outgoing");
+      setOutgoingReloadNonce((n) => n + 1);
+    },
+  }));
 
   const incomingColumns: ColumnDef<IncomingReview>[] = useMemo(
     () => [
@@ -508,7 +529,10 @@ export function BusinessReviewsWorkspace({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm md:p-6">
+      <div
+        id="business-reviews-workspace"
+        className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm md:p-6"
+      >
       <Tabs
         value={tab}
         onValueChange={(v) => {
@@ -697,7 +721,7 @@ export function BusinessReviewsWorkspace({
           data={verifyOpen}
           onOpenChange={(o) => !o && setVerifyOpen(null)}
           onUpdatedReview={() => {
-            void refresh();
+            void loadIncoming();
             setVerifyOpen(null);
           }}
         />
@@ -715,7 +739,7 @@ export function BusinessReviewsWorkspace({
           data={submitOpen}
           onOpenChange={(o) => !o && setSubmitOpen(null)}
           onUpdatedReview={() => {
-            void refresh();
+            void loadOutgoing();
             setSubmitOpen(null);
           }}
         />
@@ -728,6 +752,8 @@ export function BusinessReviewsWorkspace({
         />
       )}
       </div>
-    </TooltipProvider>
+      </TooltipProvider>
   );
-}
+});
+
+BusinessReviewsWorkspace.displayName = "BusinessReviewsWorkspace";

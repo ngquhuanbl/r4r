@@ -1,4 +1,6 @@
 import {
+  AlertTriangle,
+  CheckCircle2,
   ExternalLink,
   Loader2Icon,
   Send,
@@ -37,6 +39,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import {
+  classifyPlatformUrl,
+  platformLabelForMessage,
+} from "@/lib/validation/platform-urls";
 import { OutgoingReview, SubmitReviewResponse } from "@/types/dashboard";
 import { ErrorUtils } from "@/utils/error";
 
@@ -184,8 +191,13 @@ export function SubmitReviewDialog({
     );
   };
 
+  const reviewUrlKind = classifyPlatformUrl(reviewUrl, platformName);
+  const platformLabel = platformLabelForMessage(platformName);
+
   const canSubmit =
-    reviewUrl.trim().length > 0 && reviewContent.trim().length > 0;
+    reviewUrl.trim().length > 0 &&
+    reviewContent.trim().length > 0 &&
+    reviewUrlKind !== "invalid";
   const isLoading = isSubmitting;
 
   const goToPlatformControl =
@@ -298,15 +310,64 @@ export function SubmitReviewDialog({
 
                 <div className="grid gap-2">
                   <Label htmlFor="out-going-review-url">Review URL</Label>
-                  <Input
-                    id="out-going-review-url"
-                    name={REVIEW_URL_FIELD_NAME}
-                    value={reviewUrl}
-                    onChange={(e) => setReviewUrl(e.target.value)}
-                    placeholder="Paste the link to your review here"
-                    className="text-sm sm:text-base"
-                    autoComplete="off"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="out-going-review-url"
+                      name={REVIEW_URL_FIELD_NAME}
+                      value={reviewUrl}
+                      onChange={(e) => setReviewUrl(e.target.value)}
+                      placeholder="Paste the link to your review here"
+                      className={cn(
+                        "pr-10 text-sm sm:text-base",
+                        reviewUrlKind === "invalid" &&
+                          "border-amber-400 focus-visible:ring-amber-400",
+                        reviewUrlKind === "valid" &&
+                          "border-green-600/50 focus-visible:ring-green-600",
+                      )}
+                      autoComplete="off"
+                      aria-invalid={reviewUrlKind === "invalid" || undefined}
+                      aria-describedby={
+                        reviewUrlKind === "invalid"
+                          ? "out-going-review-url-hint"
+                          : undefined
+                      }
+                    />
+                    <span className="pointer-events-none absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center">
+                      {reviewUrlKind === "valid" && (
+                        <CheckCircle2
+                          className="h-5 w-5 text-green-600"
+                          aria-hidden
+                        />
+                      )}
+                      {reviewUrlKind === "invalid" && (
+                        <TooltipProvider delayDuration={0}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="pointer-events-auto text-amber-500"
+                                aria-label={`Warning: URL may not be a ${platformLabel} link`}
+                              >
+                                <AlertTriangle className="h-5 w-5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              This doesn&apos;t look like a {platformLabel} link.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </span>
+                  </div>
+                  {reviewUrlKind === "invalid" ? (
+                    <p
+                      id="out-going-review-url-hint"
+                      className="text-xs text-amber-700 dark:text-amber-400"
+                    >
+                      Use a link from {platformName} (see tips above if
+                      you&apos;re not sure how to copy it).
+                    </p>
+                  ) : null}
                 </div>
 
                 <Collapsible open={howToOpen} onOpenChange={setHowToOpen}>

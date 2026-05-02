@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 
-import { Paths, businessPath } from "@/constants/paths";
+import { Paths } from "@/constants/paths";
 import { ReviewStatusNames } from "@/constants/shared";
 import type { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/types/database";
@@ -77,9 +77,9 @@ export async function tryCompleteConnection(
     .select("business_a_id, business_b_id");
 
   if (updated?.[0]) {
-    revalidatePath(businessPath(updated[0].business_a_id));
-    revalidatePath(businessPath(updated[0].business_b_id));
     revalidatePath(Paths.DASHBOARD);
+    // Avoid revalidatePath(businessPath(...)): users on a business page would get
+    // a full segment refresh and lose client UI state (e.g. active reviews tab).
   }
 }
 

@@ -216,3 +216,25 @@ export async function fetchBusinessBillingContext(
     slotsUsed,
   };
 }
+
+/**
+ * Client-safe refresh of billing + slot usage after mutations (e.g. new connection).
+ * Uses the authenticated session; ignores client-supplied user id.
+ */
+export async function refetchBusinessBillingContext(
+  businessId: Tables<"businesses">["id"],
+): Promise<APIResponse<BusinessBillingSidebarContext>> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, error: "Unauthorized" };
+  }
+  const owned = await getBusinessForUser(user.id, businessId);
+  if (!owned) {
+    return { ok: false, error: "Business not found" };
+  }
+  const data = await fetchBusinessBillingContext(user.id, businessId);
+  return { ok: true, data };
+}

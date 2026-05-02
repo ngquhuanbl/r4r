@@ -40,6 +40,10 @@ export function classifyPlatformUrl(
     return "invalid";
   }
 
+  // Other platforms: well-formed http(s) URL
+  if (url.protocol === "http:" || url.protocol === "https:") {
+    return "valid";
+  }
   return "invalid";
 }
 
