@@ -17,7 +17,22 @@ import { VerifyReviewDialog } from "@/components/business/v2/verify-review-dialo
 import { ViewOutgoingReviewDialog } from "@/components/dashboard/YourReview/OutgoingReviewPanel/ViewReviewDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { DataTable } from "@/components/ui/data-table";
+import { Pulse } from "@/components/ui/pulse";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Pagination,
   PaginationContent,
@@ -46,6 +61,9 @@ import type { UserId } from "@/types/shared";
 import { ReviewUtils } from "@/utils/review";
 import { getAddress, getTotalPage } from "@/utils/shared";
 
+import fallbackBusinessAvatarSrc from "@/public/dashboard/fallback_business_avatar.png";
+import fallbackBusinessAvatarDarkSrc from "@/public/dashboard/fallback_business_avatar--dark.png";
+
 function statusBadgeClass(name: string) {
   if (ReviewUtils.isVerifiedReviewStatus(name as any))
     return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300";
@@ -73,10 +91,173 @@ function outgoingLabel(statusName: string) {
   return statusName;
 }
 
+/** Filter dropdown labels — same wording as status badges per tab. */
+function statusFilterOptionLabel(
+  statusName: string,
+  tab: "incoming" | "outgoing",
+): string {
+  return tab === "incoming"
+    ? incomingLabel(statusName)
+    : outgoingLabel(statusName);
+}
+
 function rowMuted(statusName: string) {
   return (
     ReviewUtils.isVerifiedReviewStatus(statusName as any) ||
     ReviewUtils.isRejectedReviewStatus(statusName as any)
+  );
+}
+
+function incomingStatusTooltip(statusName: string): string {
+  if (ReviewUtils.isDraftReviewStatus(statusName as any))
+    return "The partner has not submitted their review yet. There is nothing for you to verify.";
+  if (ReviewUtils.isSubmittedReviewStatus(statusName as any))
+    return "Their review is waiting for you to verify or reject using the action on this row.";
+  if (ReviewUtils.isVerifiedReviewStatus(statusName as any))
+    return "You accepted this review. This incoming task is complete.";
+  if (ReviewUtils.isRejectedReviewStatus(statusName as any))
+    return "You rejected this review.";
+  return `Status in our system: ${statusName}.`;
+}
+
+function outgoingStatusTooltip(statusName: string): string {
+  if (ReviewUtils.isDraftReviewStatus(statusName as any))
+    return "You still need to write and submit your review for this partner.";
+  if (ReviewUtils.isSubmittedReviewStatus(statusName as any))
+    return "Your review is submitted and waiting for the partner to verify.";
+  if (ReviewUtils.isVerifiedReviewStatus(statusName as any))
+    return "Your review was accepted. This outgoing task is finished.";
+  if (ReviewUtils.isRejectedReviewStatus(statusName as any))
+    return "Your review was rejected by the partner.";
+  return `Status in our system: ${statusName}.`;
+}
+
+const REVIEW_STATUS_TOOLTIP_CONTENT_CLASS =
+  "max-w-[min(18rem,calc(100vw-2rem))] text-left text-xs leading-snug";
+
+const REVIEW_TABLE_SKELETON_ROW_COUNT = 6;
+
+/** Matches incoming/outgoing workspace tables: Partner | Platform | Status | Action */
+function ReviewsWorkspaceTableSkeleton() {
+  return (
+    <div
+      className="overflow-x-auto rounded-md border"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <span className="sr-only">Loading reviews…</span>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="min-w-[180px]">Partner business</TableHead>
+            <TableHead>Platform</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="w-[120px]">Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: REVIEW_TABLE_SKELETON_ROW_COUNT }, (_, i) => (
+            <TableRow key={i}>
+              <TableCell>
+                <div className="flex min-w-[180px] items-start gap-3">
+                  <Pulse className="h-10 w-10 shrink-0 rounded-md" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
+                    <Pulse className="h-4 w-36 max-w-full" />
+                    <Pulse className="h-3 w-28 max-w-full" />
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell>
+                <Pulse className="h-6 w-6 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Pulse className="h-6 w-24 rounded-full" />
+              </TableCell>
+              <TableCell>
+                <Pulse className="h-9 w-[4.5rem] rounded-md" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+function ReviewPartnerAvatar({
+  coverUrl,
+  alt,
+}: {
+  coverUrl: string | null | undefined;
+  alt: string;
+}) {
+  return (
+    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
+      {coverUrl ? (
+        <Image
+          src={coverUrl}
+          alt={alt}
+          fill
+          className="object-cover"
+          sizes="40px"
+        />
+      ) : (
+        <>
+          <Image
+            src={fallbackBusinessAvatarSrc}
+            alt=""
+            fill
+            className="object-cover dark:hidden"
+            sizes="40px"
+          />
+          <Image
+            src={fallbackBusinessAvatarDarkSrc}
+            alt=""
+            fill
+            className="hidden object-cover dark:block"
+            sizes="40px"
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+function ReviewStatusBadgeWithTooltip({
+  statusName,
+  variant,
+}: {
+  statusName: string;
+  variant: "incoming" | "outgoing";
+}) {
+  const label =
+    variant === "incoming"
+      ? incomingLabel(statusName)
+      : outgoingLabel(statusName);
+  const tooltip =
+    variant === "incoming"
+      ? incomingStatusTooltip(statusName)
+      : outgoingStatusTooltip(statusName);
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className="inline-flex cursor-default rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          tabIndex={0}
+        >
+          <Badge
+            variant="outline"
+            className={cn("font-normal", statusBadgeClass(statusName))}
+          >
+            {label}
+          </Badge>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className={REVIEW_STATUS_TOOLTIP_CONTENT_CLASS}>
+        <p>{tooltip}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -198,24 +379,14 @@ export function BusinessReviewsWorkspace({
         header: "Partner business",
         cell: ({ row }) => {
           const r = row.original;
+          const partnerName =
+            r.invitation.invitee_business_name?.trim() || "Partner business";
           return (
             <div className="flex items-start gap-3 min-w-[180px]">
-              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
-                <Image
-                  src="/dashboard/fallback_business_avatar.png"
-                  alt=""
-                  fill
-                  className="object-cover dark:hidden"
-                  sizes="40px"
-                />
-                <Image
-                  src="/dashboard/fallback_business_avatar--dark.png"
-                  alt=""
-                  fill
-                  className="hidden object-cover dark:block"
-                  sizes="40px"
-                />
-              </div>
+              <ReviewPartnerAvatar
+                coverUrl={r.invitation.invitee_business_cover_image_url}
+                alt={partnerName}
+              />
               <div>
                 <p className="font-semibold text-foreground">Review #{r.id}</p>
                 <p className="text-xs text-muted-foreground">
@@ -238,11 +409,7 @@ export function BusinessReviewsWorkspace({
         header: "Status",
         cell: ({ row }) => {
           const name = row.original.status.name;
-          return (
-            <Badge variant="outline" className={cn("font-normal", statusBadgeClass(name))}>
-              {incomingLabel(name)}
-            </Badge>
-          );
+          return <ReviewStatusBadgeWithTooltip statusName={name} variant="incoming" />;
         },
       },
       {
@@ -282,22 +449,10 @@ export function BusinessReviewsWorkspace({
           const b = row.original.invitation.business;
           return (
             <div className="flex items-start gap-3 min-w-[200px]">
-              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border bg-muted">
-                <Image
-                  src="/dashboard/fallback_business_avatar.png"
-                  alt=""
-                  fill
-                  className="object-cover dark:hidden"
-                  sizes="40px"
-                />
-                <Image
-                  src="/dashboard/fallback_business_avatar--dark.png"
-                  alt=""
-                  fill
-                  className="hidden object-cover dark:block"
-                  sizes="40px"
-                />
-              </div>
+              <ReviewPartnerAvatar
+                coverUrl={b.cover_image_url}
+                alt={b.business_name || "Partner business"}
+              />
               <div>
                 <p className="font-semibold text-foreground">{b.business_name}</p>
                 <p className="text-xs text-muted-foreground">{getAddress(b)}</p>
@@ -318,11 +473,7 @@ export function BusinessReviewsWorkspace({
         header: "Status",
         cell: ({ row }) => {
           const name = row.original.status.name;
-          return (
-            <Badge variant="outline" className={cn("font-normal", statusBadgeClass(name))}>
-              {outgoingLabel(name)}
-            </Badge>
-          );
+          return <ReviewStatusBadgeWithTooltip statusName={name} variant="outgoing" />;
         },
       },
       {
@@ -356,7 +507,8 @@ export function BusinessReviewsWorkspace({
   const outgoingPages = getTotalPage(outgoingTotal, OUTGOING_REVIEWS_PAGE_SIZE);
 
   return (
-    <div className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm md:p-6">
+    <TooltipProvider delayDuration={200}>
+      <div className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm md:p-6">
       <Tabs
         value={tab}
         onValueChange={(v) => {
@@ -409,7 +561,9 @@ export function BusinessReviewsWorkspace({
             <SelectContent>
               {statusOptions.map((s) => (
                 <SelectItem key={s.id} value={String(s.id)}>
-                  {s.id === REVIEW_STATUS_FILTER_ALL_OPTION.id ? "All statuses" : s.name}
+                  {s.id === REVIEW_STATUS_FILTER_ALL_OPTION.id
+                    ? "All statuses"
+                    : statusFilterOptionLabel(s.name, tab)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -418,7 +572,7 @@ export function BusinessReviewsWorkspace({
 
         <TabsContent value="incoming" className="mt-4 space-y-4">
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <ReviewsWorkspaceTableSkeleton />
           ) : (
             <DataTable
               columns={incomingColumns}
@@ -478,7 +632,7 @@ export function BusinessReviewsWorkspace({
 
         <TabsContent value="outgoing" className="mt-4 space-y-4">
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <ReviewsWorkspaceTableSkeleton />
           ) : (
             <DataTable
               columns={outgoingColumns}
@@ -573,6 +727,7 @@ export function BusinessReviewsWorkspace({
           onOpenChange={(o) => !o && setViewOutOpen(null)}
         />
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

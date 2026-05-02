@@ -37,6 +37,8 @@ export type IncomingReview = Pick<
     invitee_id: Tables<"review_invitations">["invitee_id"];
     /** Partner (reviewer) business name; first business row per invitee user, by created_at. */
     invitee_business_name: string | null;
+    /** Cover image for that same partner business row, when present. */
+    invitee_business_cover_image_url: string | null;
   };
 };
 
@@ -48,7 +50,13 @@ export type OutgoingReview = Pick<
   invitation: {
     business: Pick<
       Tables<"businesses">,
-      "id" | "business_name" | "address" | "city" | "state" | "zip_code"
+      | "id"
+      | "business_name"
+      | "address"
+      | "city"
+      | "state"
+      | "zip_code"
+      | "cover_image_url"
     > & {
       business_platforms: Pick<
         Tables<"business_platforms">,

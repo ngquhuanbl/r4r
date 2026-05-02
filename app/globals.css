@@ -103,3 +103,29 @@
     transform: scaleX(0.95);
   }
 }
+
+/* Submit-review dialog rotating tips — flip-in on change */
+@keyframes submit-tip-flip-in {
+  0% {
+    opacity: 0;
+    transform: rotateX(-88deg);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateX(0deg);
+  }
+}
+
+.submit-tip-flip {
+  transform-origin: center top;
+  animation: submit-tip-flip-in 0.55s ease-out both;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit-tip-flip {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

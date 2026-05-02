@@ -44,6 +44,16 @@ const REVIEW_URL_FIELD_NAME = "url";
 const REVIEW_CONTENT_FIELD_NAME = "content";
 const FORM_ID = "submit-outgoing-review-form";
 
+const TIP_ROTATE_MS = 45_000;
+
+const SUBMIT_REVIEW_TIPS = [
+  "One real detail beats a vague “love it”—helps them verify you were there.",
+  "Keep it constructive. You’re swapping honest value, not venting.",
+  "If speed or communication stood out, say so.",
+  "Short is fine. Just make it true to what you saw.",
+  "Skim for typos before you paste the link.",
+] as const;
+
 interface SubmitReviewDialogProps {
   open: boolean;
   data: OutgoingReview;
@@ -74,13 +84,23 @@ export function SubmitReviewDialog({
   const [reviewUrl, setReviewUrl] = useState("");
   const [reviewContent, setReviewContent] = useState("");
   const [howToOpen, setHowToOpen] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
 
   useEffect(() => {
     if (!open) return;
     setReviewUrl(data.url?.trim() ? data.url : "");
     setReviewContent(data.content?.trim() ? data.content : "");
     setHowToOpen(false);
+    setTipIndex(0);
   }, [open, data.id, data.url, data.content]);
+
+  useEffect(() => {
+    if (!open) return;
+    const id = window.setInterval(() => {
+      setTipIndex((i) => (i + 1) % SUBMIT_REVIEW_TIPS.length);
+    }, TIP_ROTATE_MS);
+    return () => clearInterval(id);
+  }, [open]);
 
   const [isSubmitting, startSubmitting] = useTransition();
 
@@ -243,12 +263,23 @@ export function SubmitReviewDialog({
                     service details.
                   </p>
                   <div className="rounded-md border border-l-4 border-l-amber-400/80 border-border bg-muted/60 px-3 py-2.5 text-sm">
-                    <p className="text-muted-foreground">
-                      <span aria-hidden className="mr-1.5">
+                    <p className="flex gap-2 text-muted-foreground">
+                      <span aria-hidden className="shrink-0">
                         💡
                       </span>
-                      <span className="italic">
-                        Tip: Professional reviews add more value.
+                      <span className="min-w-0 min-h-[2.5rem] leading-relaxed">
+                        <span className="font-medium not-italic text-foreground/90">
+                          Tip:{" "}
+                        </span>
+                        <span className="inline-block [perspective:900px] align-baseline">
+                          <span
+                            key={tipIndex}
+                            aria-live="polite"
+                            className="submit-tip-flip inline-block italic"
+                          >
+                            {SUBMIT_REVIEW_TIPS[tipIndex]}
+                          </span>
+                        </span>
                       </span>
                     </p>
                   </div>
@@ -309,8 +340,8 @@ export function SubmitReviewDialog({
                 </div>
 
                 <p className="text-xs italic text-muted-foreground">
-                  After submitting, the owner will be notified for verification.
-                  Only verified reviews count toward your reputation.
+                  After submitting, the owner will be notified for verification.<br/>
+                  <b>Submitting your review will free up a connection slot on your plan.</b>
                 </p>
               </div>
             </div>

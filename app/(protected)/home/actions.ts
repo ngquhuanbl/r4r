@@ -177,6 +177,7 @@ export async function fetchIncomingReviews(
     invitation: {
       ...(row as IncomingReview).invitation,
       invitee_business_name: null,
+      invitee_business_cover_image_url: null,
     },
   }));
 
@@ -192,26 +193,35 @@ export async function fetchIncomingReviews(
   if (inviteeIds.length > 0) {
     const { data: bizRows } = await supabase
       .from("businesses")
-      .select("user_id, business_name, created_at")
+      .select("user_id, business_name, created_at, cover_image_url")
       .in("user_id", inviteeIds)
       .order("created_at", { ascending: true });
 
-    const nameByUser = new Map<UserId, string>();
+    const partnerByUser = new Map<
+      UserId,
+      { name: string; cover: string | null }
+    >();
     for (const row of bizRows ?? []) {
       const uid = row.user_id as UserId;
-      if (!nameByUser.has(uid)) {
-        nameByUser.set(uid, row.business_name);
+      if (!partnerByUser.has(uid)) {
+        partnerByUser.set(uid, {
+          name: row.business_name,
+          cover: row.cover_image_url ?? null,
+        });
       }
     }
 
-    enriched = enriched.map((r) => ({
-      ...r,
-      invitation: {
-        ...r.invitation,
-        invitee_business_name:
-          nameByUser.get(r.invitation.invitee_id as UserId) ?? null,
-      },
-    }));
+    enriched = enriched.map((r) => {
+      const p = partnerByUser.get(r.invitation.invitee_id as UserId);
+      return {
+        ...r,
+        invitation: {
+          ...r.invitation,
+          invitee_business_name: p?.name ?? null,
+          invitee_business_cover_image_url: p?.cover ?? null,
+        },
+      };
+    });
   }
 
   return {
@@ -401,6 +411,7 @@ export async function fetchOutgoingReviews(
 						city,
 						state,
 						zip_code,
+						cover_image_url,
 						business_platforms (
 							platform_id,
 							platform_url

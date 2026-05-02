@@ -33,12 +33,14 @@ import { useAppSelector } from "@/lib/redux/hooks";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
 import { ManageSubscriptionDialog } from "@/components/billing/manage-subscription-dialog";
 import {
+  TIER_LABELS,
   TIER_MOMENTUM,
   TIER_SLOT_LIMIT,
   TIER_STARTER,
   type BillingTier,
 } from "@/lib/billing/tiers";
 
+import { ConnectionCapacityInfoDialog } from "./connection-capacity-info-dialog";
 import { EditBusinessProfileDialog } from "./edit-business-profile-dialog";
 import { ReviewSnapshotChart } from "./review-snapshot-chart";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
@@ -59,6 +61,138 @@ function tierFromBilling(
 ): BillingTier {
   if (!billing) return TIER_STARTER;
   return billing.tier as BillingTier;
+}
+
+type CapacityVariant = "full" | "low" | "ok";
+
+function capacityVariant(
+  slotsTotal: number,
+  slotsAvailable: number,
+): CapacityVariant {
+  if (slotsTotal <= 0) return "ok";
+  if (slotsAvailable <= 0) return "full";
+  if (slotsAvailable / slotsTotal < 0.5) return "low";
+  return "ok";
+}
+
+const CAPACITY_STYLES: Record<
+  CapacityVariant,
+  {
+    card: string;
+    glow: string;
+    ring: string;
+    title: string;
+    progressTrack: string;
+    progressIndicator: string;
+    infoBtn: string;
+  }
+> = {
+  ok: {
+    card:
+      "border-primary/20 bg-gradient-to-br from-primary/[0.09] via-card/80 to-violet-500/[0.07] dark:border-primary/25 dark:from-primary/[0.12] dark:via-card/60 dark:to-violet-500/10",
+    glow: "from-amber-400/25 to-primary/20 dark:from-amber-400/15",
+    ring: "ring-primary/10 dark:ring-primary/15",
+    title: "text-primary/90",
+    progressTrack: "bg-emerald-600/15 dark:bg-emerald-500/20",
+    progressIndicator: "bg-emerald-600 dark:bg-emerald-500",
+    infoBtn:
+      "border-border/80 bg-background/80 text-muted-foreground hover:border-primary/30 hover:text-foreground",
+  },
+  low: {
+    card:
+      "border-amber-300/70 bg-gradient-to-br from-amber-500/[0.12] via-card/85 to-amber-600/[0.06] dark:border-amber-800/60 dark:from-amber-500/[0.14] dark:via-card/60 dark:to-amber-950/30",
+    glow: "from-amber-400/35 to-amber-600/20 dark:from-amber-500/20",
+    ring: "ring-amber-400/20 dark:ring-amber-700/25",
+    title: "text-amber-900 dark:text-amber-200",
+    progressTrack: "bg-amber-500/25 dark:bg-amber-500/15",
+    progressIndicator: "bg-amber-500 dark:bg-amber-400",
+    infoBtn:
+      "border-amber-300/80 bg-background/90 text-amber-900 hover:border-amber-500 hover:text-amber-950 dark:border-amber-800 dark:text-amber-100 dark:hover:border-amber-600",
+  },
+  full: {
+    card:
+      "border-red-300/80 bg-gradient-to-br from-red-500/[0.1] via-card/85 to-red-900/[0.05] dark:border-red-900/55 dark:from-red-500/[0.12] dark:via-card/55 dark:to-red-950/35",
+    glow: "from-red-400/30 to-red-600/20 dark:from-red-500/18",
+    ring: "ring-red-400/15 dark:ring-red-900/30",
+    title: "text-red-900 dark:text-red-200",
+    progressTrack: "bg-red-500/20 dark:bg-red-500/15",
+    progressIndicator: "bg-red-600 dark:bg-red-500",
+    infoBtn:
+      "border-red-300/80 bg-background/90 text-red-900 hover:border-red-500 hover:text-red-950 dark:border-red-900 dark:text-red-100 dark:hover:border-red-700",
+  },
+};
+
+const CAPACITY_BADGE_TOOLTIP_CONTENT_CLASS =
+  "max-w-[min(15rem,calc(100vw-2rem))] flex-col items-stretch gap-0 px-3 py-2.5 text-left text-xs leading-snug";
+
+function CapacityStatusBadgeTooltip({ variant }: { variant: CapacityVariant }) {
+  const label =
+    variant === "full" ? "Full" : variant === "low" ? "Limited" : "Ready";
+  const badgeClass =
+    variant === "full"
+      ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400"
+      : variant === "low"
+        ? "bg-amber-50 text-amber-800 dark:bg-amber-950/45 dark:text-amber-200"
+        : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400";
+
+  const tooltip =
+    variant === "ok"
+      ? {
+          title: "Slots available",
+          body: (
+            <>
+              You can accept new connections here. Each slot is one live
+              exchange.
+            </>
+          ),
+        }
+      : variant === "full"
+        ? {
+            title: "At capacity",
+            body: (
+              <>
+                Every plan slot is in use. Finish a connection or upgrade to
+                open more.
+              </>
+            ),
+          }
+        : {
+            title: "Limited capacity",
+            body: (
+              <>
+                Fewer than half of your plan slots are still free. Finish
+                exchanges or upgrade so you don&apos;t run out.
+              </>
+            ),
+          };
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            className={cn(
+              "inline-flex cursor-default items-center rounded-full px-2 py-0.5 text-xs font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              badgeClass,
+            )}
+            tabIndex={0}
+          >
+            {label}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className={CAPACITY_BADGE_TOOLTIP_CONTENT_CLASS}>
+          <div className="flex flex-col gap-1">
+            <p className="font-semibold leading-tight text-background">
+              {tooltip.title}
+            </p>
+            <p className="text-[11px] leading-relaxed text-background/80">
+              {tooltip.body}
+            </p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export function BusinessLeftPanel({
@@ -96,9 +230,15 @@ export function BusinessLeftPanel({
   const atMaxTier = currentTier === TIER_MOMENTUM;
 
   const isFull = slotsAvailable <= 0;
+  const capVariant = capacityVariant(slotsTotal, slotsAvailable);
+  const capUi = CAPACITY_STYLES[capVariant];
+  const suggestUpgrade =
+    isFull ||
+    (slotsTotal > 0 && slotsAvailable / slotsTotal < 0.5);
 
   const [searching, setSearching] = useState(false);
   const [capacityOpen, setCapacityOpen] = useState(false);
+  const [capacityInfoOpen, setCapacityInfoOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
   const ctaLabel = searching ? "Searching…" : "LET'S CONNECT";
@@ -234,38 +374,50 @@ export function BusinessLeftPanel({
         {ctaLabel}
       </Button>
 
-      <div className="animate-in relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/[0.09] via-card/80 to-violet-500/[0.07] p-3 shadow-sm ring-1 ring-primary/10 dark:border-primary/25 dark:from-primary/[0.12] dark:via-card/60 dark:to-violet-500/10 dark:ring-primary/15">
+      <div
+        className={cn(
+          "animate-in relative overflow-hidden rounded-xl border p-3 shadow-sm ring-1",
+          capUi.card,
+          capUi.ring,
+        )}
+      >
         <div
-          className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-gradient-to-br from-amber-400/25 to-primary/20 blur-2xl dark:from-amber-400/15"
+          className={cn(
+            "pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-gradient-to-br blur-2xl",
+            capUi.glow,
+          )}
           aria-hidden
         />
         <div className="relative space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary/90">
+            <p
+              className={cn(
+                "text-xs font-semibold uppercase tracking-wide",
+                capUi.title,
+              )}
+            >
               Connection capacity
             </p>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-background/80 text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/30 hover:text-foreground"
-                    aria-label="About connection capacity"
-                  >
-                    <Info className="h-4 w-4" /> 
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs" side="top">
-                  Each slot allows one review exchange at a time. <br/> The bar shows
-                  how much capacity is still available. Upgrade for more slots.
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <button
+              type="button"
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm backdrop-blur-sm transition-colors",
+                capUi.infoBtn,
+              )}
+              aria-label="Learn about connection capacity"
+              onClick={() => setCapacityInfoOpen(true)}
+            >
+              <Info className="h-4 w-4" aria-hidden />
+            </button>
           </div>
           <div className="flex items-center justify-between gap-2">
             <Progress
               value={availableSlotsProgressPct}
-              className="h-2.5 flex-1 bg-primary/15 shadow-inner"
+              className={cn(
+                "h-2.5 flex-1 shadow-inner [&>div]:transition-all",
+                capUi.progressTrack,
+              )}
+              indicatorClassName={capUi.progressIndicator}
             />
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -278,15 +430,7 @@ export function BusinessLeftPanel({
                 </span>
               </span>
               <span className="text-muted-foreground">slots available</span>
-              {isFull ? (
-                <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600 dark:bg-red-950/40 dark:text-red-400">
-                  Full
-                </span>
-              ) : (
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
-                  Ready
-                </span>
-              )}
+              <CapacityStatusBadgeTooltip variant={capVariant} />
             </div>
             <button
               type="button"
@@ -319,6 +463,18 @@ export function BusinessLeftPanel({
           </div>
         </div>
       </div>
+
+      <ConnectionCapacityInfoDialog
+        open={capacityInfoOpen}
+        onOpenChange={setCapacityInfoOpen}
+        planName={TIER_LABELS[currentTier]}
+        slotsTotal={slotsTotal}
+        slotsUsed={slotsUsed}
+        slotsAvailable={slotsAvailable}
+        suggestUpgrade={suggestUpgrade}
+        atMaxTier={atMaxTier}
+        onManageSubscription={() => setCapacityOpen(true)}
+      />
 
       <ManageSubscriptionDialog
         open={capacityOpen}
