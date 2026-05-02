@@ -26,7 +26,7 @@ export default function Loading() {
                   <div className="space-y-3 px-6 pb-3 pt-4">
                     <div className="flex items-start justify-between gap-3">
                       <Pulse className="h-7 w-[70%]" />
-                      <Pulse className="h-8 w-16 shrink-0 rounded-full" />
+                      <Pulse className="h-9 w-16 shrink-0 rounded-full" />
                     </div>
                     <div className="flex items-center gap-2">
                       <Pulse className="h-6 w-6 shrink-0 rounded-full" />

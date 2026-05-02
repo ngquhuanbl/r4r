@@ -33,7 +33,7 @@ function ConnectionStatusBadge({ status }: { status: "ready" | "full" }) {
         <TooltipTrigger asChild>
           <span
             className={cn(
-              "shrink-0 cursor-default rounded-full px-2.5 py-1 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "inline-flex h-9 shrink-0 cursor-default items-center justify-center rounded-full px-3 text-sm font-semibold leading-none outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               ready
                 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
                 : "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400",
@@ -134,20 +134,22 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
         className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-[box-shadow,border-color] duration-200 ease-out group-hover:border-primary/25 group-hover:shadow-md"
       >
         <CardHeader className="gap-1 space-y-1 px-6 pb-3 pt-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 ">
             <CardTitle className="text-xl font-semibold leading-tight text-card-foreground">
               {location.name}
             </CardTitle>
-            {location.status === "loading" ? (
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-muted/50 text-muted-foreground"
-                aria-label="Loading connection status"
-              >
-                <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
-              </span>
-            ) : (
-              <ConnectionStatusBadge status={location.status} />
-            )}
+            <div className="flex min-h-9 shrink-0 items-center justify-end self-start">
+              {location.status === "loading" ? (
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/80 bg-muted/50 text-muted-foreground"
+                  aria-label="Loading connection status"
+                >
+                  <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
+                </span>
+              ) : (
+                <ConnectionStatusBadge status={location.status} />
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 text-base text-muted-foreground">
             <svg
