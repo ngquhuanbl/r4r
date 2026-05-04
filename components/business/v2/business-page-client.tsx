@@ -1,13 +1,14 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
   refetchBusinessBillingContext,
   type BusinessBillingSidebarContext,
 } from "@/app/(protected)/business/[id]/actions";
+import { refreshBusinessReviewSnapshot } from "@/lib/business/refresh-business-review-snapshot-browser";
 import type { FetchedBusiness } from "@/types/dashboard";
 import type { Tables } from "@/types/database";
 import type { UserId } from "@/types/shared";
@@ -22,7 +23,7 @@ import {
 export function BusinessPageClient({
   userId,
   business,
-  snapshot,
+  snapshot: initialSnapshot,
   reviewStatuses,
   billingContext,
 }: {
@@ -37,10 +38,24 @@ export function BusinessPageClient({
   const reviewsWorkspaceRef = useRef<BusinessReviewsWorkspaceHandle>(null);
   const [billing, setBilling] =
     useState<BusinessBillingSidebarContext>(billingContext);
+  const [snapshot, setSnapshot] =
+    useState<BusinessReviewSnapshot>(initialSnapshot);
 
   useEffect(() => {
     setBilling(billingContext);
   }, [billingContext]);
+
+  useEffect(() => {
+    setSnapshot(initialSnapshot);
+  }, [initialSnapshot]);
+
+  const refreshSnapshot = useCallback(async () => {
+    const res = await refreshBusinessReviewSnapshot(business.id);
+    if (res.ok) {
+      console.log("refreshSnapshot", res.data);
+      setSnapshot(res.data);
+    }
+  }, [business.id]);
 
   return (
     <div className="grid w-full grid-cols-1 gap-8 pt-8 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start lg:gap-x-10 lg:gap-y-0">
@@ -74,6 +89,7 @@ export function BusinessPageClient({
                     : "Please refresh the page.",
               });
             }
+            await refreshSnapshot();
           }}
         />
       </div>
@@ -83,6 +99,13 @@ export function BusinessPageClient({
           userId={userId}
           businessId={business.id}
           reviewStatuses={reviewStatuses}
+          onOutgoingReviewSubmitted={async () => {
+            const res = await refetchBusinessBillingContext(business.id);
+            if (res.ok) {
+              setBilling(res.data);
+            }
+          }}
+          onReviewStatsMayHaveChanged={refreshSnapshot}
         />
       </div>
     </div>

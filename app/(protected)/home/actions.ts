@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import { Paths, businessPath } from "@/constants/paths";
 import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
-import { tryCompleteConnectionForReview } from "@/lib/connections/complete-connection";
+import {
+  tryCompleteConnectionForReview,
+  tryReleaseOwnSlotAfterOutgoingSubmit,
+} from "@/lib/connections/complete-connection";
 import { createClient } from "@/lib/supabase/server";
 import {
   FetchedReviewsResponse,
@@ -93,7 +96,8 @@ export async function fetchIncomingReviews(
 						name
 					),
 					inviter_id,
-					invitee_id
+					invitee_id,
+					invitee_business_id
 				)
 				`
       )
@@ -102,7 +106,7 @@ export async function fetchIncomingReviews(
 
     // Filter
     if (businessId !== undefined) {
-      query = query.eq("invitation.business.id", businessId);
+      query = query.eq("invitation.business_id", businessId);
     }
     if (statusId !== undefined) {
       query = query.eq("status.id", statusId);
@@ -140,7 +144,7 @@ export async function fetchIncomingReviews(
 
     // Filter
     if (businessId !== undefined) {
-      query = query.eq("invitation.business.id", businessId);
+      query = query.eq("invitation.business_id", businessId);
     }
     if (statusId !== undefined) {
       query = query.eq("status.id", statusId);
@@ -178,51 +182,111 @@ export async function fetchIncomingReviews(
       ...(row as IncomingReview).invitation,
       invitee_business_name: null,
       invitee_business_cover_image_url: null,
+      invitee_business_location: null,
     },
   }));
 
-  const inviteeIds: UserId[] = [];
+  const explicitBusinessIds = Array.from(
+    new Set(
+      enriched
+        .map((r) => r.invitation.invitee_business_id)
+        .filter((id): id is number => id != null),
+    ),
+  );
+
+  const partnerByBusinessId = new Map<
+    number,
+    {
+      name: string;
+      cover: string | null;
+      location: Pick<
+        Tables<"businesses">,
+        "address" | "city" | "state"
+      >;
+    }
+  >();
+
+  if (explicitBusinessIds.length > 0) {
+    const { data: explicitRows } = await supabase
+      .from("businesses")
+      .select(
+        "id, business_name, cover_image_url, address, city, state",
+      )
+      .in("id", explicitBusinessIds);
+
+    for (const row of explicitRows ?? []) {
+      partnerByBusinessId.set(row.id, {
+        name: row.business_name,
+        cover: row.cover_image_url ?? null,
+        location: {
+          address: row.address,
+          city: row.city,
+          state: row.state,
+        },
+      });
+    }
+  }
+
+  const inviteeIdsNeedingFallback: UserId[] = [];
   const seenInvitee = new Set<string>();
   for (const r of enriched) {
+    if (r.invitation.invitee_business_id != null) continue;
     const uid = r.invitation.invitee_id;
     if (uid && !seenInvitee.has(uid)) {
       seenInvitee.add(uid);
-      inviteeIds.push(uid);
+      inviteeIdsNeedingFallback.push(uid);
     }
   }
-  if (inviteeIds.length > 0) {
+
+  const partnerByUser = new Map<
+    UserId,
+    {
+      name: string;
+      cover: string | null;
+      location: Pick<Tables<"businesses">, "address" | "city" | "state">;
+    }
+  >();
+
+  if (inviteeIdsNeedingFallback.length > 0) {
     const { data: bizRows } = await supabase
       .from("businesses")
-      .select("user_id, business_name, created_at, cover_image_url")
-      .in("user_id", inviteeIds)
+      .select(
+        "user_id, business_name, created_at, cover_image_url, address, city, state",
+      )
+      .in("user_id", inviteeIdsNeedingFallback)
       .order("created_at", { ascending: true });
 
-    const partnerByUser = new Map<
-      UserId,
-      { name: string; cover: string | null }
-    >();
     for (const row of bizRows ?? []) {
       const uid = row.user_id as UserId;
       if (!partnerByUser.has(uid)) {
         partnerByUser.set(uid, {
           name: row.business_name,
           cover: row.cover_image_url ?? null,
+          location: {
+            address: row.address,
+            city: row.city,
+            state: row.state,
+          },
         });
       }
     }
-
-    enriched = enriched.map((r) => {
-      const p = partnerByUser.get(r.invitation.invitee_id as UserId);
-      return {
-        ...r,
-        invitation: {
-          ...r.invitation,
-          invitee_business_name: p?.name ?? null,
-          invitee_business_cover_image_url: p?.cover ?? null,
-        },
-      };
-    });
   }
+
+  enriched = enriched.map((r) => {
+    const bid = r.invitation.invitee_business_id;
+    const explicit = bid != null ? partnerByBusinessId.get(bid) : undefined;
+    const fallback = partnerByUser.get(r.invitation.invitee_id as UserId);
+    const p = explicit ?? fallback;
+    return {
+      ...r,
+      invitation: {
+        ...r.invitation,
+        invitee_business_name: p?.name ?? null,
+        invitee_business_cover_image_url: p?.cover ?? null,
+        invitee_business_location: p?.location ?? null,
+      },
+    };
+  });
 
   return {
     ok: true,
@@ -263,29 +327,6 @@ export async function confirmIncomingReview(
   if (error) {
     console.error("Error approving review:", error);
     return { ok: false, error };
-  }
-
-  // Get the review details for revalidation
-  const { data: reviewData } = await supabase
-    .from("reviews")
-    .select("invitation_id")
-    .eq("id", reviewId)
-    .single();
-
-  if (reviewData) {
-    const { data: invitationData } = await supabase
-      .from("review_invitations")
-      .select("invitee_id, inviter_id, business_id")
-      .eq("id", reviewData.invitation_id)
-      .single();
-
-    if (invitationData) {
-      revalidatePath(Paths.DASHBOARD);
-      revalidatePath(Paths.MY_BUSINESSES);
-      // Do not revalidate business profile URLs: the owner may be on that page;
-      // revalidation remounts client UI (e.g. reviews tab). Lists refresh via
-      // fetchIncomingReviews / client state on the business page.
-    }
   }
 
   await tryCompleteConnectionForReview(supabase, reviewId);
@@ -331,27 +372,6 @@ export async function rejectIncomingReview(
   if (error) {
     console.error("Error rejecting review:", error);
     return { ok: false, error };
-  }
-
-  // Get the review details for revalidation
-  const { data: reviewData } = await supabase
-    .from("reviews")
-    .select("invitation_id")
-    .eq("id", reviewId)
-    .single();
-
-  if (reviewData) {
-    const { data: invitationData } = await supabase
-      .from("review_invitations")
-      .select("invitee_id, inviter_id, business_id")
-      .eq("id", reviewData.invitation_id)
-      .single();
-
-    if (invitationData) {
-      revalidatePath(Paths.DASHBOARD);
-      revalidatePath(Paths.MY_BUSINESSES);
-      // Do not revalidate business profile URLs (see confirmIncomingReview).
-    }
   }
 
   await tryCompleteConnectionForReview(supabase, reviewId);
@@ -556,10 +576,10 @@ export async function submitOutgoingReview(
   }
 
   await tryCompleteConnectionForReview(supabase, reviewId);
+  await tryReleaseOwnSlotAfterOutgoingSubmit(supabase, reviewId);
 
-  // Ensure all relevant paths are revalidated
-  revalidatePath(Paths.DASHBOARD, "layout");
-  revalidatePath(Paths.DASHBOARD, "page");
+  // Client lists update via submit dialogs (Redux / local state); avoid revalidatePath
+  // here so the dashboard layout and business page do not remount.
   return {
     ok: true,
     data: updateData,
@@ -1168,8 +1188,9 @@ export async function submitReview(
     return { success: false, error };
   }
 
-  // Ensure all relevant paths are revalidated
-  revalidatePath(Paths.DASHBOARD, "layout");
+  await tryCompleteConnectionForReview(supabase, reviewData.id);
+  await tryReleaseOwnSlotAfterOutgoingSubmit(supabase, reviewData.id);
+
   revalidatePath(Paths.DASHBOARD, "page");
   return { success: true, data, status_id: submittedStatus.id };
 }

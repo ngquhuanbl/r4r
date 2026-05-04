@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { getBusinessForUser } from "@/app/(protected)/business/[id]/actions";
 import { Paths } from "@/constants/paths";
 import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
 import { assertBusinessHasAvailableSlot } from "@/lib/billing/check-slots";
@@ -277,3 +278,4 @@ export async function startConnectionMatch(
 
   return { ok: true, data: { connectionId } };
 }
+

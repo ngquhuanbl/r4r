@@ -6,7 +6,7 @@ export type BusinessReviewSnapshot = {
     rejected: number;
     other: number;
   };
-  /** Outgoing reviews (invitee = user), user-global — schema has no per-business link for invitee */
+  /** Outgoing reviews authored from this business (`invitee_business_id = businessId`): verified vs rejected vs other */
   given: {
     accepted: number;
     rejected: number;

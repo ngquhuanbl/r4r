@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useState,
 } from "react";
@@ -62,7 +63,12 @@ import {
 } from "@/constants/dashboard/ui";
 import { ReviewStatusNames } from "@/constants/shared";
 import { cn } from "@/lib/utils";
-import type { IncomingReview, OutgoingReview } from "@/types/dashboard";
+import type {
+  IncomingReview,
+  OutgoingReview,
+  SubmitReviewResponse,
+  UpdatedReviewStatus,
+} from "@/types/dashboard";
 import type { Tables } from "@/types/database";
 import type { UserId } from "@/types/shared";
 import { ReviewUtils } from "@/utils/review";
@@ -119,9 +125,9 @@ function incomingStatusTooltip(statusName: string): string {
   if (ReviewUtils.isDraftReviewStatus(statusName as any))
     return "The partner has not submitted their review yet. There is nothing for you to verify.";
   if (ReviewUtils.isSubmittedReviewStatus(statusName as any))
-    return "Their review is waiting for you to verify or reject using the action on this row.";
+    return "Review for your business is waiting for you to verify.";
   if (ReviewUtils.isVerifiedReviewStatus(statusName as any))
-    return "You accepted this review. This incoming task is complete.";
+    return "This review was accepted by you! Congratulations!";
   if (ReviewUtils.isRejectedReviewStatus(statusName as any))
     return "You rejected this review.";
   return `Status in our system: ${statusName}.`;
@@ -133,7 +139,7 @@ function outgoingStatusTooltip(statusName: string): string {
   if (ReviewUtils.isSubmittedReviewStatus(statusName as any))
     return "Your review is submitted and waiting for the partner to verify.";
   if (ReviewUtils.isVerifiedReviewStatus(statusName as any))
-    return "Your review was accepted. This outgoing task is finished.";
+    return "Your review was accepted. Thank you for your feedback!";
   if (ReviewUtils.isRejectedReviewStatus(statusName as any))
     return "Your review was rejected by the partner.";
   return `Status in our system: ${statusName}.`;
@@ -272,6 +278,10 @@ type WorkspaceProps = {
   userId: UserId;
   businessId: Tables<"businesses">["id"];
   reviewStatuses: Tables<"review_statuses">[];
+  /** After outgoing submit: refresh sidebar slot counts without a full page reload. */
+  onOutgoingReviewSubmitted?: () => void | Promise<void>;
+  /** Recompute left-panel performance chart after verify/submit (browser Supabase). */
+  onReviewStatsMayHaveChanged?: () => void | Promise<void>;
 };
 
 export type BusinessReviewsWorkspaceHandle = {
@@ -286,9 +296,20 @@ export const BusinessReviewsWorkspace = forwardRef<
   BusinessReviewsWorkspaceHandle,
   WorkspaceProps
 >(function BusinessReviewsWorkspace(
-  { userId, businessId, reviewStatuses },
+  {
+    userId,
+    businessId,
+    reviewStatuses,
+    onOutgoingReviewSubmitted,
+    onReviewStatsMayHaveChanged,
+  },
   ref,
 ) {
+  const reviewsTabStorageKey = useMemo(
+    () => `r4r:reviews-workspace-tab:${businessId}`,
+    [businessId],
+  );
+
   const [tab, setTab] = useState<"incoming" | "outgoing">("incoming");
   const [statusFilter, setStatusFilter] = useState<number>(
     REVIEW_STATUS_FILTER_ALL_OPTION.id,
@@ -310,12 +331,30 @@ export const BusinessReviewsWorkspace = forwardRef<
   const [submitOpen, setSubmitOpen] = useState<OutgoingReview | null>(null);
   const [viewOutOpen, setViewOutOpen] = useState<OutgoingReview | null>(null);
 
+  /** Restore tab after remounts (e.g. layout revalidation) so submit/verify does not jump to Incoming. */
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const stored = sessionStorage.getItem(reviewsTabStorageKey);
+      if (stored === "outgoing" || stored === "incoming") {
+        setTab(stored);
+        return;
+      }
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "outgoing") {
+        setTab("outgoing");
+      }
+    } catch {
+      /* private mode */
+    }
+  }, [businessId, reviewsTabStorageKey]);
+
   const statusOptions = useMemo(
     () => [REVIEW_STATUS_FILTER_ALL_OPTION, ...reviewStatuses],
     [reviewStatuses],
   );
 
-  const loadIncoming = useCallback(async () => {
+  const refetchIncomingOnly = useCallback(async () => {
     const res = await fetchIncomingReviews(
       userId,
       incomingPage,
@@ -333,7 +372,11 @@ export const BusinessReviewsWorkspace = forwardRef<
     setIncomingTotal(res.data.total_results);
   }, [userId, businessId, incomingPage, statusFilter]);
 
-  const loadOutgoing = useCallback(async () => {
+  const loadIncoming = useCallback(async () => {
+    await refetchIncomingOnly();
+  }, [refetchIncomingOnly]);
+
+  const refetchOutgoingOnly = useCallback(async () => {
     const res = await fetchOutgoingReviews(
       userId,
       outgoingPage,
@@ -350,6 +393,10 @@ export const BusinessReviewsWorkspace = forwardRef<
     setOutgoing(res.data.data);
     setOutgoingTotal(res.data.total_results);
   }, [userId, businessId, outgoingPage, statusFilter]);
+
+  const loadOutgoing = useCallback(async () => {
+    await refetchOutgoingOnly();
+  }, [refetchOutgoingOnly]);
 
   useEffect(() => {
     if (tab !== "incoming") return;
@@ -389,6 +436,11 @@ export const BusinessReviewsWorkspace = forwardRef<
       setIncomingPage(1);
       setOutgoingPage(1);
       setTab("outgoing");
+      try {
+        sessionStorage.setItem(reviewsTabStorageKey, "outgoing");
+      } catch {
+        /* private mode */
+      }
       setOutgoingReloadNonce((n) => n + 1);
     },
   }));
@@ -400,8 +452,10 @@ export const BusinessReviewsWorkspace = forwardRef<
         header: "Partner business",
         cell: ({ row }) => {
           const r = row.original;
+          const loc = r.invitation.invitee_business_location;
           const partnerName =
             r.invitation.invitee_business_name?.trim() || "Partner business";
+          const addressLine = loc ? getAddress(loc) : null;
           return (
             <div className="flex items-start gap-3 min-w-[180px]">
               <ReviewPartnerAvatar
@@ -409,9 +463,9 @@ export const BusinessReviewsWorkspace = forwardRef<
                 alt={partnerName}
               />
               <div>
-                <p className="font-semibold text-foreground">Review #{r.id}</p>
+                <p className="font-semibold text-foreground">{partnerName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {r.invitation.platform.name}
+                  {addressLine?.trim() ? addressLine : "—"}
                 </p>
               </div>
             </div>
@@ -536,7 +590,13 @@ export const BusinessReviewsWorkspace = forwardRef<
       <Tabs
         value={tab}
         onValueChange={(v) => {
-          setTab(v as "incoming" | "outgoing");
+          const next = v as "incoming" | "outgoing";
+          setTab(next);
+          try {
+            sessionStorage.setItem(reviewsTabStorageKey, next);
+          } catch {
+            /* private mode */
+          }
           setStatusFilter(REVIEW_STATUS_FILTER_ALL_OPTION.id);
           setIncomingPage(1);
           setOutgoingPage(1);
@@ -720,9 +780,23 @@ export const BusinessReviewsWorkspace = forwardRef<
           open={!!verifyOpen}
           data={verifyOpen}
           onOpenChange={(o) => !o && setVerifyOpen(null)}
-          onUpdatedReview={() => {
-            void loadIncoming();
+          onUpdatedReview={async (updated: UpdatedReviewStatus) => {
+            const matchesFilter =
+              statusFilter === REVIEW_STATUS_FILTER_ALL_OPTION.id ||
+              updated.status.id === statusFilter;
+            if (matchesFilter) {
+              setIncoming((prev) =>
+                prev.map((r) =>
+                  r.id === updated.id
+                    ? { ...r, status: updated.status, invitation: r.invitation }
+                    : r,
+                ),
+              );
+            } else {
+              await refetchIncomingOnly();
+            }
             setVerifyOpen(null);
+            await onReviewStatsMayHaveChanged?.();
           }}
         />
       )}
@@ -738,9 +812,24 @@ export const BusinessReviewsWorkspace = forwardRef<
           open={!!submitOpen}
           data={submitOpen}
           onOpenChange={(o) => !o && setSubmitOpen(null)}
-          onUpdatedReview={() => {
-            void loadOutgoing();
+          onUpdatedReview={async (updated: SubmitReviewResponse) => {
+            const matchesFilter =
+              statusFilter === REVIEW_STATUS_FILTER_ALL_OPTION.id ||
+              updated.status.id === statusFilter;
+            if (matchesFilter) {
+              setOutgoing((prev) =>
+                prev.map((r) =>
+                  r.id === updated.id
+                    ? { ...r, ...updated, invitation: r.invitation }
+                    : r,
+                ),
+              );
+            } else {
+              await refetchOutgoingOnly();
+            }
             setSubmitOpen(null);
+            await onOutgoingReviewSubmitted?.();
+            await onReviewStatsMayHaveChanged?.();
           }}
         />
       )}

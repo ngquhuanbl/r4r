@@ -35,10 +35,15 @@ export type IncomingReview = Pick<
     platform: Pick<Tables<"platforms">, "id" | "name">;
     inviter_id: Tables<"review_invitations">["inviter_id"];
     invitee_id: Tables<"review_invitations">["invitee_id"];
-    /** Partner (reviewer) business name; first business row per invitee user, by created_at. */
+    invitee_business_id: Tables<"review_invitations">["invitee_business_id"];
+    /** Partner (reviewer) business display; prefer invitee_business_id row, else first business for invitee user. */
     invitee_business_name: string | null;
     /** Cover image for that same partner business row, when present. */
     invitee_business_cover_image_url: string | null;
+    invitee_business_location: Pick<
+      Tables<"businesses">,
+      "address" | "city" | "state"
+    > | null;
   };
 };
 

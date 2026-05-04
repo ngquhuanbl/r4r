@@ -115,12 +115,19 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
   }, []);
 
   const onSubmittedReview = useCallback(
-    (submittedReview: SubmitReviewResponse) => {
-      dispatch(outgoingReviewsActions.updateReview(submittedReview));
+    async (submittedReview: SubmitReviewResponse) => {
+      const matchesFilter =
+        filteredStatus === REVIEW_STATUS_FILTER_ALL_OPTION.id ||
+        submittedReview.status.id === filteredStatus;
 
+      if (matchesFilter) {
+        dispatch(outgoingReviewsActions.updateReview(submittedReview));
+      } else {
+        await refetchList(page, filteredStatus);
+      }
       setSelectedSubmitReview(null);
     },
-    [dispatch]
+    [dispatch, filteredStatus, page, refetchList]
   );
 
   const areFiltersApplied =

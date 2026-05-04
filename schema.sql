@@ -99,6 +99,9 @@ EXECUTE FUNCTION trigger_set_updated_at();
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
     completed_at TIMESTAMP WITH TIME ZONE,
+    partner_acknowledged_at TIMESTAMP WITH TIME ZONE,
+    business_a_slot_released_at TIMESTAMP WITH TIME ZONE,
+    business_b_slot_released_at TIMESTAMP WITH TIME ZONE,
     CONSTRAINT connections_ordered_pair CHECK (business_a_id < business_b_id)
   );
 

@@ -26,19 +26,29 @@ export async function countActiveConnectionsForBusiness(
   supabase: Supabase,
   businessId: number,
 ): Promise<number> {
-  const { count, error } = await supabase
-    .from("connections")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "active")
-    .or(
-      `business_a_id.eq.${businessId},business_b_id.eq.${businessId}`,
-    );
+  /** A business "uses" a slot only while the connection is active and its side is not released yet (see outgoing submit). */
+  const [asA, asB] = await Promise.all([
+    supabase
+      .from("connections")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active")
+      .eq("business_a_id", businessId)
+      .is("business_a_slot_released_at", null),
+    supabase
+      .from("connections")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active")
+      .eq("business_b_id", businessId)
+      .is("business_b_slot_released_at", null),
+  ]);
 
-  if (error) {
-    console.error("countActiveConnectionsForBusiness:", error);
-    return 0;
+  if (asA.error) {
+    console.error("countActiveConnectionsForBusiness (a):", asA.error);
   }
-  return count ?? 0;
+  if (asB.error) {
+    console.error("countActiveConnectionsForBusiness (b):", asB.error);
+  }
+  return (asA.count ?? 0) + (asB.count ?? 0);
 }
 
 /**

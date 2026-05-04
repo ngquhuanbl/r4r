@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { startConnectionMatch } from "@/app/(protected)/business/[id]/connection-actions";
+import { acknowledgePendingPartnerConnections } from "@/lib/connections/acknowledge-pending-partner-browser";
 import { Platform } from "@/components/dashboard/Platform";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -257,6 +258,24 @@ export function BusinessLeftPanel({
     };
   }, []);
 
+  /** Another business matched with you; capacity lives in this column — notify here so it runs regardless of reviews tab. */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await acknowledgePendingPartnerConnections(business.id);
+      if (cancelled || !res.ok || !res.data.length) return;
+
+      for (const row of res.data) {
+        toast.info("New connection created", {
+          description: `You've been matched with ${row.initiatorBusinessName}`,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [business.id]);
+
   const ctaLabel = searching ? "Searching…" : "LET'S CONNECT";
 
   const ctaDisabled = searching;
@@ -298,7 +317,7 @@ export function BusinessLeftPanel({
         return;
       }
       toast.success(
-        "Match found! Opening your Outgoing tab so you can start your review.",
+        "Match found! Please check your Outgoing tab and submit your review.",
       );
       onConnectionMatchFound?.();
     } catch {

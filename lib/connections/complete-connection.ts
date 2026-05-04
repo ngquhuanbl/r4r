@@ -105,3 +105,110 @@ export async function tryCompleteConnectionForReview(
 
   await tryCompleteConnection(supabase, inv.connection_id);
 }
+
+/**
+ * After outgoing submit: the invitee's owned business (`invitee_business_id`) stops
+ * counting this connection toward its slot limit. When both sides have submitted,
+ * the connection is marked completed so neither party is blocked from new matches.
+ */
+export async function tryReleaseOwnSlotAfterOutgoingSubmit(
+  supabase: Supabase,
+  reviewId: Tables<"reviews">["id"],
+): Promise<void> {
+  const { data: row, error: rowErr } = await supabase
+    .from("reviews")
+    .select(
+      `
+      invitation:review_invitations!inner (
+        connection_id,
+        invitee_business_id
+      )
+    `,
+    )
+    .eq("id", reviewId)
+    .maybeSingle();
+
+  if (rowErr || !row?.invitation) {
+    if (rowErr) {
+      console.error("tryReleaseOwnSlotAfterOutgoingSubmit review", rowErr);
+    }
+    return;
+  }
+
+  const inv = row.invitation as {
+    connection_id: number | null;
+    invitee_business_id: number | null;
+  };
+
+  if (!inv.connection_id || inv.invitee_business_id == null) {
+    return;
+  }
+
+  const { data: conn, error: cErr } = await supabase
+    .from("connections")
+    .select(
+      "id, status, business_a_id, business_b_id, business_a_slot_released_at, business_b_slot_released_at",
+    )
+    .eq("id", inv.connection_id)
+    .maybeSingle();
+
+  if (cErr || !conn || conn.status !== "active") {
+    if (cErr) console.error("tryReleaseOwnSlotAfterOutgoingSubmit conn", cErr);
+    return;
+  }
+
+  const bid = inv.invitee_business_id;
+  if (bid !== conn.business_a_id && bid !== conn.business_b_id) {
+    console.error(
+      "tryReleaseOwnSlotAfterOutgoingSubmit: invitee_business_id not on connection",
+      { reviewId, bid, conn },
+    );
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const isA = bid === conn.business_a_id;
+  const { error: uErr } = await supabase
+    .from("connections")
+    .update(
+      isA
+        ? { business_a_slot_released_at: now }
+        : { business_b_slot_released_at: now },
+    )
+    .eq("id", conn.id)
+    .eq("status", "active")
+    .is(isA ? "business_a_slot_released_at" : "business_b_slot_released_at", null);
+
+  if (uErr) {
+    console.error("tryReleaseOwnSlotAfterOutgoingSubmit update", uErr);
+    return;
+  }
+
+  const { data: after } = await supabase
+    .from("connections")
+    .select(
+      "business_a_slot_released_at, business_b_slot_released_at, status",
+    )
+    .eq("id", conn.id)
+    .maybeSingle();
+
+  if (
+    after?.status === "active" &&
+    after.business_a_slot_released_at &&
+    after.business_b_slot_released_at
+  ) {
+    const { error: doneErr } = await supabase
+      .from("connections")
+      .update({
+        status: "completed",
+        completed_at: now,
+      })
+      .eq("id", conn.id)
+      .eq("status", "active");
+
+    if (doneErr) {
+      console.error("tryReleaseOwnSlotAfterOutgoingSubmit complete", doneErr);
+      return;
+    }
+  }
+}

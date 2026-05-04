@@ -23,6 +23,11 @@ export function classifyPlatformUrl(
 
   if (platformName === PlatformNames.Google) {
     if (host === "maps.app.goo.gl" || host === "goo.gl") return "valid";
+    // Google Maps / reviews short links (e.g. share.google/…)
+    if (host === "share.google" || host.endsWith(".share.google")) {
+      if (url.pathname.length > 1) return "valid";
+      return "invalid";
+    }
     if (host.includes("google.")) {
       if (url.pathname.includes("/maps") || host.startsWith("maps."))
         return "valid";

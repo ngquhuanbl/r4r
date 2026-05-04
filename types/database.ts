@@ -145,29 +145,38 @@ export type Database = {
       connections: {
         Row: {
           business_a_id: number;
+          business_a_slot_released_at: string | null;
           business_b_id: number;
+          business_b_slot_released_at: string | null;
           completed_at: string | null;
           created_at: string;
           id: number;
           initiator_business_id: number;
+          partner_acknowledged_at: string | null;
           status: string;
         };
         Insert: {
           business_a_id: number;
+          business_a_slot_released_at?: string | null;
           business_b_id: number;
+          business_b_slot_released_at?: string | null;
           completed_at?: string | null;
           created_at?: string;
           id?: number;
           initiator_business_id: number;
+          partner_acknowledged_at?: string | null;
           status?: string;
         };
         Update: {
           business_a_id?: number;
+          business_a_slot_released_at?: string | null;
           business_b_id?: number;
+          business_b_slot_released_at?: string | null;
           completed_at?: string | null;
           created_at?: string;
           id?: number;
           initiator_business_id?: number;
+          partner_acknowledged_at?: string | null;
           status?: string;
         };
         Relationships: [

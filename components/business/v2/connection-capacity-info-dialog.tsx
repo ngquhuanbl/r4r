@@ -111,7 +111,9 @@ export function ConnectionCapacityInfoDialog({
         <div className="space-y-4 text-sm text-muted-foreground">
           <p>
             Each slot on your plan is one concurrent review exchange with another
-            business. The table is scoped to this business and your current plan.
+            business.<br/>
+            Connections are shared between businesses. They can be created when you
+            start one or when another business matches with you.
           </p>
 
           <ul className="list-none space-y-2 rounded-lg border border-border bg-muted/40 p-3 text-foreground">
