@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { Suspense } from "react";
 
 import { FinishProfileDialog } from "@/components/dashboard/finish-profile-dialog";
-import { DashboardLocationsGrid } from "@/components/dashboard/DashboardLocationsGrid";
+import { DashboardLocationsGrid } from "@/components/dashboard/locations/dashboard-locations-grid";
 import { createClient } from "@/lib/supabase/server";
 
 import { PreloadResources } from "./preload-resources";

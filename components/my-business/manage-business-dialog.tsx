@@ -10,7 +10,7 @@ import { Tables } from "@/types/database";
 import { ErrorUtils } from "@/utils/error";
 import { FieldNames } from "@/utils/my-business";
 
-import { Platform } from "../dashboard/Platform";
+import { Platform } from "../dashboard/platform";
 import { Button } from "../ui/button";
 import {
   Dialog,

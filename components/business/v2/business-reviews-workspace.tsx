@@ -18,11 +18,11 @@ import {
   fetchIncomingReviews,
   fetchOutgoingReviews,
 } from "@/app/(protected)/actions/review-actions";
-import { Platform } from "@/components/dashboard/Platform";
-import { ViewReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/ViewReviewDialog";
+import { Platform } from "@/components/dashboard/platform";
+import { ViewReviewDialog } from "@/components/reviews/incoming-review-panel/view-review-dialog";
 import { SubmitReviewDialog } from "@/components/business/v2/submit-review-dialog";
 import { VerifyReviewDialog } from "@/components/business/v2/verify-review-dialog";
-import { ViewOutgoingReviewDialog } from "@/components/dashboard/YourReview/OutgoingReviewPanel/ViewReviewDialog";
+import { ViewOutgoingReviewDialog } from "@/components/reviews/outgoing-review-panel/view-review-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

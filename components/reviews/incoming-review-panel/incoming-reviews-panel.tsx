@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Platform } from "@/components/dashboard/Platform";
-import { VerifyReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/VerifyReviewDialog";
-import { ViewReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/ViewReviewDialog";
+import { Platform } from "@/components/dashboard/platform";
+import { VerifyReviewDialog } from "@/components/reviews/incoming-review-panel/verify-review-dialog";
+import { ViewReviewDialog } from "@/components/reviews/incoming-review-panel/view-review-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -37,10 +37,10 @@ import { Tables } from "@/types/database";
 import { ErrorUtils } from "@/utils/error";
 import { getAddress, getTotalPage } from "@/utils/shared";
 
-import { InboxPagination } from "../Pagination";
-import { ReviewStatus } from "../ReviewStatus";
-import { BusinessesFilter } from "./BusinessesFilter";
-import { ReviewStatusFilter } from "./ReviewStatusFilter";
+import { InboxPagination } from "../inbox-pagination";
+import { ReviewStatus } from "../review-status";
+import { BusinessesFilter } from "./businesses-filter";
+import { ReviewStatusFilter } from "./review-status-filter";
 
 interface IncomingReviewsPanelProps {
   userId: string;

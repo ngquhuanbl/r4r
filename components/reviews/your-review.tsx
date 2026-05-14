@@ -2,8 +2,8 @@
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 
-import { IncomingReviewsPanel } from "@/components/dashboard/YourReview/IncomingReviewPanel/Index";
-import { OutgoingReviewsPanel } from "@/components/dashboard/YourReview/OutgoingReviewPanel/Index";
+import { IncomingReviewsPanel } from "@/components/reviews/incoming-review-panel/incoming-reviews-panel";
+import { OutgoingReviewsPanel } from "@/components/reviews/outgoing-review-panel/outgoing-reviews-panel";
 import {
   INCOMING_REVIEWS_PANEL_ID,
   INCOMING_REVIEWS_TAB_ID,

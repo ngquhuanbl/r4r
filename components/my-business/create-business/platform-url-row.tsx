@@ -2,7 +2,7 @@
 
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
-import { Platform } from "@/components/dashboard/Platform";
+import { Platform } from "@/components/dashboard/platform";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {

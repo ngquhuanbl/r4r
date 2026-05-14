@@ -16,7 +16,7 @@ import {
   OUTGOING_REVIEWS_PAGE_SIZE,
 } from "@/constants/dashboard/ui";
 import { ONBOARDING_STEPS } from "@/constants/dashboard/onboarding";
-import StepCard from "@/components/shared/CardStep";
+import StepCard from "@/components/shared/card-step";
 import { StoreProvider } from "./StoreProvider";
 import { createClient } from "@/lib/supabase/server";
 import { fetchBusinesses } from "./actions/business-actions";

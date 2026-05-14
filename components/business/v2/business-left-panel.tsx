@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 import { startConnectionMatch } from "@/app/(protected)/business/[id]/connection-actions";
 import { acknowledgePendingPartnerConnections } from "@/lib/connections/acknowledge-pending-partner-browser";
-import { Platform } from "@/components/dashboard/Platform";
+import { Platform } from "@/components/dashboard/platform";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {

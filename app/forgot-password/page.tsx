@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { Metadata } from "next";
 import Link from "next/link";
 
-import { ForgotPwdForm } from "@/components/forgot-password/ForgotPwdForm";
+import { ForgotPwdForm } from "@/components/forgot-password/forgot-password-form";
 import Logo from "@/components/shared/logo";
 import { Paths } from "@/constants/paths";
 

@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 
-import { NewPwdForm } from "@/components/new-password/NewPwdForm";
+import { NewPwdForm } from "@/components/new-password/new-password-form";
 import Logo from "@/components/shared/logo";
 
 export const metadata: Metadata = {

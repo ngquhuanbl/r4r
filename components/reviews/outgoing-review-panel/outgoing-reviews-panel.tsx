@@ -3,7 +3,7 @@ import { Bell, ChevronsUpDown, Radio } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { Platform } from "@/components/dashboard/Platform";
+import { Platform } from "@/components/dashboard/platform";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -30,11 +30,11 @@ import { ErrorUtils } from "@/utils/error";
 import { ReviewUtils } from "@/utils/review";
 import { getAddress, getTotalPage } from "@/utils/shared";
 
-import { InboxPagination } from "../Pagination";
-import { ReviewStatus } from "../ReviewStatus";
-import { ReviewStatusFilter } from "./ReviewStatusFilter";
-import { SubmitReviewDialog } from "./SubmitReviewDialog";
-import { ViewOutgoingReviewDialog } from "./ViewReviewDialog";
+import { InboxPagination } from "../inbox-pagination";
+import { ReviewStatus } from "../review-status";
+import { ReviewStatusFilter } from "./review-status-filter";
+import { SubmitReviewDialog } from "./submit-review-dialog";
+import { ViewOutgoingReviewDialog } from "./view-review-dialog";
 
 interface OutgoingReviewsPanelProps {
   userId: string;
