@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import {
   fetchIncomingReviews,
   fetchOutgoingReviews,
-} from "@/app/(protected)/home/actions";
+} from "@/app/(protected)/actions/review-actions";
 import { Platform } from "@/components/dashboard/Platform";
 import { ViewReviewDialog } from "@/components/dashboard/YourReview/IncomingReviewPanel/ViewReviewDialog";
 import { SubmitReviewDialog } from "@/components/business/v2/submit-review-dialog";
@@ -290,7 +290,7 @@ export type BusinessReviewsWorkspaceHandle = {
 };
 
 /**
- * Fetches lists via server actions (isolated from global Redux filters used on /home).
+ * Fetches lists via server actions (isolated from global Redux filters on the dashboard hub).
  */
 export const BusinessReviewsWorkspace = forwardRef<
   BusinessReviewsWorkspaceHandle,

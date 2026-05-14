@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import {
   confirmIncomingReview,
   rejectIncomingReview,
-} from "@/app/(protected)/home/actions";
+} from "@/app/(protected)/actions/review-actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

@@ -1,20 +1,18 @@
 "use client";
-import { Lock, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { HTMLAttributes } from "react";
 
 import Logo from "@/components/shared/logo";
 import { NAV_LINKS } from "@/constants/nav-links";
-import { Paths } from "@/constants/paths";
 import { useAppSelector } from "@/lib/redux/hooks";
-import { authSelectors } from "@/lib/redux/slices/auth";
 import { metricSelectors } from "@/lib/redux/slices/metric";
 import { cn } from "@/lib/utils";
 import { getVerifiedRate } from "@/utils/metrics";
 
 export function HamburgerMenu() {
-  const isAdmin = useAppSelector(authSelectors.selectIsAdmin);
   const {
     total_incoming_verified,
     total_incoming_all,
@@ -64,15 +62,13 @@ export function HamburgerMenu() {
       </div>
       <dialog
         ref={ref}
-        // className="w-[80%] h-screen backdrop:bg-gray-500 backdrop:opacity-70 m-0 md:hidden max-h-screen dark:bg-black transition-transform duration-500 ease-in-out transform -translate-x-full open:translate-x-0"
         className={cn(
           "w-[80%] h-screen backdrop:bg-gray-500 backdrop:opacity-70 m-0 md:hidden max-h-screen dark:bg-black transition-transform duration-500 ease-in-out transform -translate-x-full",
           {
             "translate-x-0": isOpen,
           }
         )}
-        // @ts-ignore
-        closedby="any"
+        {...({ closedby: "any" } as HTMLAttributes<HTMLDialogElement>)}
       >
         <div className="flex flex-col">
           <div className="flex p-4 pb-3 border-b border-gray-300 justify-between items-center pr-5">
@@ -98,18 +94,6 @@ export function HamburgerMenu() {
                   {name}
                 </Link>
               ))}
-              {isAdmin ? (
-                <Link
-                  href={Paths.ADMIN}
-                  className={cn("px-4 py-2 font-medium", {
-                    "bg-primary rounded-r-xl text-white":
-                      pathname === Paths.ADMIN,
-                  })}
-                  onClick={closeMenu}
-                >
-                  Admin <Lock className="inline ml-1 align-top" size={20} />
-                </Link>
-              ) : null}
             </nav>
           </div>
           <div className="p-4 dark:text-white">

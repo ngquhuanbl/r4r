@@ -1,4 +1,4 @@
-import { fetchOutgoingReviews } from "@/app/(protected)/home/actions";
+import { fetchOutgoingReviews } from "@/app/(protected)/actions/review-actions";
 import {
   OUTGOING_REVIEWS_PAGE_SIZE,
   REVIEW_STATUS_FILTER_ALL_OPTION,

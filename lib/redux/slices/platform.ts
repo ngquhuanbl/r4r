@@ -1,4 +1,4 @@
-import { fetchPlatforms } from "@/app/(protected)/home/actions";
+import { fetchPlatforms } from "@/app/(protected)/actions/review-actions";
 import { Tables } from "@/types/database";
 import {
   createEntityAdapter,

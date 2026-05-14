@@ -14,7 +14,7 @@ import {
 } from "@/lib/billing/tiers";
 import { createClient } from "@/lib/supabase/server";
 import { isStripeConfigured } from "@/lib/stripe/server";
-import { fetchBusinesses } from "@/app/(protected)/my-businesses/actions";
+import { fetchBusinesses } from "@/app/(protected)/actions/business-actions";
 import type { Tables } from "@/types/database";
 
 export const metadata: Metadata = {

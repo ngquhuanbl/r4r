@@ -1,4 +1,4 @@
-import { fetchReviewStatuses as fetchReviewStatusesFromServer } from "@/app/(protected)/home/actions";
+import { fetchReviewStatuses as fetchReviewStatusesFromServer } from "@/app/(protected)/actions/review-actions";
 import { Tables } from "@/types/database";
 import {
   createEntityAdapter,

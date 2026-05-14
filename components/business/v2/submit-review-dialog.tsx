@@ -15,7 +15,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-import { submitOutgoingReview } from "@/app/(protected)/home/actions";
+import { submitOutgoingReview } from "@/app/(protected)/actions/review-actions";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,

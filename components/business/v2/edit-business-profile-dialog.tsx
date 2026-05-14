@@ -10,7 +10,8 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-import { updateBusiness } from "@/app/(protected)/my-businesses/actions";
+import { updateBusiness } from "@/app/(protected)/actions/business-actions";
+import { ADDRESS_SEARCH_TEMPORARILY_DISABLED } from "@/constants/address-search";
 import { DASHBOARD_ACCENT } from "@/components/dashboard/locations/constants";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
@@ -65,14 +66,11 @@ function addressFromBusiness(b: FetchedBusiness): AddressFields {
 
 const hasMapsKey = Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 
-/** TODO: keep in sync with CreateBusinessDialog — re-enable Places when ready. */
-const ADDRESS_SEARCH_TEMPORARILY_DISABLED = true;
-
 interface EditBusinessProfileDialogProps {
   open: boolean;
-  onOpenChange: (opened: boolean) => void;
+  onOpenChange: (_opened: boolean) => void;
   data: FetchedBusiness;
-  onUpdatedData?: (data: FetchedBusiness) => void;
+  onUpdatedData?: (_data: FetchedBusiness) => void;
 }
 
 /**

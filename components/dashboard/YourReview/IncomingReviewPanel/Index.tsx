@@ -156,7 +156,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
             feedback!
           </p>
           <Button asChild className="mt-5">
-            <Link href={`${Paths.MY_BUSINESSES}?${params.toString()}`}>
+            <Link href={`${Paths.DASHBOARD}?${params.toString()}`}>
               <Plus />
               Add new business
             </Link>

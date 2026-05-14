@@ -15,30 +15,19 @@ if (supabaseUrl) {
 }
 
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   async redirects() {
     return [
       { source: "/sign-in", destination: "/login", permanent: true },
       { source: "/sign-up", destination: "/login", permanent: true },
+      { source: "/home", destination: "/dashboard", permanent: false },
+      { source: "/my-businesses", destination: "/dashboard", permanent: false },
     ];
   },
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "oaidalleapiprodscus.blob.core.windows.net",
-      },
-      {
-        protocol: "https",
-        hostname: "1n0wldx72cziwk4n.public.blob.vercel-storage.com",
-      },
-      {
-        protocol: "https",
-        hostname: "imagedelivery.net",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
       {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",

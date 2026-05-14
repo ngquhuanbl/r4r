@@ -18,7 +18,7 @@ import {
 import {
   acceptReviewRequest,
   rejectReviewRequest,
-} from "@/app/(protected)/home/actions";
+} from "@/app/(protected)/actions/review-actions";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
 

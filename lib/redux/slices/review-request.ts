@@ -1,4 +1,4 @@
-import { fetchPendingReviewRequests as fetchReviewRequestsFromServer } from "@/app/(protected)/home/actions";
+import { fetchPendingReviewRequests as fetchReviewRequestsFromServer } from "@/app/(protected)/actions/review-actions";
 import { ReviewRequest, UpdatedReviewRequestsStatus } from "@/types/dashboard";
 import { UserId } from "@/types/shared";
 import {

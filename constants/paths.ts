@@ -5,13 +5,12 @@ export enum Paths {
   SIGN_IN = "/sign-in",
   SIGN_UP = "/sign-up",
   AUTH_CALLBACK = "/auth/callback",
+  /** Locations grid and primary post-login overview. */
   DASHBOARD = "/dashboard",
-  MY_BUSINESSES = "/my-businesses", // V1
   ACCOUNT = "/account",
   BILLING = "/billing",
   FORGOT_PWD = "/forgot-password",
   NEW_PWD = "/new-password",
-  ADMIN = "/admin",
 }
 
 /** Single-business workspace (V2). */

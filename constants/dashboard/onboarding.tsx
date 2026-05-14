@@ -130,7 +130,7 @@ export const ONBOARDING_STEPS: Tour[] = [
         selector: "#" + ONBOARDING_STEP_IDS.YOUR_ACHIEVEMENT,
         showControls: true,
         showSkip: true,
-        nextRoute: Paths.MY_BUSINESSES,
+        nextRoute: Paths.DASHBOARD,
         pointerPadding: 10,
         pointerRadius: 10,
       },

@@ -41,13 +41,20 @@ Create a `.env.local` file in the root directory with the following:
 ```
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-NEXT_PUBLIC_ADMIN_ID=user_id_of_admin
 ```
 
 ### Database Setup
 
-1. Create a new Supabase project
-2. Run the SQL script in `supabase_schema.sql` in the Supabase SQL editor to set up the database schema
+1. Create a new Supabase project.
+2. Apply migrations under [`supabase/migrations/`](supabase/migrations/) (Supabase CLI `supabase db push`, or run each file in timestamp order in the SQL Editor). See [`supabase/README.md`](supabase/README.md) and [`docs/supabase-project-setup.md`](docs/supabase-project-setup.md).
+
+### Scripts
+
+```bash
+npm run lint        # ESLint (Next.js core config; not enforced on `next build` yet)
+npm run typecheck   # TypeScript, no emit
+npm test            # Vitest unit tests
+```
 
 ### Installation
 
@@ -67,26 +74,22 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the a
 - **UI Components**: Shadcn components
 - **Authentication**: Supabase Auth
 - **Database**: Supabase PostgreSQL
-- **State Management**: React Hooks and Server Components
+- **State Management**: Redux Toolkit (client) with SSR bootstrap in the protected layout; see [`docs/redux-ssr.md`](docs/redux-ssr.md)
 - **API**: Next.js Server Actions
 
 ## Project Structure
 
 ```
-/app                   # Next.js App Router files
-  /(protected)         # Protected routes (requires authentication)
-    /dashboard         # Default dashboard (locations grid)
-    /home              # Legacy page (redirects to /dashboard; server actions still live here)
-    /businesses        # Business management
-    /invitations       # Invitation management
-  /login               # Authentication pages
-  /auth                # Auth callback handling
-/components            # React components
-  /common              # Common layout components
-  /dashboard           # Dashboard-specific components
-  /ui                  # Shadcn UI components
-/lib                   # Utility functions and libraries
-  /supabase            # Supabase client setup
+/app/(protected)       # Authenticated shell (Redux bootstrap — see docs/redux-ssr.md)
+  /dashboard           # Locations grid, business list, and create-business entry (`?show=1` opens create)
+  /business/[id]       # Single-business workspace
+  /account, /billing   # Account & billing (lighter Redux bootstrap)
+/app/login             # Auth entry
+/components            # UI by feature area
+/lib                   # Supabase clients, billing, connections, server helpers
+/docs                  # Specs and internal notes
+/supabase/migrations   # Postgres schema (source of truth)
+/supabase/scripts      # Optional dev resets only (see supabase/README.md)
 ```
 
 ## Credits

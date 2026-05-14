@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BusinessPageClient } from "@/components/business/v2/business-page-client";
-import { fetchReviewStatuses } from "@/app/(protected)/home/actions";
+import { fetchReviewStatuses } from "@/app/(protected)/actions/review-actions";
 import { getUser, getUserOrRedirect } from "@/lib/supabase/server";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
 import type { Tables } from "@/types/database";

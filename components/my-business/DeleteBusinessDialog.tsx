@@ -2,7 +2,7 @@ import { Loader2Icon } from "lucide-react";
 import { useCallback, useTransition } from "react";
 import { toast } from "sonner";
 
-import { deleteBusiness } from "@/app/(protected)/my-businesses/actions";
+import { deleteBusiness } from "@/app/(protected)/actions/business-actions";
 import { FetchedBusiness } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { ErrorUtils } from "@/utils/error";

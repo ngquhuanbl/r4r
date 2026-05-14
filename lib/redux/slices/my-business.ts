@@ -1,4 +1,4 @@
-import { fetchBusinesses } from "@/app/(protected)/my-businesses/actions";
+import { fetchBusinesses } from "@/app/(protected)/actions/business-actions";
 import { FetchedBusiness } from "@/types/dashboard";
 import { Tables } from "@/types/database";
 import { UserId } from "@/types/shared";

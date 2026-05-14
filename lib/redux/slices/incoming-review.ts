@@ -1,4 +1,4 @@
-import { fetchIncomingReviews } from "@/app/(protected)/home/actions";
+import { fetchIncomingReviews } from "@/app/(protected)/actions/review-actions";
 import {
   BUSINESS_FILTER_ALL_OPTION,
   INCOMING_REVIEWS_PAGE_SIZE,

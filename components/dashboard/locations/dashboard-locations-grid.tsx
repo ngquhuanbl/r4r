@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import {
   fetchDashboardBusinessActionCounts,
   type BusinessActionCounts,
 } from "@/app/(protected)/dashboard/actions";
 import { CreateBusinessDialog } from "@/components/my-business/CreateBusinessDialog";
+import { MyBusinessesSearchParams } from "@/constants/my-businesses";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
 import {
@@ -28,6 +30,9 @@ const zeroCounts = (): BusinessActionCounts => ({
 
 export function DashboardLocationsGrid() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const userId = useAppSelector(authSelectors.selectUserId);
   const myBusinesses = useAppSelector(myBusinessesSelectors.selectData);
   const [query, setQuery] = useState("");
@@ -88,6 +93,15 @@ export function DashboardLocationsGrid() {
   );
 
   const openCreate = useCallback(() => setCreateOpen(true), []);
+
+  useEffect(() => {
+    if (searchParams.get(MyBusinessesSearchParams.SHOW) !== "1") return;
+    setCreateOpen(true);
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete(MyBusinessesSearchParams.SHOW);
+    const q = next.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+  }, [searchParams, router, pathname]);
 
   return (
     <>

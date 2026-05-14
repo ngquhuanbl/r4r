@@ -4,15 +4,21 @@ import { Paths } from "@/constants/paths";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 export const updateSession = async (request: NextRequest) => {
+  function nextWithPathname(): NextResponse {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-next-pathname", request.nextUrl.pathname);
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
   // This `try/catch` block is only here for the interactive tutorial.
   // Feel free to remove once you have Supabase connected.
   try {
     // Create an unmodified response
-    let response = NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
+    let response = nextWithPathname();
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,11 +35,7 @@ export const updateSession = async (request: NextRequest) => {
               value,
               ...options,
             });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
+            response = nextWithPathname();
             response.cookies.set({
               name,
               value,
@@ -47,11 +49,7 @@ export const updateSession = async (request: NextRequest) => {
               value: "",
               ...options,
             });
-            response = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
+            response = nextWithPathname();
             response.cookies.set({
               name,
               value: "",
@@ -93,10 +91,6 @@ export const updateSession = async (request: NextRequest) => {
     // If you are here, a Supabase client could not be created!
     // This is likely because you have not set up environment variables.
     // Check out http://localhost:3000 for Next Steps.
-    return NextResponse.next({
-      request: {
-        headers: request.headers,
-      },
-    });
+    return nextWithPathname();
   }
 };

@@ -2,7 +2,7 @@ import { Loader2Icon } from "lucide-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
-import { updateBusiness } from "@/app/(protected)/my-businesses/actions";
+import { updateBusiness } from "@/app/(protected)/actions/business-actions";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
 import { FetchedBusiness } from "@/types/dashboard";

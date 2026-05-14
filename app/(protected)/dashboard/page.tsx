@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 
 import { FinishProfileDialog } from "@/components/dashboard/finish-profile-dialog";
 import { DashboardLocationsGrid } from "@/components/dashboard/DashboardLocationsGrid";
@@ -22,7 +23,9 @@ export default async function Page() {
       <PreloadResources />
       {user ? <FinishProfileDialog user={user} /> : null}
       <section className="flex w-full min-w-0 flex-1 flex-col py-7 pb-16">
-        <DashboardLocationsGrid />
+        <Suspense fallback={null}>
+          <DashboardLocationsGrid />
+        </Suspense>
       </section>
     </>
   );

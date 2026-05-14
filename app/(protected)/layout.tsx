@@ -1,25 +1,35 @@
+import { headers } from "next/headers";
 import { NextStep, NextStepProvider } from "nextstepjs";
+
 import {
   fetchIncomingReviews,
   fetchOutgoingReviews,
   fetchPendingReviewRequests,
   fetchPlatforms,
   fetchReviewStatuses,
-} from "./home/actions";
+} from "./actions/review-actions";
 
 import { Footer } from "@/components/shared/footer";
 import { Header } from "@/components/shared/header";
-import { INCOMING_REVIEWS_PAGE_SIZE } from "@/constants/dashboard/ui";
+import {
+  INCOMING_REVIEWS_PAGE_SIZE,
+  OUTGOING_REVIEWS_PAGE_SIZE,
+} from "@/constants/dashboard/ui";
 import { ONBOARDING_STEPS } from "@/constants/dashboard/onboarding";
 import StepCard from "@/components/shared/CardStep";
 import { StoreProvider } from "./StoreProvider";
 import { createClient } from "@/lib/supabase/server";
-import { fetchBusinesses } from "./my-businesses/actions";
+import { fetchBusinesses } from "./actions/business-actions";
 import { fetchMetrics } from "./metrics/actions";
+import type { IncomingReview, OutgoingReview, ReviewRequest } from "@/types/dashboard";
 import { unwrap } from "@/utils/api";
 
 interface LayoutProps {
   children: React.ReactNode;
+}
+
+function emptyReviewList<T>(): { data: T[]; total_results: number } {
+  return { data: [], total_results: 0 };
 }
 
 export default async function Layout({ children }: LayoutProps) {
@@ -30,23 +40,38 @@ export default async function Layout({ children }: LayoutProps) {
 
   const userId = user!.id;
 
-  const [
-    incomingReviews,
-    outgoingReviews,
-    reviewRequests,
-    myBusinesses,
-    reviewStatuses,
-    platforms,
-    metrics,
-  ] = await Promise.all([
-    unwrap(fetchIncomingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
-    unwrap(fetchOutgoingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
-    unwrap(fetchPendingReviewRequests(userId)),
+  const pathname = headers().get("x-next-pathname") ?? "";
+  const skipReviewLists =
+    pathname === "/account" ||
+    pathname.startsWith("/account/") ||
+    pathname === "/billing" ||
+    pathname.startsWith("/billing/");
+
+  const [myBusinesses, reviewStatuses, platforms, metrics] = await Promise.all([
     unwrap(fetchBusinesses(userId)),
     unwrap(fetchReviewStatuses()),
     unwrap(fetchPlatforms()),
     unwrap(fetchMetrics(userId)),
   ]);
+
+  let incomingReviews: { data: IncomingReview[]; total_results: number };
+  let outgoingReviews: { data: OutgoingReview[]; total_results: number };
+  let reviewRequests: ReviewRequest[];
+
+  if (skipReviewLists) {
+    incomingReviews = emptyReviewList<IncomingReview>();
+    outgoingReviews = emptyReviewList<OutgoingReview>();
+    reviewRequests = [];
+  } else {
+    const [inc, out, req] = await Promise.all([
+      unwrap(fetchIncomingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
+      unwrap(fetchOutgoingReviews(userId, 1, OUTGOING_REVIEWS_PAGE_SIZE)),
+      unwrap(fetchPendingReviewRequests(userId)),
+    ]);
+    incomingReviews = inc;
+    outgoingReviews = out;
+    reviewRequests = req;
+  }
 
   return (
     <StoreProvider
@@ -63,7 +88,7 @@ export default async function Layout({ children }: LayoutProps) {
     >
       <NextStepProvider>
         <NextStep steps={ONBOARDING_STEPS} cardComponent={StepCard}>
-          <div className="flex flex-col min-h-screen">
+          <div className="flex min-h-screen flex-col">
             <Header user={user!} />
 
             <main className="flex min-h-0 w-full flex-1 flex-col">

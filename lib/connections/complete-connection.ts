@@ -7,7 +7,7 @@ import type { Tables } from "@/types/database";
 
 type Supabase = ReturnType<typeof createClient>;
 
-function isTerminalReview(name: string | undefined): boolean {
+export function isTerminalReview(name: string | undefined): boolean {
   if (!name) return false;
   return (
     name === ReviewStatusNames.VERIFIED || name === ReviewStatusNames.REJECTED

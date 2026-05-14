@@ -10,7 +10,8 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-import { createBusiness } from "@/app/(protected)/my-businesses/actions";
+import { createBusiness } from "@/app/(protected)/actions/business-actions";
+import { ADDRESS_SEARCH_TEMPORARILY_DISABLED } from "@/constants/address-search";
 import { DASHBOARD_ACCENT } from "@/components/dashboard/locations/constants";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
@@ -52,8 +53,8 @@ import { Separator } from "../ui/separator";
 
 interface CreateBusinessDialogProps {
   open: boolean;
-  onOpenChange: (opened: boolean) => void;
-  onCreatedData?: (data: FetchedBusiness) => void;
+  onOpenChange: (_opened: boolean) => void;
+  onCreatedData?: (_data: FetchedBusiness) => void;
 }
 
 function emptyAddress(): AddressFields {
@@ -61,9 +62,6 @@ function emptyAddress(): AddressFields {
 }
 
 const hasMapsKey = Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
-
-/** TODO: re-enable Places search — set to false and restore manual/toggle behavior tied to `hasMapsKey`. */
-const ADDRESS_SEARCH_TEMPORARILY_DISABLED = true;
 
 export function CreateBusinessDialog({
   open,

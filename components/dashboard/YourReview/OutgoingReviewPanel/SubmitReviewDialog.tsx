@@ -2,7 +2,7 @@ import { Loader2Icon, Send, Share2 } from "lucide-react";
 import { useCallback, useTransition } from "react";
 import { toast } from "sonner";
 
-import { submitOutgoingReview } from "@/app/(protected)/home/actions";
+import { submitOutgoingReview } from "@/app/(protected)/actions/review-actions";
 import {
   Accordion,
   AccordionContent,
