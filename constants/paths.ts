@@ -13,7 +13,7 @@ export enum Paths {
   NEW_PWD = "/new-password",
 }
 
-/** Single-business workspace (V2). */
+/** Single-business workspace. */
 export function businessPath(businessId: string | number) {
   return `/business/${businessId}`;
 }

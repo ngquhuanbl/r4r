@@ -3,7 +3,7 @@ import {
   BUSINESS_FILTER_ALL_OPTION,
   INCOMING_REVIEWS_PAGE_SIZE,
   REVIEW_STATUS_FILTER_ALL_OPTION,
-} from "@/constants/dashboard/ui";
+} from "@/constants/reviews";
 import {
   FetchedReviewsResponse,
   IncomingReview,

@@ -20,8 +20,8 @@ import {
 } from "@/app/(protected)/actions/review-actions";
 import { Platform } from "@/components/dashboard/platform";
 import { ViewReviewDialog } from "@/components/reviews/incoming-review-panel/view-review-dialog";
-import { SubmitReviewDialog } from "@/components/business/v2/submit-review-dialog";
-import { VerifyReviewDialog } from "@/components/business/v2/verify-review-dialog";
+import { SubmitReviewDialog } from "@/components/business/submit-review-dialog";
+import { VerifyReviewDialog } from "@/components/business/verify-review-dialog";
 import { ViewOutgoingReviewDialog } from "@/components/reviews/outgoing-review-panel/view-review-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,7 @@ import {
   INCOMING_REVIEWS_PAGE_SIZE,
   OUTGOING_REVIEWS_PAGE_SIZE,
   REVIEW_STATUS_FILTER_ALL_OPTION,
-} from "@/constants/dashboard/ui";
+} from "@/constants/reviews";
 import { ReviewStatusNames } from "@/constants/shared";
 import { cn } from "@/lib/utils";
 import type {

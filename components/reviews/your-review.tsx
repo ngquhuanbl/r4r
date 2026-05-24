@@ -9,7 +9,7 @@ import {
   INCOMING_REVIEWS_TAB_ID,
   OUTGOING_REVIEWS_PANEL_ID,
   OUTGOING_REVIEWS_TAB_ID,
-} from "@/constants/dashboard/ui";
+} from "@/constants/reviews";
 import { cn } from "@/lib/utils";
 
 export function YourReview({ userId }: { userId: string }) {

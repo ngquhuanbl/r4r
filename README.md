@@ -46,7 +46,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ### Database Setup
 
 1. Create a new Supabase project.
-2. Apply migrations under [`supabase/migrations/`](supabase/migrations/) (Supabase CLI `supabase db push`, or run each file in timestamp order in the SQL Editor). See [`supabase/README.md`](supabase/README.md) and [`docs/supabase-project-setup.md`](docs/supabase-project-setup.md).
+2. Apply migrations under [`supabase/migrations/`](supabase/migrations/) (Supabase CLI `supabase db push`, or run each file in timestamp order in the SQL Editor). See [`supabase/README.md`](supabase/README.md) and [`docs/supabase-and-local-development.md`](docs/supabase-and-local-development.md).
 
 ### Scripts
 
@@ -74,20 +74,21 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the a
 - **UI Components**: Shadcn components
 - **Authentication**: Supabase Auth
 - **Database**: Supabase PostgreSQL
-- **State Management**: Redux Toolkit (client) with SSR bootstrap in the protected layout; see [`docs/redux-ssr.md`](docs/redux-ssr.md)
+- **State Management**: Redux Toolkit (client) with SSR bootstrap in the protected layout; see [`docs/architecture-and-codebase.md`](docs/architecture-and-codebase.md)
 - **API**: Next.js Server Actions
 
 ## Project Structure
 
 ```
-/app/(protected)       # Authenticated shell (Redux bootstrap — see docs/redux-ssr.md)
-  /dashboard           # Locations grid, business list, and create-business entry (`?show=1` opens create)
-  /business/[id]       # Single-business workspace
-  /account, /billing   # Account & billing (lighter Redux bootstrap)
+/app/(protected)       # Authenticated shell (see docs/architecture-and-codebase.md)
+  /(workspace)         # Route group: heavy Redux fetch for dashboard + business only
+    /dashboard         # Locations grid (`?show=1` opens create-business)
+    /business/[id]     # Single-business workspace
+  /account, /billing   # Settings (no workspace data fetch)
 /app/login             # Auth entry
-/components            # UI by feature area
+/components            # UI by feature area (`business/` = workspace + create/manage dialogs)
 /lib                   # Supabase clients, billing, connections, server helpers
-/docs                  # Specs and internal notes
+/docs                  # Maintainer tech specs (`docs/README.md`)
 /supabase/migrations   # Postgres schema (source of truth)
 /supabase/scripts      # Optional dev resets only (see supabase/README.md)
 ```

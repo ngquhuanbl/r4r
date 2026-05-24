@@ -19,13 +19,3 @@ export const BUSINESS_FILTER_ALL_OPTION = {
 export const INCOMING_REVIEWS_PAGE_SIZE = 5;
 
 export const OUTGOING_REVIEWS_PAGE_SIZE = 5;
-
-export enum ONBOARDING_STEP_IDS {
-  NAV_BAR = "nav-bar",
-  NOTIFICATIONS = "notifications",
-  YOUR_REVIEWS = "your-reviewS",
-  INCOMING_REVIEWS = INCOMING_REVIEWS_TAB_ID,
-  OUTGOING_REVIEWS = OUTGOING_REVIEWS_TAB_ID,
-  YOUR_ACHIEVEMENT = "your-achievement",
-  LETS_START = "let-start",
-}

@@ -6,8 +6,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   fetchDashboardBusinessActionCounts,
   type BusinessActionCounts,
-} from "@/app/(protected)/dashboard/actions";
-import { CreateBusinessDialog } from "@/components/my-business/create-business-dialog";
+} from "@/app/(protected)/(workspace)/dashboard/actions";
+import { CreateBusinessDialog } from "@/components/business/create-business-dialog";
 import { MyBusinessesSearchParams } from "@/constants/my-businesses";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";

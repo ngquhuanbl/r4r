@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BUSINESS_FILTER_ALL_OPTION } from "@/constants/dashboard/ui";
+import { BUSINESS_FILTER_ALL_OPTION } from "@/constants/reviews";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { myBusinessesSelectors, Status } from "@/lib/redux/slices/my-business";
 

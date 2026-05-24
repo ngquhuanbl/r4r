@@ -32,10 +32,10 @@ import { FieldNames } from "@/utils/my-business";
 import {
   AddressSection,
   type AddressFields,
-} from "@/components/my-business/create-business/address-section";
-import { BusinessImageField } from "@/components/my-business/create-business/business-image-field";
-import { PlatformUrlRow } from "@/components/my-business/create-business/platform-url-row";
-import { sortPlatformsBySpec } from "@/components/my-business/create-business/sort-platforms";
+} from "@/components/business/create-business/address-section";
+import { BusinessImageField } from "@/components/business/create-business/business-image-field";
+import { PlatformUrlRow } from "@/components/business/create-business/platform-url-row";
+import { sortPlatformsBySpec } from "@/components/business/create-business/sort-platforms";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

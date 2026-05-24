@@ -1,4 +1,4 @@
-import type { BusinessActionCounts } from "@/app/(protected)/dashboard/actions";
+import type { BusinessActionCounts } from "@/app/(protected)/(workspace)/dashboard/actions";
 import { FetchedBusiness } from "@/types/dashboard";
 import { getAddress } from "@/utils/shared";
 

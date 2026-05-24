@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   refetchBusinessBillingContext,
   type BusinessBillingSidebarContext,
-} from "@/app/(protected)/business/[id]/actions";
+} from "@/app/(protected)/(workspace)/business/[id]/actions";
 import { refreshBusinessReviewSnapshot } from "@/lib/business/refresh-business-review-snapshot-browser";
 import type { FetchedBusiness } from "@/types/dashboard";
 import type { Tables } from "@/types/database";

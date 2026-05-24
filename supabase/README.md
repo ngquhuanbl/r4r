@@ -22,4 +22,4 @@ In [`scripts/`](./scripts/):
 | [`01_reset_app_data.sql`](./scripts/01_reset_app_data.sql) | Truncate app tables; keeps auth users and lookup rows. **Dev/demo only.** |
 | [`02_reset_auth_users.sql`](./scripts/02_reset_auth_users.sql) | Deletes **all** `auth.users`. Run only when you intend a completely empty Auth directory. |
 
-See [`docs/supabase-project-setup.md`](../docs/supabase-project-setup.md) and [`docs/testing-demo-data.md`](../docs/testing-demo-data.md).
+See [`docs/supabase-and-local-development.md`](../docs/supabase-and-local-development.md) and the maintainer index [`docs/README.md`](../docs/README.md).

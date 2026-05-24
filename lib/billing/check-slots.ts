@@ -19,7 +19,7 @@ export async function getSlotLimitForBusiness(
 }
 
 /**
- * Active connections: first-class `connections` rows with status=active (see docs/connection-spec.md).
+ * Active connections: first-class `connections` rows with status=active (see docs/connections.md).
  * Legacy invitations without `connection_id` are not counted here.
  */
 export async function countActiveConnectionsForBusiness(

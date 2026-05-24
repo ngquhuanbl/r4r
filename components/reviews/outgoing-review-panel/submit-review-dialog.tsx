@@ -27,7 +27,7 @@ import { ErrorUtils } from "@/utils/error";
 const REVIEW_URL_FIELD_NAME = "url";
 const REVIEW_CONTENT_FIELD_NAME = "content";
 
-/** Accordion layout for dashboard Outgoing tab. Business page uses `@/components/business/v2/submit-review-dialog`. */
+/** Accordion layout for dashboard Outgoing tab. Business page uses `@/components/business/submit-review-dialog`. */
 interface SubmitReviewDialogProps {
   open: boolean;
   data: OutgoingReview;

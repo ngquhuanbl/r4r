@@ -13,7 +13,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { startConnectionMatch } from "@/app/(protected)/business/[id]/connection-actions";
+import { startConnectionMatch } from "@/app/(protected)/(workspace)/business/[id]/connection-actions";
 import { acknowledgePendingPartnerConnections } from "@/lib/connections/acknowledge-pending-partner-browser";
 import { Platform } from "@/components/dashboard/platform";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,9 @@ import {
 import { DASHBOARD_PRIMARY_BUTTON_CLASSNAME } from "@/components/dashboard/locations/constants";
 import { cn } from "@/lib/utils";
 import { Paths } from "@/constants/paths";
-import type { BusinessBillingSidebarContext } from "@/app/(protected)/business/[id]/actions";
+import type { BusinessBillingSidebarContext } from "@/app/(protected)/(workspace)/business/[id]/actions";
 import type { FetchedBusiness } from "@/types/dashboard";
-import { sortPlatformsBySpec } from "@/components/my-business/create-business/sort-platforms";
+import { sortPlatformsBySpec } from "@/components/business/create-business/sort-platforms";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
 import { ManageSubscriptionDialog } from "@/components/billing/manage-subscription-dialog";

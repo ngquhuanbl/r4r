@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { REVIEW_STATUS_FILTER_ALL_OPTION } from "@/constants/dashboard/ui";
+import { REVIEW_STATUS_FILTER_ALL_OPTION } from "@/constants/reviews";
 import { useAppSelector } from "@/lib/redux/hooks";
 import {
   reviewStatusesSelectors,

@@ -11,15 +11,7 @@ import { platformsActions } from "@/lib/redux/slices/platform";
 import { reviewRequestsActions } from "@/lib/redux/slices/review-request";
 import { reviewStatusesActions } from "@/lib/redux/slices/review-status";
 import { AppStore, makeStore } from "@/lib/redux/store";
-import {
-  FetchedBusiness,
-  FetchedReviewsResponse,
-  IncomingReview,
-  OutgoingReview,
-  ReviewRequest,
-} from "@/types/dashboard";
 import { Tables } from "@/types/database";
-import { Metrics } from "@/types/metric";
 import { setupListeners } from "@reduxjs/toolkit/query";
 
 import type { ReactNode } from "react";
@@ -30,13 +22,8 @@ interface Props {
 
   readonly initialData: {
     user: User;
-    incomingReviews: FetchedReviewsResponse<IncomingReview>;
-    outgoingReviews: FetchedReviewsResponse<OutgoingReview>;
-    reviewRequests: ReviewRequest[];
-    myBusinesses: FetchedBusiness[];
     reviewStatuses: Tables<"review_statuses">[];
     platforms: Tables<"platforms">[];
-    metrics: Metrics;
   };
 }
 
@@ -44,33 +31,31 @@ export const StoreProvider = ({ initialData, children }: Props) => {
   const storeRef = useRef<AppStore | null>(null);
 
   if (!storeRef.current) {
-    // Create the store instance the first time this renders
     const store = makeStore();
 
     store.dispatch(authActions.setCredentials(initialData.user));
     store.dispatch(
-      incomingReviewsActions.loadInitData(initialData.incomingReviews)
-    );
-    store.dispatch(
-      outgoingReviewsActions.loadInitData(initialData.outgoingReviews)
-    );
-    store.dispatch(
-      reviewRequestsActions.loadInitData(initialData.reviewRequests)
-    );
-    store.dispatch(myBusinessesActions.loadInitData(initialData.myBusinesses));
-    store.dispatch(
-      reviewStatusesActions.loadInitData(initialData.reviewStatuses)
+      reviewStatusesActions.loadInitData(initialData.reviewStatuses),
     );
     store.dispatch(platformsActions.loadInitData(initialData.platforms));
-    store.dispatch(metricActions.setMetric(initialData.metrics));
+
+    // Workspace routes hydrate businesses, reviews, requests, and metrics.
+    store.dispatch(incomingReviewsActions.loadInitData({ data: [], total_results: 0 }));
+    store.dispatch(outgoingReviewsActions.loadInitData({ data: [], total_results: 0 }));
+    store.dispatch(reviewRequestsActions.loadInitData([]));
+    store.dispatch(myBusinessesActions.loadInitData([]));
+    store.dispatch(metricActions.setMetric({
+      total_incoming_all: 0,
+      total_incoming_verified: 0,
+      total_outgoing_all: 0,
+      total_outgoing_verified: 0,
+    }));
 
     storeRef.current = store;
   }
 
   useEffect(() => {
     if (storeRef.current != null) {
-      // configure listeners using the provided defaults
-      // optional, but required for `refetchOnFocus`/`refetchOnReconnect` behaviors
       const unsubscribe = setupListeners(storeRef.current.dispatch);
       return unsubscribe;
     }

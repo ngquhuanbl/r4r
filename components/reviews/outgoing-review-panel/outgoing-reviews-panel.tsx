@@ -16,7 +16,7 @@ import {
   OUTGOING_REVIEWS_TAB_ID,
   REVIEW_CONTENT_LENGTH_LIMIT,
   REVIEW_STATUS_FILTER_ALL_OPTION,
-} from "@/constants/dashboard/ui";
+} from "@/constants/reviews";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import {
   outgoingReviewsActions,

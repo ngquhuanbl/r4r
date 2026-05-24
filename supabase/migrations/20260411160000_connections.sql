@@ -1,4 +1,4 @@
--- First-class pairing between two businesses (see docs/connection-spec.md).
+-- First-class pairing between two businesses (see docs/connections.md).
 CREATE TABLE public.connections (
   id SERIAL PRIMARY KEY,
   business_a_id INTEGER NOT NULL REFERENCES public.businesses (id) ON DELETE CASCADE,
