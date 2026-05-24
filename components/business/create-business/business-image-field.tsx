@@ -16,7 +16,7 @@ import {
 type BusinessImageFieldProps = {
   file: File | null;
   previewUrl: string | null;
-  onFileChange: (file: File | null) => void;
+  onFileChange: (_file: File | null) => void;
 };
 
 /** Optional storefront image — uploaded with the business create form. */

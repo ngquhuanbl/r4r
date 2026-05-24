@@ -41,7 +41,7 @@ export const platformsSlice = createSlice({
         state.status = Status.SUCCEEDED;
         platformsAdapter.setAll(state, action.payload);
       })
-      .addCase(fetchPlatformsThunk.rejected, (state, action) => {
+      .addCase(fetchPlatformsThunk.rejected, (state) => {
         state.status = Status.FAILED;
       });
   },

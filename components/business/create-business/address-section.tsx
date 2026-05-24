@@ -19,11 +19,11 @@ export type AddressFields = {
 
 type AddressSectionProps = {
   manualMode: boolean;
-  onManualModeChange: (manual: boolean) => void;
+  onManualModeChange: (_manual: boolean) => void;
   addressSearch: string;
-  onAddressSearchChange: (v: string) => void;
+  onAddressSearchChange: (_v: string) => void;
   fields: AddressFields;
-  onFieldsChange: (next: Partial<AddressFields>) => void;
+  onFieldsChange: (_next: Partial<AddressFields>) => void;
   /** When Places is unavailable (no API key), only manual fields are shown */
   placesDisabled: boolean;
   dialogOpen: boolean;

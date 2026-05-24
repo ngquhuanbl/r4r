@@ -14,7 +14,7 @@ import {
 
 type Props = {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
   planName: string;
   slotsTotal: number;
   slotsUsed: number;

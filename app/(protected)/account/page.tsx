@@ -5,11 +5,10 @@ import { redirect } from "next/navigation";
 import { AccountSettingsForm } from "@/components/account/account-settings-form";
 import { Paths } from "@/constants/paths";
 import { createClient } from "@/lib/supabase/server";
-import type { Tables } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Account",
-  description: "Manage your profile, notifications, and appearance.",
+  description: "Manage your profile and appearance.",
 };
 
 export default async function AccountPage() {
@@ -21,20 +20,6 @@ export default async function AccountPage() {
   if (!user) {
     redirect(Paths.LOGIN);
   }
-
-  const { data: prefs } = await supabase
-    .from("user_preferences")
-    .select("notify_new_connection, notify_weekly_summary")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  const initialPreferences: Pick<
-    Tables<"user_preferences">,
-    "notify_new_connection" | "notify_weekly_summary"
-  > = {
-    notify_new_connection: prefs?.notify_new_connection ?? true,
-    notify_weekly_summary: prefs?.notify_weekly_summary ?? false,
-  };
 
   const billingEnabled =
     process.env.NEXT_PUBLIC_BILLING_ENABLED === "true";
@@ -61,7 +46,7 @@ export default async function AccountPage() {
         ) : null}
       </div>
       <div className="mt-8 max-w-xl">
-        <AccountSettingsForm user={user} initialPreferences={initialPreferences} />
+        <AccountSettingsForm user={user} />
       </div>
     </div>
   );

@@ -37,8 +37,8 @@ function formatSubmittedAt(iso: string) {
 interface VerifyReviewDialogProps {
   open: boolean;
   data: IncomingReview;
-  onOpenChange: (open: boolean) => void;
-  onUpdatedReview: (updatedReview: UpdatedReviewStatus) => void;
+  onOpenChange: (_open: boolean) => void;
+  onUpdatedReview: (_updatedReview: UpdatedReviewStatus) => void;
 }
 
 /** Spec: single-column verify flow for the business page workspace. */

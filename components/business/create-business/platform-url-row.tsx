@@ -21,7 +21,7 @@ import { Tables } from "@/types/database";
 type PlatformRowProps = {
   platform: Pick<Tables<"platforms">, "id" | "name">;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
 };
 
 export function PlatformUrlRow({

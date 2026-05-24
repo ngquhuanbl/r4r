@@ -16,7 +16,7 @@ import { getAddress } from "@/utils/shared";
 interface ViewReviewDialogProps {
   open: boolean;
   data: IncomingReview;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
 }
 export function ViewReviewDialog({
   open,

@@ -4,18 +4,13 @@ import { Camera } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
 
-import {
-  deleteAccount,
-  saveProfileIdentity,
-  updateNotificationPreference,
-} from "@/app/(protected)/account/actions";
+import { deleteAccount, saveProfileIdentity } from "@/app/(protected)/account/actions";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -27,7 +22,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { authActions } from "@/lib/redux/slices/auth";
@@ -37,19 +31,12 @@ import {
   getProviderBadge,
 } from "@/lib/account/profile";
 import { cn } from "@/lib/utils";
-import type { Tables } from "@/types/database";
-
-type Prefs = Pick<
-  Tables<"user_preferences">,
-  "notify_new_connection" | "notify_weekly_summary"
->;
 
 type Props = {
   user: User;
-  initialPreferences: Prefs;
 };
 
-export function AccountSettingsForm({ user, initialPreferences }: Props) {
+export function AccountSettingsForm({ user }: Props) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { theme, setTheme } = useTheme();
@@ -86,13 +73,6 @@ export function AccountSettingsForm({ user, initialPreferences }: Props) {
     (removeCustomAvatar && hadUploadedAvatar);
 
   const [savingIdentity, setSavingIdentity] = useState(false);
-
-  const [notifyConnection, setNotifyConnection] = useState(
-    initialPreferences.notify_new_connection,
-  );
-  const [notifyWeekly, setNotifyWeekly] = useState(
-    initialPreferences.notify_weekly_summary,
-  );
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -145,33 +125,6 @@ export function AccountSettingsForm({ user, initialPreferences }: Props) {
       setSavingIdentity(false);
     }
   };
-
-  const onToggleConnection = useCallback(
-    async (checked: boolean) => {
-      setNotifyConnection(checked);
-      const res = await updateNotificationPreference(
-        "notify_new_connection",
-        checked,
-      );
-      if (!res.ok) {
-        setNotifyConnection(!checked);
-        toast.error("Could not save preference", { description: res.error });
-      }
-    },
-    [],
-  );
-
-  const onToggleWeekly = useCallback(async (checked: boolean) => {
-    setNotifyWeekly(checked);
-    const res = await updateNotificationPreference(
-      "notify_weekly_summary",
-      checked,
-    );
-    if (!res.ok) {
-      setNotifyWeekly(!checked);
-      toast.error("Could not save preference", { description: res.error });
-    }
-  }, []);
 
   const onDeleteConfirm = async () => {
     setDeleting(true);
@@ -278,42 +231,6 @@ export function AccountSettingsForm({ user, initialPreferences }: Props) {
           </button>
         ) : null}
       </section>
-
-      {/* <section className="space-y-4">
-        <h2 className="text-sm font-medium text-muted-foreground">
-          Notifications
-        </h2>
-        <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
-          <div className="space-y-0.5">
-            <Label htmlFor="notify-conn" className="text-sm font-normal">
-              Email me when a business is connected
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Sent when a new partner connection is established.
-            </p>
-          </div>
-          <Switch
-            id="notify-conn"
-            checked={notifyConnection}
-            onCheckedChange={(c) => void onToggleConnection(c)}
-          />
-        </div>
-        <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
-          <div className="space-y-0.5">
-            <Label htmlFor="notify-weekly" className="text-sm font-normal">
-              Weekly summary of my reputation growth
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              A digest of how your reviews are trending.
-            </p>
-          </div>
-          <Switch
-            id="notify-weekly"
-            checked={notifyWeekly}
-            onCheckedChange={(c) => void onToggleWeekly(c)}
-          />
-        </div>
-      </section> */}
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium text-muted-foreground">

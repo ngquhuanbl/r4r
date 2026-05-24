@@ -41,7 +41,7 @@ export const reviewStatusesSlice = createSlice({
         state.status = Status.SUCCEEDED;
         reviewStatusesAdapter.setAll(state, action.payload);
       })
-      .addCase(fetchReviewStatusesThunk.rejected, (state, action) => {
+      .addCase(fetchReviewStatusesThunk.rejected, (state) => {
         state.status = Status.FAILED;
       });
   },

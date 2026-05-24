@@ -12,7 +12,7 @@ interface InboxPaginationProps {
   page: number;
   totalPage: number;
   numVisiblePage: number;
-  onPageChange: (page: number) => void;
+  onPageChange: (_page: number) => void;
 }
 export function InboxPagination({
   page,

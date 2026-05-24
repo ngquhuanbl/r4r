@@ -14,7 +14,7 @@ import { myBusinessesSelectors, Status } from "@/lib/redux/slices/my-business";
 
 interface BusinessesFilterProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
 }
 
 export function BusinessesFilter({ value, onChange }: BusinessesFilterProps) {

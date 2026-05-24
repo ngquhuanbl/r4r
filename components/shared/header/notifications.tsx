@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellDot, Loader2Icon } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 import {
   Dialog,
   DialogContent,

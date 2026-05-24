@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 
-import { getBusinessForUser } from "@/app/(protected)/(workspace)/business/[id]/actions";
 import { Paths } from "@/constants/paths";
 import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
 import { assertBusinessHasAvailableSlot } from "@/lib/billing/check-slots";

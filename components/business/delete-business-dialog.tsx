@@ -1,5 +1,5 @@
 import { Loader2Icon } from "lucide-react";
-import { useCallback, useTransition } from "react";
+import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { deleteBusiness } from "@/app/(protected)/actions/business-actions";
@@ -20,9 +20,9 @@ import {
 
 interface DeleteBusinessDialogProps {
   open: boolean;
-  onOpenChange: (opened: boolean) => void;
+  onOpenChange: (_opened: boolean) => void;
   data: FetchedBusiness;
-  onDeleteData?: (id: Pick<Tables<"businesses">, "id">) => void;
+  onDeleteData?: (_id: Pick<Tables<"businesses">, "id">) => void;
 }
 
 export function DeleteBusinessDialog({

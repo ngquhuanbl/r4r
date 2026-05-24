@@ -21,7 +21,7 @@ type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   /** When set, rows get extra classes (e.g. completed state). */
-  getRowClassName?: (row: TData) => string | undefined;
+  getRowClassName?: (_row: TData) => string | undefined;
 };
 
 export function DataTable<TData, TValue>({

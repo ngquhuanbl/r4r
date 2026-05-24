@@ -5,7 +5,7 @@ interface LogoProps {
   size?: "lg" | "md" | "sm";
 }
 
-export default function Logo({ style = "colored", size = "md" }: LogoProps) {
+export default function Logo({ style = "colored" }: LogoProps) {
   return (
     <div className="flex items-center justify-center flex-row gap-2 sm:gap-4">
       <svg

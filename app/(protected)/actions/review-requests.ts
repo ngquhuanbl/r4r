@@ -41,14 +41,13 @@ export async function acceptReviewRequest(
   }
 
   // Update the invitation status and invitee-owned business context
-  const { data: _updatedRows, error } = await supabase
+  const { error } = await supabase
     .from("review_invitations")
     .update({
       status_id: acceptedStatus.id,
       invitee_business_id: resolved.businessId,
     })
-    .eq("id", invitationId)
-    .select();
+    .eq("id", invitationId);
 
   if (error) {
     console.error("Error accepting invitation:", error);
@@ -102,11 +101,10 @@ export async function rejectReviewRequest(
   }
 
   // Update the invitation status
-  const { data: _updatedRows, error } = await supabase
+  const { error } = await supabase
     .from("review_invitations")
     .update({ status_id: rejectedStatus.id })
-    .eq("id", invitationId)
-    .select();
+    .eq("id", invitationId);
 
   if (error) {
     console.error("Error rejecting invitation:", error);

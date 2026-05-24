@@ -31,8 +31,8 @@ const REVIEW_CONTENT_FIELD_NAME = "content";
 interface SubmitReviewDialogProps {
   open: boolean;
   data: OutgoingReview;
-  onOpenChange: (open: boolean) => void;
-  onUpdatedReview: (updatedReview: SubmitReviewResponse) => void;
+  onOpenChange: (_open: boolean) => void;
+  onUpdatedReview: (_updatedReview: SubmitReviewResponse) => void;
 }
 export function SubmitReviewDialog({
   open,

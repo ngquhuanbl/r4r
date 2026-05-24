@@ -26,9 +26,9 @@ import { Label } from "../ui/label";
 
 interface ManageBusinessDialogProps {
   open: boolean;
-  onOpenChange: (opened: boolean) => void;
+  onOpenChange: (_opened: boolean) => void;
   data: FetchedBusiness;
-  onUpdatedData?: (data: FetchedBusiness) => void;
+  onUpdatedData?: (_data: FetchedBusiness) => void;
   /** Override default “Manage business” title (e.g. business page v2). */
   dialogTitle?: string;
   dialogDescription?: string;

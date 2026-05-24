@@ -74,7 +74,7 @@ const TIER_VISUAL: Record<
 
 type Props = {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
   businessId: number;
   businessName: string;
   currentTier: BillingTier;

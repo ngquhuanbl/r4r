@@ -17,7 +17,7 @@ import {
 
 interface ReviewStatusFilterProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
 }
 
 export function ReviewStatusFilter({

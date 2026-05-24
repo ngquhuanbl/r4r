@@ -26,8 +26,8 @@ import { getAddress } from "@/utils/shared";
 interface VerifyReviewDialogProps {
   open: boolean;
   data: IncomingReview;
-  onOpenChange: (open: boolean) => void;
-  onUpdatedReview: (updatedReview: UpdatedReviewStatus) => void;
+  onOpenChange: (_open: boolean) => void;
+  onUpdatedReview: (_updatedReview: UpdatedReviewStatus) => void;
 }
 export function VerifyReviewDialog({
   open,
