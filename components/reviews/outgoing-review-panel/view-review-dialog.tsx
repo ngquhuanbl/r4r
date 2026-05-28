@@ -21,12 +21,12 @@ export function ViewOutgoingReviewDialog({
   data,
   onOpenChange,
 }: ViewOutgoingReviewDialogProps) {
-  const { url, content, status, invitation } = data;
-  const businessInfo = invitation.business;
+  const { url, content, status, reviewed_business, platform } = data;
+  const businessInfo = reviewed_business;
   const businessName = businessInfo.business_name;
   const businessAddress = getAddress(businessInfo);
 
-  const platformInfo = invitation.platform;
+  const platformInfo = platform;
   const platformName = platformInfo.name;
 
   const reviewURL = url;

@@ -40,11 +40,11 @@ export function SubmitReviewDialog({
   onOpenChange,
   onUpdatedReview,
 }: SubmitReviewDialogProps) {
-  const { invitation, id } = data;
-  const businessInfo = invitation.business;
+  const { reviewed_business, platform, id } = data;
+  const businessInfo = reviewed_business;
   const businessName = businessInfo.business_name;
 
-  const platformInfo = invitation.platform;
+  const platformInfo = platform;
   const platformName = platformInfo.name;
 
   const [isSubmitting, startSubmitting] = useTransition();

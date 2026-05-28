@@ -285,8 +285,8 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
         </thead>
         <tbody className="divide-y divide-zinc-300">
           {data.map((item) => {
-            const { id, content, created_at, status, invitation } = item;
-            const businessInfo = businessEntries[invitation.business.id];
+            const { id, content, created_at, status, reviewed_business, platform } = item;
+            const businessInfo = businessEntries[reviewed_business.id];
             const businessName = businessInfo.business_name;
             const businessAddress = getAddress(businessInfo);
 
@@ -295,7 +295,7 @@ export function IncomingReviewsPanel({ userId }: IncomingReviewsPanelProps) {
             const reviewContent = content || "";
             const submittedDttm = created_at;
 
-            const platformName = invitation.platform.name;
+            const platformName = platform.name;
 
             const reviewAriaId =
               "the incoming review for ${businessName} on ${platformName} platform";

@@ -64,7 +64,7 @@ export async function getBusinessForUser(
 
 /**
  * Snapshot counts for the stacked bar chart. "Received" is scoped to this business.
- * "Given" is user-global (outgoing reviews are not linked to a specific owned business in `review_invitations`).
+ * "Given" counts outgoing reviews where `reviewer_business_id` matches this business.
  */
 export async function fetchBusinessReviewSnapshot(
   userId: UserId,

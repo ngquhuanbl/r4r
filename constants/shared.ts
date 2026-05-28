@@ -10,9 +10,3 @@ export enum PlatformNames {
   Google = "Google",
   TripAdvisor = "TripAdvisor",
 }
-
-export enum InvitationStatusNames {
-  PENDING = "PENDING",
-  ACCEPTED = "ACCEPTED",
-  REJECTED = "REJECTED",
-}

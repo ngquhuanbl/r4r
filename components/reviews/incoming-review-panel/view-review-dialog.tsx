@@ -24,12 +24,12 @@ export function ViewReviewDialog({
   onOpenChange,
 }: ViewReviewDialogProps) {
   const businessEntries = useAppSelector(myBusinessesSelectors.selectEntries);
-  const { url, content, status, invitation } = data;
-  const businessInfo = businessEntries[invitation.business.id];
+  const { url, content, status, reviewed_business, platform } = data;
+  const businessInfo = businessEntries[reviewed_business.id];
   const businessName = businessInfo.business_name;
   const businessAddress = getAddress(businessInfo);
 
-  const platformInfo = invitation.platform;
+  const platformInfo = platform;
   const platformName = platformInfo.name;
 
   const reviewURL = url;

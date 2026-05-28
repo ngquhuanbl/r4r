@@ -48,12 +48,12 @@ export function VerifyReviewDialog({
   onOpenChange,
   onUpdatedReview,
 }: VerifyReviewDialogProps) {
-  const { url, content, invitation, id, created_at } = data;
-  const subjectName = invitation.business.business_name;
+  const { url, content, reviewed_business, platform, id, created_at } = data;
+  const subjectName = reviewed_business.business_name;
   const reviewerName =
-    invitation.invitee_business_name?.trim() || "Partner business";
+    data.reviewer_business_name?.trim() || "Partner business";
 
-  const platformName = invitation.platform.name;
+  const platformName = platform.name;
   const reviewURL = url?.trim() ? url : null;
   const reviewContent = content ?? "";
 

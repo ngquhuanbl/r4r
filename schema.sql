@@ -64,19 +64,6 @@ EXECUTE FUNCTION trigger_set_updated_at();
 
 
 
-  -- Review invitation statuses
-  CREATE TABLE public.invitation_statuses (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
-    description TEXT NOT NULL
-  );
-
-  -- Insert invitation statuses
-  INSERT INTO public.invitation_statuses (name, description) VALUES
-    ('PENDING', 'Invitation sent, awaiting response'),
-    ('ACCEPTED', 'User accepted the invitation'),
-    ('REJECTED', 'User rejected the invitation');
-
   -- Review statuses
   CREATE TABLE public.review_statuses (
     id SERIAL PRIMARY KEY,
@@ -96,35 +83,23 @@ EXECUTE FUNCTION trigger_set_updated_at();
     business_a_id INTEGER NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
     business_b_id INTEGER NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
     initiator_business_id INTEGER NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-    completed_at TIMESTAMP WITH TIME ZONE,
+    closed_at TIMESTAMP WITH TIME ZONE,
+    resolved_at TIMESTAMP WITH TIME ZONE,
     partner_acknowledged_at TIMESTAMP WITH TIME ZONE,
-    business_a_slot_released_at TIMESTAMP WITH TIME ZONE,
-    business_b_slot_released_at TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT connections_ordered_pair CHECK (business_a_id < business_b_id)
+    CONSTRAINT connections_ordered_pair CHECK (business_a_id < business_b_id),
+    CONSTRAINT connections_business_pair_unique UNIQUE (business_a_id, business_b_id)
   );
 
-  -- Initial invitation
-  CREATE TABLE public.review_invitations (
-    id SERIAL PRIMARY KEY,
-    business_id INTEGER NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
-    platform_id INTEGER NOT NULL REFERENCES public.platforms(id),
-    inviter_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    invitee_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    status_id INTEGER NOT NULL REFERENCES public.invitation_statuses(id),
-    message TEXT,
-    invitee_business_id INTEGER REFERENCES public.businesses(id) ON DELETE SET NULL,
-    connection_id INTEGER REFERENCES public.connections(id) ON DELETE SET NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
-  );
-
-  -- Review content
+  -- Connection-backed reviews (two per active connection)
   CREATE TABLE public.reviews (
     id SERIAL PRIMARY KEY,
-    invitation_id INTEGER NOT NULL REFERENCES public.review_invitations(id) ON DELETE
-  CASCADE,
+    connection_id INTEGER NOT NULL REFERENCES public.connections(id) ON DELETE CASCADE,
+    platform_id INTEGER NOT NULL REFERENCES public.platforms(id),
+    reviewed_business_id INTEGER NOT NULL REFERENCES public.businesses(id) ON DELETE CASCADE,
+    reviewed_owner_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    reviewer_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    reviewer_business_id INTEGER REFERENCES public.businesses(id) ON DELETE SET NULL,
     content TEXT,
     url TEXT,
     status_id INTEGER NOT NULL REFERENCES public.review_statuses(id),
@@ -132,22 +107,18 @@ EXECUTE FUNCTION trigger_set_updated_at();
     submitted_at TIMESTAMP WITH TIME ZONE,
     verified_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+    CONSTRAINT reviews_connection_reviewed_business_unique UNIQUE (connection_id, reviewed_business_id),
+    CONSTRAINT reviews_reviewed_ne_reviewer_business CHECK (reviewed_business_id <> reviewer_business_id)
   );
 
-  -- Create triggers for updated_at timestamps
-  CREATE OR REPLACE FUNCTION trigger_set_updated_at()
-  RETURNS TRIGGER AS $$
-  BEGIN
-    NEW.updated_at = now();
-    RETURN NEW;
-  END;
-  $$ LANGUAGE plpgsql;
-
-  CREATE TRIGGER set_review_invitations_updated_at
-  BEFORE UPDATE ON public.review_invitations
-  FOR EACH ROW
-  EXECUTE FUNCTION trigger_set_updated_at();
+  CREATE INDEX reviews_connection_id_idx ON public.reviews (connection_id);
+  CREATE INDEX reviews_reviewer_user_id_idx ON public.reviews (reviewer_user_id);
+  CREATE INDEX reviews_reviewed_owner_user_id_idx ON public.reviews (reviewed_owner_user_id);
+  CREATE INDEX reviews_reviewer_business_id_idx ON public.reviews (reviewer_business_id)
+    WHERE reviewer_business_id IS NOT NULL;
+  CREATE INDEX reviews_reviewer_business_status_idx ON public.reviews (reviewer_business_id, status_id)
+    WHERE reviewer_business_id IS NOT NULL;
 
   CREATE TRIGGER set_reviews_updated_at
   BEFORE UPDATE ON public.reviews

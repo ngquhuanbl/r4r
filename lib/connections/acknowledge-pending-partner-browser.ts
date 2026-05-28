@@ -39,7 +39,7 @@ export async function acknowledgePendingPartnerConnections(
     .or(`business_a_id.eq.${businessId},business_b_id.eq.${businessId}`)
     .neq("initiator_business_id", businessId)
     .is("partner_acknowledged_at", null)
-    .eq("status", "active");
+    .is("closed_at", null);
 
   if (error) {
     console.error("acknowledgePendingPartnerConnections list", error);
@@ -58,7 +58,7 @@ export async function acknowledgePendingPartnerConnections(
     .or(`business_a_id.eq.${businessId},business_b_id.eq.${businessId}`)
     .neq("initiator_business_id", businessId)
     .is("partner_acknowledged_at", null)
-    .eq("status", "active");
+    .is("closed_at", null);
 
   if (selErr) {
     console.error("acknowledgePendingPartnerConnections validate", selErr);

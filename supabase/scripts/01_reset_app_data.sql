@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Reset all APPLICATION data (public schema)
--- Keeps: auth.users (logins), platforms, invitation_statuses, review_statuses
+-- Keeps: auth.users (logins), platforms, review_statuses
 -- =============================================================================
 -- Run in Supabase: SQL Editor (Dashboard) or psql.
 -- Use a DEVELOPMENT project only unless you intend to wipe production.
@@ -17,7 +17,6 @@ BEGIN;
 
 TRUNCATE TABLE
   public.reviews,
-  public.review_invitations,
   public.connections,
   public.business_platforms,
   public.business_billing,

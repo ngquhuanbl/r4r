@@ -8,7 +8,6 @@ import { metricActions } from "@/lib/redux/slices/metric";
 import { myBusinessesActions } from "@/lib/redux/slices/my-business";
 import { outgoingReviewsActions } from "@/lib/redux/slices/outgoing-review";
 import { platformsActions } from "@/lib/redux/slices/platform";
-import { reviewRequestsActions } from "@/lib/redux/slices/review-request";
 import { reviewStatusesActions } from "@/lib/redux/slices/review-status";
 import { AppStore, makeStore } from "@/lib/redux/store";
 import { Tables } from "@/types/database";
@@ -39,10 +38,9 @@ export const StoreProvider = ({ initialData, children }: Props) => {
     );
     store.dispatch(platformsActions.loadInitData(initialData.platforms));
 
-    // Workspace routes hydrate businesses, reviews, requests, and metrics.
+    // Workspace routes hydrate businesses, reviews, and metrics.
     store.dispatch(incomingReviewsActions.loadInitData({ data: [], total_results: 0 }));
     store.dispatch(outgoingReviewsActions.loadInitData({ data: [], total_results: 0 }));
-    store.dispatch(reviewRequestsActions.loadInitData([]));
     store.dispatch(myBusinessesActions.loadInitData([]));
     store.dispatch(metricActions.setMetric({
       total_incoming_all: 0,

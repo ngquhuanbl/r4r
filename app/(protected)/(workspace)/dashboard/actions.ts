@@ -18,7 +18,7 @@ export type BusinessActionCounts = {
 
 /**
  * Per owned business: incoming SUBMITTED (verify) and outgoing DRAFT (submit) when
- * `review_invitations.invitee_business_id` is set for the invitee.
+ * `reviews.reviewer_business_id` matches the owned business.
  */
 export async function fetchDashboardBusinessActionCounts(
   userId: UserId,
@@ -50,29 +50,25 @@ export async function fetchDashboardBusinessActionCounts(
       .select(
         `
         id,
-        invitation:review_invitations!inner (
-          business_id,
-          inviter_id
-        ),
+        reviewed_business_id,
+        reviewed_owner_user_id,
         status:review_statuses!inner ( name )
       `,
       )
-      .eq("invitation.inviter_id", userId)
+      .eq("reviewed_owner_user_id", userId)
       .eq("status.name", ReviewStatusNames.SUBMITTED)
-      .in("invitation.business_id", businessIds),
+      .in("reviewed_business_id", businessIds),
     supabase
       .from("reviews")
       .select(
         `
         id,
-        invitation:review_invitations!inner (
-          invitee_id,
-          invitee_business_id
-        ),
+        reviewer_user_id,
+        reviewer_business_id,
         status:review_statuses!inner ( name )
       `,
       )
-      .eq("invitation.invitee_id", userId)
+      .eq("reviewer_user_id", userId)
       .eq("status.name", ReviewStatusNames.DRAFT),
   ]);
 
@@ -87,15 +83,13 @@ export async function fetchDashboardBusinessActionCounts(
 
   const incomingByBiz = new Map<number, number>();
   for (const row of incomingRes.data ?? []) {
-    const inv = row.invitation as { business_id: number };
-    const bid = inv.business_id;
+    const bid = row.reviewed_business_id as number;
     incomingByBiz.set(bid, (incomingByBiz.get(bid) ?? 0) + 1);
   }
 
   const outgoingByBiz = new Map<number, number>();
   for (const row of outgoingRes.data ?? []) {
-    const inv = row.invitation as { invitee_business_id: number | null };
-    const bid = inv.invitee_business_id;
+    const bid = row.reviewer_business_id as number | null;
     if (bid == null || !businessIdSet.has(bid)) continue;
     outgoingByBiz.set(bid, (outgoingByBiz.get(bid) ?? 0) + 1);
   }

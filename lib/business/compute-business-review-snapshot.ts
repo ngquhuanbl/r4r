@@ -44,30 +44,17 @@ export async function computeBusinessReviewSnapshot(
   const baseIncoming = () =>
     supabase
       .from("reviews")
-      .select(
-        `
-        id,
-        invitation:review_invitations!inner (
-          business_id,
-          inviter_id
-        )
-      `,
-        { count: "exact", head: true },
-      )
-      .eq("invitation.inviter_id", userId)
-      .eq("invitation.business_id", businessId)
+      .select("id", { count: "exact", head: true })
+      .eq("reviewed_owner_user_id", userId)
+      .eq("reviewed_business_id", businessId)
       .neq("status_id", draftId);
 
   const baseOutgoing = () =>
     supabase
       .from("reviews")
-      .select(
-        `id,
-        invitation:review_invitations!inner ( invitee_id, invitee_business_id )`,
-        { count: "exact", head: true },
-      )
-      .eq("invitation.invitee_id", userId)
-      .eq("invitation.invitee_business_id", businessId)
+      .select("id", { count: "exact", head: true })
+      .eq("reviewer_user_id", userId)
+      .eq("reviewer_business_id", businessId)
       .neq("status_id", draftId);
 
   const [
@@ -83,23 +70,15 @@ export async function computeBusinessReviewSnapshot(
     baseIncoming(),
     supabase
       .from("reviews")
-      .select(
-        `id,
-        invitation:review_invitations!inner ( invitee_id, invitee_business_id )`,
-        { count: "exact", head: true },
-      )
-      .eq("invitation.invitee_id", userId)
-      .eq("invitation.invitee_business_id", businessId)
+      .select("id", { count: "exact", head: true })
+      .eq("reviewer_user_id", userId)
+      .eq("reviewer_business_id", businessId)
       .eq("status_id", verifiedId),
     supabase
       .from("reviews")
-      .select(
-        `id,
-        invitation:review_invitations!inner ( invitee_id, invitee_business_id )`,
-        { count: "exact", head: true },
-      )
-      .eq("invitation.invitee_id", userId)
-      .eq("invitation.invitee_business_id", businessId)
+      .select("id", { count: "exact", head: true })
+      .eq("reviewer_user_id", userId)
+      .eq("reviewer_business_id", businessId)
       .eq("status_id", rejectedId),
     baseOutgoing(),
   ]);

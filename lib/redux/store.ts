@@ -10,14 +10,12 @@ import { metricSlice } from "./slices/metric";
 import { myBusinessesSlice } from "./slices/my-business";
 import { outgoingReviewsSlice } from "./slices/outgoing-review";
 import { platformsSlice } from "./slices/platform";
-import { reviewRequestsSlice } from "./slices/review-request";
 import { reviewStatusesSlice } from "./slices/review-status";
 
 // `combineSlices` automatically combines the reducers using
 // their `reducerPath`s, therefore we no longer need to call `combineReducers`.
 const rootReducer = combineSlices(
   reviewStatusesSlice,
-  reviewRequestsSlice,
   incomingReviewsSlice,
   myBusinessesSlice,
   outgoingReviewsSlice,

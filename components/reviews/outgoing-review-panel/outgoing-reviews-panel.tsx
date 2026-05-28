@@ -1,5 +1,5 @@
 "use client";
-import { Bell, ChevronsUpDown, Radio } from "lucide-react";
+import { ChevronsUpDown, Radio } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -185,23 +185,11 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
               <p className="text-base">Connecting Others to You!</p>
             </div>
             <p className="text-sm">
-              Our network community is actively working to connect other
-              businesses with you.
-              <br />
-              Review requests will appear in the{" "}
-              <Bell
-                aria-label="notifications"
-                className="inline"
-                size={20}
-              />{" "}
-              in the page header.
-              <br />
-              After you accept a request, your review for them will be shown
-              here.
+              When you match with another business from a location page, your
+              review task for them will appear here in the Outgoing tab.
             </p>
             <p className="text-xs sm:text-sm italic">
-              Please check your notifications regularly for new outgoing review
-              requests.
+              Use Let&apos;s Connect on a business page to start a new match.
             </p>
           </div>
         );
@@ -256,8 +244,8 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
         </thead>
         <tbody className="divide-y divide-zinc-300">
           {data.map((item) => {
-            const { id, content, created_at, status, invitation } = item;
-            const businessInfo = invitation.business;
+            const { id, content, created_at, status, reviewed_business, platform } = item;
+            const businessInfo = reviewed_business;
             const businessName = businessInfo.business_name;
             const businessAddress = getAddress(businessInfo);
 
@@ -266,7 +254,7 @@ export function OutgoingReviewsPanel({ userId }: OutgoingReviewsPanelProps) {
             const reviewContent = content || "";
             const submittedDttm = created_at;
 
-            const platformName = invitation.platform.name;
+            const platformName = platform.name;
 
             const reviewAriaId =
               "the incoming review for ${businessName} on ${platformName} platform";

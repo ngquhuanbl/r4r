@@ -81,8 +81,8 @@ const fetchMyBusinessesThunk = createAppAsyncThunk(
   },
   {
     condition: (_, { getState }) => {
-      const { review_requests } = getState();
-      if (review_requests.status === Status.LOADING) {
+      const { my_businesses } = getState();
+      if (my_businesses.status === Status.LOADING) {
         return false;
       }
       return true;

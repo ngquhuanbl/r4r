@@ -6,7 +6,6 @@ import { getAvatarUrl, getDisplayName } from "@/lib/account/profile";
 
 import { BusinessHeaderSwitcher } from "./business-header-switcher";
 import { HamburgerMenu } from "./hamburger-menu";
-// import { Notifications } from "./notifications";
 import { PageTitle } from "./page-title";
 import { ProfileMenu } from "./profile-menu";
 import { Theme } from "./theme";

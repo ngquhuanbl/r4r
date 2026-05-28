@@ -33,58 +33,25 @@ export async function fetchMetrics(
 
   const totalIncomingAllQuery = supabase
     .from("reviews")
-    .select(
-      `
-				id,
-				invitation:review_invitations!inner (
-					inviter_id
-				)
-				`,
-      { count: "exact", head: false }
-    )
-    .eq("invitation.inviter_id", userId)
+    .select("id", { count: "exact", head: false })
+    .eq("reviewed_owner_user_id", userId)
     .neq("status_id", draftStatus.id);
 
   const totalIncomingVerifiedQuery = supabase
     .from("reviews")
-    .select(
-      `
-				id,
-				status_id,
-				invitation:review_invitations!inner (
-					inviter_id
-				)
-				`,
-      { count: "exact", head: false }
-    )
-    .eq("invitation.inviter_id", userId)
+    .select("id, status_id", { count: "exact", head: false })
+    .eq("reviewed_owner_user_id", userId)
     .eq("status_id", verifiedStatus.id);
 
   const totalOutgoingAllQuery = supabase
     .from("reviews")
-    .select(
-      `
-				id,
-				invitation:review_invitations!inner (
-					invitee_id
-				)
-				`,
-      { count: "exact", head: false }
-    )
-    .eq("invitation.invitee_id", userId);
+    .select("id", { count: "exact", head: false })
+    .eq("reviewer_user_id", userId);
 
   const totalOutgoingVerifiedQuery = supabase
     .from("reviews")
-    .select(
-      `
-				id,
-				invitation:review_invitations!inner (
-					invitee_id
-				)
-				`,
-      { count: "exact", head: false }
-    )
-    .eq("invitation.invitee_id", userId)
+    .select("id", { count: "exact", head: false })
+    .eq("reviewer_user_id", userId)
     .eq("status_id", verifiedStatus.id);
 
   const result = await Promise.all([

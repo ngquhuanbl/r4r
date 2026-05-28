@@ -15,7 +15,6 @@ import {
   myBusinessesActions,
   myBusinessesSelectors,
 } from "@/lib/redux/slices/my-business";
-import { reviewRequestsActions } from "@/lib/redux/slices/review-request";
 import { FetchedBusiness } from "@/types/dashboard";
 
 import { LocationsBoard } from "./locations-board";
@@ -87,9 +86,8 @@ export function DashboardLocationsGrid() {
     (data: FetchedBusiness) => {
       dispatch(myBusinessesActions.addData(data));
       setCreateOpen(false);
-      dispatch(reviewRequestsActions.fetchReviewRequestsThunk(userId));
     },
-    [dispatch, userId],
+    [dispatch],
   );
 
   const openCreate = useCallback(() => setCreateOpen(true), []);

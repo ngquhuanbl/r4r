@@ -109,6 +109,7 @@ export type Database = {
           business_id: number;
           cancel_at_period_end: boolean;
           current_period_end: string | null;
+          slots_used: number;
           slot_limit: number;
           stripe_subscription_item_id: string | null;
           tier: number;
@@ -118,6 +119,7 @@ export type Database = {
           business_id: number;
           cancel_at_period_end?: boolean;
           current_period_end?: string | null;
+          slots_used?: number;
           slot_limit?: number;
           stripe_subscription_item_id?: string | null;
           tier?: number;
@@ -127,6 +129,7 @@ export type Database = {
           business_id?: number;
           cancel_at_period_end?: boolean;
           current_period_end?: string | null;
+          slots_used?: number;
           slot_limit?: number;
           stripe_subscription_item_id?: string | null;
           tier?: number;
@@ -145,39 +148,33 @@ export type Database = {
       connections: {
         Row: {
           business_a_id: number;
-          business_a_slot_released_at: string | null;
           business_b_id: number;
-          business_b_slot_released_at: string | null;
-          completed_at: string | null;
+          closed_at: string | null;
           created_at: string;
           id: number;
           initiator_business_id: number;
           partner_acknowledged_at: string | null;
-          status: string;
+          resolved_at: string | null;
         };
         Insert: {
           business_a_id: number;
-          business_a_slot_released_at?: string | null;
           business_b_id: number;
-          business_b_slot_released_at?: string | null;
-          completed_at?: string | null;
+          closed_at?: string | null;
           created_at?: string;
           id?: number;
           initiator_business_id: number;
           partner_acknowledged_at?: string | null;
-          status?: string;
+          resolved_at?: string | null;
         };
         Update: {
           business_a_id?: number;
-          business_a_slot_released_at?: string | null;
           business_b_id?: number;
-          business_b_slot_released_at?: string | null;
-          completed_at?: string | null;
+          closed_at?: string | null;
           created_at?: string;
           id?: number;
           initiator_business_id?: number;
           partner_acknowledged_at?: string | null;
-          status?: string;
+          resolved_at?: string | null;
         };
         Relationships: [
           {
@@ -203,24 +200,6 @@ export type Database = {
           },
         ];
       };
-      invitation_statuses: {
-        Row: {
-          description: string;
-          id: number;
-          name: string;
-        };
-        Insert: {
-          description: string;
-          id?: number;
-          name: string;
-        };
-        Update: {
-          description?: string;
-          id?: number;
-          name?: string;
-        };
-        Relationships: [];
-      };
       platforms: {
         Row: {
           color: string;
@@ -245,84 +224,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      review_invitations: {
-        Row: {
-          business_id: number;
-          connection_id: number | null;
-          created_at: string;
-          id: number;
-          invitee_business_id: number | null;
-          invitee_id: string;
-          inviter_id: string;
-          message: string | null;
-          platform_id: number;
-          status_id: number;
-          updated_at: string;
-        };
-        Insert: {
-          business_id: number;
-          connection_id?: number | null;
-          created_at?: string;
-          id?: number;
-          invitee_business_id?: number | null;
-          invitee_id: string;
-          inviter_id: string;
-          message?: string | null;
-          platform_id: number;
-          status_id: number;
-          updated_at?: string;
-        };
-        Update: {
-          business_id?: number;
-          connection_id?: number | null;
-          created_at?: string;
-          id?: number;
-          invitee_business_id?: number | null;
-          invitee_id?: string;
-          inviter_id?: string;
-          message?: string | null;
-          platform_id?: number;
-          status_id?: number;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "review_invitations_connection_id_fkey";
-            columns: ["connection_id"];
-            isOneToOne: false;
-            referencedRelation: "connections";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "review_invitations_business_id_fkey";
-            columns: ["business_id"];
-            isOneToOne: false;
-            referencedRelation: "businesses";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "review_invitations_invitee_business_id_fkey";
-            columns: ["invitee_business_id"];
-            isOneToOne: false;
-            referencedRelation: "businesses";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "review_invitations_platform_id_fkey";
-            columns: ["platform_id"];
-            isOneToOne: false;
-            referencedRelation: "platforms";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "review_invitations_status_id_fkey";
-            columns: ["status_id"];
-            isOneToOne: false;
-            referencedRelation: "invitation_statuses";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
       review_statuses: {
         Row: {
           description: string;
@@ -343,11 +244,16 @@ export type Database = {
       };
       reviews: {
         Row: {
+          connection_id: number;
           content: string | null;
           created_at: string;
           id: number;
-          invitation_id: number;
+          platform_id: number;
           rejection_reason: string | null;
+          reviewed_business_id: number;
+          reviewed_owner_user_id: string;
+          reviewer_business_id: number | null;
+          reviewer_user_id: string;
           status_id: number;
           submitted_at: string | null;
           updated_at: string;
@@ -355,11 +261,16 @@ export type Database = {
           verified_at: string | null;
         };
         Insert: {
+          connection_id: number;
           content?: string | null;
           created_at?: string;
           id?: number;
-          invitation_id: number;
+          platform_id: number;
           rejection_reason?: string | null;
+          reviewed_business_id: number;
+          reviewed_owner_user_id: string;
+          reviewer_business_id?: number | null;
+          reviewer_user_id: string;
           status_id: number;
           submitted_at?: string | null;
           updated_at?: string;
@@ -367,11 +278,16 @@ export type Database = {
           verified_at?: string | null;
         };
         Update: {
+          connection_id?: number;
           content?: string | null;
           created_at?: string;
           id?: number;
-          invitation_id?: number;
+          platform_id?: number;
           rejection_reason?: string | null;
+          reviewed_business_id?: number;
+          reviewed_owner_user_id?: string;
+          reviewer_business_id?: number | null;
+          reviewer_user_id?: string;
           status_id?: number;
           submitted_at?: string | null;
           updated_at?: string;
@@ -380,10 +296,31 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "reviews_invitation_id_fkey";
-            columns: ["invitation_id"];
+            foreignKeyName: "reviews_connection_id_fkey";
+            columns: ["connection_id"];
             isOneToOne: false;
-            referencedRelation: "review_invitations";
+            referencedRelation: "connections";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_platform_id_fkey";
+            columns: ["platform_id"];
+            isOneToOne: false;
+            referencedRelation: "platforms";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_reviewed_business_id_fkey";
+            columns: ["reviewed_business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reviews_reviewer_business_id_fkey";
+            columns: ["reviewer_business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
             referencedColumns: ["id"];
           },
           {

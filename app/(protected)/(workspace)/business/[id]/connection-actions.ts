@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 
 import { Paths } from "@/constants/paths";
-import { InvitationStatusNames, ReviewStatusNames } from "@/constants/shared";
+import { ReviewStatusNames } from "@/constants/shared";
 import { assertBusinessHasAvailableSlot } from "@/lib/billing/check-slots";
+import { adjustSlotsUsed } from "@/lib/billing/slots-used";
 import { createClient } from "@/lib/supabase/server";
 import type { APIResponse, UserId } from "@/types/shared";
 import type { Tables } from "@/types/database";
@@ -16,7 +17,7 @@ function canonicalPair(
   return a < b ? { low: a, high: b } : { low: b, high: a };
 }
 
-async function hasActiveConnectionBetween(
+async function hasConnectionBetween(
   supabase: ReturnType<typeof createClient>,
   businessIdA: number,
   businessIdB: number,
@@ -25,13 +26,12 @@ async function hasActiveConnectionBetween(
   const { data, error } = await supabase
     .from("connections")
     .select("id")
-    .eq("status", "active")
     .eq("business_a_id", low)
     .eq("business_b_id", high)
     .maybeSingle();
 
   if (error) {
-    console.error("hasActiveConnectionBetween", error);
+    console.error("hasConnectionBetween", error);
     return true;
   }
   return data != null;
@@ -70,7 +70,7 @@ async function findMatchCandidate(
       const slot = await assertBusinessHasAvailableSlot(supabase, row.id);
       if (!slot.ok) continue;
       if (
-        await hasActiveConnectionBetween(
+        await hasConnectionBetween(
           supabase,
           initiatorBusinessId,
           row.id,
@@ -87,7 +87,7 @@ async function findMatchCandidate(
     const slot = await assertBusinessHasAvailableSlot(supabase, row.id);
     if (!slot.ok) continue;
     if (
-      await hasActiveConnectionBetween(
+      await hasConnectionBetween(
         supabase,
         initiatorBusinessId,
         row.id,
@@ -150,19 +150,13 @@ export async function startConnectionMatch(
 
   const { low, high } = canonicalPair(businessId, partnerBusinessId);
 
-  const { data: acceptedSt } = await supabase
-    .from("invitation_statuses")
-    .select("id")
-    .eq("name", InvitationStatusNames.ACCEPTED)
-    .single();
-
   const { data: draftSt } = await supabase
     .from("review_statuses")
     .select("id")
     .eq("name", ReviewStatusNames.DRAFT)
     .single();
 
-  if (!acceptedSt || !draftSt) {
+  if (!draftSt) {
     return { ok: false, error: "Status configuration missing" };
   }
 
@@ -194,80 +188,67 @@ export async function startConnectionMatch(
       business_a_id: low,
       business_b_id: high,
       initiator_business_id: businessId,
-      status: "active",
     })
     .select("id")
     .single();
 
   if (connErr || !connRow) {
+    if (connErr?.code === "23505") {
+      return {
+        ok: true,
+        data: { matched: false, reason: "already_matched_before" },
+      };
+    }
     console.error("startConnectionMatch connection insert", connErr);
     return { ok: false, error: connErr?.message ?? "Could not create connection" };
   }
 
   const connectionId = connRow.id;
 
-  const inv1 = {
-    business_id: businessId,
+  const review1 = {
+    connection_id: connectionId,
     platform_id: pInit.platform_id,
-    inviter_id: userId,
-    invitee_id: partner.user_id,
-    invitee_business_id: partnerBusinessId,
-    status_id: acceptedSt.id,
-    connection_id: connectionId,
-    message: "",
+    reviewed_business_id: businessId,
+    reviewed_owner_user_id: userId,
+    reviewer_user_id: partner.user_id,
+    reviewer_business_id: partnerBusinessId,
+    status_id: draftSt.id,
   };
 
-  const inv2 = {
-    business_id: partnerBusinessId,
+  const review2 = {
+    connection_id: connectionId,
     platform_id: pPartner.platform_id,
-    inviter_id: partner.user_id,
-    invitee_id: userId,
-    invitee_business_id: businessId,
-    status_id: acceptedSt.id,
-    connection_id: connectionId,
-    message: "",
+    reviewed_business_id: partnerBusinessId,
+    reviewed_owner_user_id: partner.user_id,
+    reviewer_user_id: userId,
+    reviewer_business_id: businessId,
+    status_id: draftSt.id,
   };
 
-  const { data: ins1, error: e1 } = await supabase
-    .from("review_invitations")
-    .insert(inv1)
-    .select("id")
-    .single();
+  const { error: r1e } = await supabase.from("reviews").insert(review1);
 
-  if (e1 || !ins1) {
-    await supabase.from("connections").delete().eq("id", connectionId);
-    return { ok: false, error: e1?.message ?? "Invitation failed" };
-  }
-
-  const { data: ins2, error: e2 } = await supabase
-    .from("review_invitations")
-    .insert(inv2)
-    .select("id")
-    .single();
-
-  if (e2 || !ins2) {
-    await supabase.from("review_invitations").delete().eq("id", ins1.id);
-    await supabase.from("connections").delete().eq("id", connectionId);
-    return { ok: false, error: e2?.message ?? "Invitation failed" };
-  }
-
-  const { error: r1e } = await supabase.from("reviews").insert({
-    invitation_id: ins1.id,
-    status_id: draftSt.id,
-  });
-
-  const { error: r2e } = await supabase.from("reviews").insert({
-    invitation_id: ins2.id,
-    status_id: draftSt.id,
-  });
+  const { error: r2e } = await supabase.from("reviews").insert(review2);
 
   if (r1e || r2e) {
-    await supabase.from("reviews").delete().eq("invitation_id", ins1.id);
-    await supabase.from("reviews").delete().eq("invitation_id", ins2.id);
-    await supabase.from("review_invitations").delete().eq("id", ins1.id);
-    await supabase.from("review_invitations").delete().eq("id", ins2.id);
+    await supabase.from("reviews").delete().eq("connection_id", connectionId);
     await supabase.from("connections").delete().eq("id", connectionId);
     return { ok: false, error: r1e?.message ?? r2e?.message ?? "Review draft failed" };
+  }
+
+  const [initiatorSlots, partnerSlots] = await Promise.all([
+    adjustSlotsUsed(businessId, +1),
+    adjustSlotsUsed(partnerBusinessId, +1),
+  ]);
+  if (initiatorSlots == null || partnerSlots == null) {
+    if (initiatorSlots != null) {
+      await adjustSlotsUsed(businessId, -1);
+    }
+    if (partnerSlots != null) {
+      await adjustSlotsUsed(partnerBusinessId, -1);
+    }
+    await supabase.from("reviews").delete().eq("connection_id", connectionId);
+    await supabase.from("connections").delete().eq("id", connectionId);
+    return { ok: false, error: "Could not reserve slot counters for this match" };
   }
 
   revalidatePath(Paths.DASHBOARD);

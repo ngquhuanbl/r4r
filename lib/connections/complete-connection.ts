@@ -14,67 +14,89 @@ export function isTerminalReview(name: string | undefined): boolean {
   );
 }
 
-/**
- * Connection completes when both reviews on the two invitations are terminal
- * (verified or rejected by the business owner who received the review).
- */
-export async function tryCompleteConnection(
+type StatusLookup = {
+  draftId: number;
+  terminalIds: Set<number>;
+};
+
+let statusLookupCache: StatusLookup | null = null;
+
+async function getStatusLookup(supabase: Supabase): Promise<StatusLookup | null> {
+  if (statusLookupCache) {
+    return statusLookupCache;
+  }
+
+  const { data, error } = await supabase
+    .from("review_statuses")
+    .select("id, name")
+    .in("name", [
+      ReviewStatusNames.DRAFT,
+      ReviewStatusNames.VERIFIED,
+      ReviewStatusNames.REJECTED,
+    ]);
+
+  if (error || !data?.length) {
+    if (error) {
+      console.error("getStatusLookup", error);
+    }
+    return null;
+  }
+
+  const draft = data.find((row) => row.name === ReviewStatusNames.DRAFT);
+  if (!draft) return null;
+
+  const terminalIds = new Set(
+    data
+      .filter(
+        (row) =>
+          row.name === ReviewStatusNames.VERIFIED ||
+          row.name === ReviewStatusNames.REJECTED,
+      )
+      .map((row) => row.id),
+  );
+
+  statusLookupCache = { draftId: draft.id, terminalIds };
+  return statusLookupCache;
+}
+
+async function getConnectionReviewStatuses(
+  supabase: Supabase,
+  connectionId: Tables<"connections">["id"],
+): Promise<number[] | null> {
+  const { data: revs, error: revErr } = await supabase
+    .from("reviews")
+    .select("status_id")
+    .eq("connection_id", connectionId);
+
+  if (revErr || !revs || revs.length !== 2) {
+    return null;
+  }
+  return revs.map((row) => row.status_id);
+}
+
+export async function tryCloseConnectionWhenBothSubmitted(
   supabase: Supabase,
   connectionId: Tables<"connections">["id"],
 ): Promise<void> {
-  const { data: conn, error: cErr } = await supabase
-    .from("connections")
-    .select("id, status")
-    .eq("id", connectionId)
-    .maybeSingle();
+  const lookup = await getStatusLookup(supabase);
+  if (!lookup) return;
 
-  if (cErr || !conn || conn.status !== "active") {
-    return;
-  }
+  const statuses = await getConnectionReviewStatuses(supabase, connectionId);
+  if (!statuses) return;
 
-  const { data: invs, error: invErr } = await supabase
-    .from("review_invitations")
-    .select("id")
-    .eq("connection_id", connectionId);
-
-  if (invErr || !invs || invs.length !== 2) {
-    return;
-  }
-
-  const { data: revs } = await supabase
-    .from("reviews")
-    .select(
-      `
-      invitation_id,
-      status:review_statuses!inner (
-        name
-      )
-    `,
-    )
-    .in("invitation_id", invs.map((i) => i.id));
-
-  if (!revs || revs.length !== 2) {
-    return;
-  }
-
-  const allTerminal = revs.every((r) => {
-    const row = r as { status: { name: string } };
-    return isTerminalReview(row.status?.name);
-  });
-
-  if (!allTerminal) {
+  const allSubmittedOrTerminal = statuses.every((statusId) => statusId !== lookup.draftId);
+  if (!allSubmittedOrTerminal) {
     return;
   }
 
   const { data: updated } = await supabase
     .from("connections")
     .update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
+      closed_at: new Date().toISOString(),
     })
     .eq("id", connectionId)
-    .eq("status", "active")
-    .select("business_a_id, business_b_id");
+    .is("closed_at", null)
+    .select("id");
 
   if (updated?.[0]) {
     revalidatePath(Paths.DASHBOARD);
@@ -83,132 +105,59 @@ export async function tryCompleteConnection(
   }
 }
 
-export async function tryCompleteConnectionForReview(
+export async function tryResolveConnection(
+  supabase: Supabase,
+  connectionId: Tables<"connections">["id"],
+): Promise<void> {
+  const lookup = await getStatusLookup(supabase);
+  if (!lookup) return;
+
+  const statuses = await getConnectionReviewStatuses(supabase, connectionId);
+  if (!statuses) return;
+
+  const allTerminal = statuses.every((statusId) => lookup.terminalIds.has(statusId));
+  if (!allTerminal) return;
+
+  const { data: updated } = await supabase
+    .from("connections")
+    .update(
+      {
+        resolved_at: new Date().toISOString(),
+      },
+    )
+    .eq("id", connectionId)
+    .is("resolved_at", null)
+    .select("id");
+
+  if (updated?.[0]) {
+    revalidatePath(Paths.DASHBOARD);
+  }
+}
+
+export async function tryCloseConnectionForReview(
   supabase: Supabase,
   reviewId: Tables<"reviews">["id"],
 ): Promise<void> {
   const { data: rev } = await supabase
     .from("reviews")
-    .select("invitation_id")
+    .select("connection_id")
     .eq("id", reviewId)
     .maybeSingle();
 
-  if (!rev?.invitation_id) return;
-
-  const { data: inv } = await supabase
-    .from("review_invitations")
-    .select("connection_id")
-    .eq("id", rev.invitation_id)
-    .maybeSingle();
-
-  if (!inv?.connection_id) return;
-
-  await tryCompleteConnection(supabase, inv.connection_id);
+  if (!rev?.connection_id) return;
+  await tryCloseConnectionWhenBothSubmitted(supabase, rev.connection_id);
 }
 
-/**
- * After outgoing submit: the invitee's owned business (`invitee_business_id`) stops
- * counting this connection toward its slot limit. When both sides have submitted,
- * the connection is marked completed so neither party is blocked from new matches.
- */
-export async function tryReleaseOwnSlotAfterOutgoingSubmit(
+export async function tryResolveConnectionForReview(
   supabase: Supabase,
   reviewId: Tables<"reviews">["id"],
 ): Promise<void> {
-  const { data: row, error: rowErr } = await supabase
+  const { data: rev } = await supabase
     .from("reviews")
-    .select(
-      `
-      invitation:review_invitations!inner (
-        connection_id,
-        invitee_business_id
-      )
-    `,
-    )
+    .select("connection_id")
     .eq("id", reviewId)
     .maybeSingle();
 
-  if (rowErr || !row?.invitation) {
-    if (rowErr) {
-      console.error("tryReleaseOwnSlotAfterOutgoingSubmit review", rowErr);
-    }
-    return;
-  }
-
-  const inv = row.invitation as {
-    connection_id: number | null;
-    invitee_business_id: number | null;
-  };
-
-  if (!inv.connection_id || inv.invitee_business_id == null) {
-    return;
-  }
-
-  const { data: conn, error: cErr } = await supabase
-    .from("connections")
-    .select(
-      "id, status, business_a_id, business_b_id, business_a_slot_released_at, business_b_slot_released_at",
-    )
-    .eq("id", inv.connection_id)
-    .maybeSingle();
-
-  if (cErr || !conn || conn.status !== "active") {
-    if (cErr) console.error("tryReleaseOwnSlotAfterOutgoingSubmit conn", cErr);
-    return;
-  }
-
-  const bid = inv.invitee_business_id;
-  if (bid !== conn.business_a_id && bid !== conn.business_b_id) {
-    console.error(
-      "tryReleaseOwnSlotAfterOutgoingSubmit: invitee_business_id not on connection",
-      { reviewId, bid, conn },
-    );
-    return;
-  }
-
-  const now = new Date().toISOString();
-  const isA = bid === conn.business_a_id;
-  const { error: uErr } = await supabase
-    .from("connections")
-    .update(
-      isA
-        ? { business_a_slot_released_at: now }
-        : { business_b_slot_released_at: now },
-    )
-    .eq("id", conn.id)
-    .eq("status", "active")
-    .is(isA ? "business_a_slot_released_at" : "business_b_slot_released_at", null);
-
-  if (uErr) {
-    console.error("tryReleaseOwnSlotAfterOutgoingSubmit update", uErr);
-    return;
-  }
-
-  const { data: after } = await supabase
-    .from("connections")
-    .select(
-      "business_a_slot_released_at, business_b_slot_released_at, status",
-    )
-    .eq("id", conn.id)
-    .maybeSingle();
-
-  if (
-    after?.status === "active" &&
-    after.business_a_slot_released_at &&
-    after.business_b_slot_released_at
-  ) {
-    const { error: doneErr } = await supabase
-      .from("connections")
-      .update({
-        status: "completed",
-        completed_at: now,
-      })
-      .eq("id", conn.id)
-      .eq("status", "active");
-
-    if (doneErr) {
-      console.error("tryReleaseOwnSlotAfterOutgoingSubmit complete", doneErr);
-      return;
-    }
-  }
+  if (!rev?.connection_id) return;
+  await tryResolveConnection(supabase, rev.connection_id);
 }

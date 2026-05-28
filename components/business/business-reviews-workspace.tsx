@@ -452,14 +452,14 @@ export const BusinessReviewsWorkspace = forwardRef<
         header: "Partner business",
         cell: ({ row }) => {
           const r = row.original;
-          const loc = r.invitation.invitee_business_location;
+          const loc = r.reviewer_business_location;
           const partnerName =
-            r.invitation.invitee_business_name?.trim() || "Partner business";
+            r.reviewer_business_name?.trim() || "Partner business";
           const addressLine = loc ? getAddress(loc) : null;
           return (
             <div className="flex items-start gap-3 min-w-[180px]">
               <ReviewPartnerAvatar
-                coverUrl={r.invitation.invitee_business_cover_image_url}
+                coverUrl={r.reviewer_business_cover_image_url}
                 alt={partnerName}
               />
               <div>
@@ -476,7 +476,7 @@ export const BusinessReviewsWorkspace = forwardRef<
         id: "platform",
         header: "Platform",
         cell: ({ row }) => (
-          <Platform name={row.original.invitation.platform.name} />
+          <Platform name={row.original.platform.name} />
         ),
       },
       {
@@ -521,7 +521,7 @@ export const BusinessReviewsWorkspace = forwardRef<
         id: "partner",
         header: "Partner business",
         cell: ({ row }) => {
-          const b = row.original.invitation.business;
+          const b = row.original.reviewed_business;
           return (
             <div className="flex items-start gap-3 min-w-[200px]">
               <ReviewPartnerAvatar
@@ -540,7 +540,7 @@ export const BusinessReviewsWorkspace = forwardRef<
         id: "platform",
         header: "Platform",
         cell: ({ row }) => (
-          <Platform name={row.original.invitation.platform.name} />
+          <Platform name={row.original.platform.name} />
         ),
       },
       {
@@ -788,7 +788,7 @@ export const BusinessReviewsWorkspace = forwardRef<
               setIncoming((prev) =>
                 prev.map((r) =>
                   r.id === updated.id
-                    ? { ...r, status: updated.status, invitation: r.invitation }
+                    ? { ...r, status: updated.status }
                     : r,
                 ),
               );
@@ -820,7 +820,7 @@ export const BusinessReviewsWorkspace = forwardRef<
               setOutgoing((prev) =>
                 prev.map((r) =>
                   r.id === updated.id
-                    ? { ...r, ...updated, invitation: r.invitation }
+                    ? { ...r, ...updated }
                     : r,
                 ),
               );

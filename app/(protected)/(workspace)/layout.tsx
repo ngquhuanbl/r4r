@@ -1,7 +1,6 @@
 import {
   fetchIncomingReviews,
   fetchOutgoingReviews,
-  fetchPendingReviewRequests,
 } from "../actions/review-actions";
 import { fetchBusinesses } from "../actions/business-actions";
 import { fetchMetrics } from "../metrics/actions";
@@ -25,19 +24,13 @@ export default async function WorkspaceLayout({ children }: LayoutProps) {
 
   const userId = user!.id;
 
-  const [
-    myBusinesses,
-    metrics,
-    incomingReviews,
-    outgoingReviews,
-    reviewRequests,
-  ] = await Promise.all([
-    unwrap(fetchBusinesses(userId)),
-    unwrap(fetchMetrics(userId)),
-    unwrap(fetchIncomingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
-    unwrap(fetchOutgoingReviews(userId, 1, OUTGOING_REVIEWS_PAGE_SIZE)),
-    unwrap(fetchPendingReviewRequests(userId)),
-  ]);
+  const [myBusinesses, metrics, incomingReviews, outgoingReviews] =
+    await Promise.all([
+      unwrap(fetchBusinesses(userId)),
+      unwrap(fetchMetrics(userId)),
+      unwrap(fetchIncomingReviews(userId, 1, INCOMING_REVIEWS_PAGE_SIZE)),
+      unwrap(fetchOutgoingReviews(userId, 1, OUTGOING_REVIEWS_PAGE_SIZE)),
+    ]);
 
   return (
     <WorkspaceHydrator
@@ -46,7 +39,6 @@ export default async function WorkspaceLayout({ children }: LayoutProps) {
         metrics,
         incomingReviews,
         outgoingReviews,
-        reviewRequests,
       }}
     >
       {children}

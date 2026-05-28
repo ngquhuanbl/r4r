@@ -2,9 +2,9 @@
 
 import { ReviewStatusNames } from "@/constants/shared";
 import {
-  tryCompleteConnectionForReview,
-  tryReleaseOwnSlotAfterOutgoingSubmit,
+  tryCloseConnectionForReview,
 } from "@/lib/connections/complete-connection";
+import { adjustSlotsUsed } from "@/lib/billing/slots-used";
 import { createClient } from "@/lib/supabase/server";
 import {
   FetchedReviewsResponse,
@@ -20,14 +20,13 @@ export async function fetchOutgoingReviews(
   pageSize: number,
   reviewStatusId?: Tables<"review_statuses">["id"],
   /**
-   * When set, only outgoing reviews whose invitation is attributed to this owned business
-   * (`review_invitations.invitee_business_id`). Omit for account-wide lists (e.g. dashboard).
+   * When set, only outgoing reviews attributed to this owned business
+   * (`reviews.reviewer_business_id`). Omit for account-wide lists (e.g. dashboard).
    */
-  inviteeOwnedBusinessId?: Tables<"businesses">["id"],
+  reviewerOwnedBusinessId?: Tables<"businesses">["id"],
 ): Promise<APIResponse<FetchedReviewsResponse<OutgoingReview>>> {
   const supabase = createClient();
 
-  // Create query for fetching data
   const dataQuery = (function () {
     let query = supabase
       .from("reviews")
@@ -41,43 +40,36 @@ export async function fetchOutgoingReviews(
 					name
 				),
 				created_at,
-				invitation:review_invitations!inner (
-					business:businesses!review_invitations_business_id_fkey (
-						id,
-						business_name,
-						address,
-						city,
-						state,
-						zip_code,
-						cover_image_url,
-						business_platforms (
-							platform_id,
-							platform_url
-						)
-					),
-					platform:platforms!inner (
-						id,
-						name
-					),
-					inviter_id
+				reviewed_owner_user_id,
+				reviewed_business:businesses!reviews_reviewed_business_id_fkey (
+					id,
+					business_name,
+					address,
+					city,
+					state,
+					zip_code,
+					cover_image_url,
+					business_platforms (
+						platform_id,
+						platform_url
+					)
+				),
+				platform:platforms!inner (
+					id,
+					name
 				)
-				`
+				`,
       )
-      .eq("invitation.invitee_id", userId);
+      .eq("reviewer_user_id", userId);
 
-    if (inviteeOwnedBusinessId !== undefined) {
-      query = query.eq(
-        "invitation.invitee_business_id",
-        inviteeOwnedBusinessId,
-      );
+    if (reviewerOwnedBusinessId !== undefined) {
+      query = query.eq("reviewer_business_id", reviewerOwnedBusinessId);
     }
 
-    // Filter by review status
     if (reviewStatusId !== undefined) {
       query = query.eq("status.id", reviewStatusId);
     }
 
-    // Pagination
     const from = (page - 1) * pageSize;
     const to = from + (pageSize - 1);
     query = query.range(from, to).order("created_at", { ascending: false });
@@ -94,23 +86,14 @@ export async function fetchOutgoingReviews(
 					status:review_statuses!inner (
 						id,
 						name
-					),
-					invitation:review_invitations!inner (
-						business:businesses!review_invitations_business_id_fkey (
-							id
-						),
-						inviter_id
 					)
 				`,
-        { count: "exact", head: true }
+        { count: "exact", head: true },
       )
-      .eq("invitation.invitee_id", userId);
+      .eq("reviewer_user_id", userId);
 
-    if (inviteeOwnedBusinessId !== undefined) {
-      query = query.eq(
-        "invitation.invitee_business_id",
-        inviteeOwnedBusinessId,
-      );
+    if (reviewerOwnedBusinessId !== undefined) {
+      query = query.eq("reviewer_business_id", reviewerOwnedBusinessId);
     }
 
     if (reviewStatusId !== undefined) {
@@ -132,7 +115,7 @@ export async function fetchOutgoingReviews(
     if (countResult.error) {
       console.error(
         "Failed to count outgoing review total page",
-        countResult.error
+        countResult.error,
       );
     }
 
@@ -150,45 +133,56 @@ export async function fetchOutgoingReviews(
     },
   };
 }
+
 export async function submitOutgoingReview(
   reviewId: Tables<"reviews">["id"],
   reviewContent: Tables<"reviews">["content"],
-  reviewUrl: Tables<"reviews">["url"]
+  reviewUrl: Tables<"reviews">["url"],
 ): Promise<APIResponse<SubmitReviewResponse>> {
   const supabase = createClient();
 
-  // Get the SUBMITTED status ID
   const { data: submittedStatus, error: reviewStatusError } = await supabase
     .from("review_statuses")
-    .select("id")
-    .eq("name", ReviewStatusNames.SUBMITTED)
-    .single();
+    .select("id, name")
+    .in("name", [ReviewStatusNames.DRAFT, ReviewStatusNames.SUBMITTED]);
 
-  if (reviewStatusError) {
+  if (reviewStatusError || !submittedStatus?.length) {
     console.error("Error fetching submitted status:", reviewStatusError);
     return { ok: false, error: reviewStatusError };
   }
 
-  // Update the review
+  const submittedStatusId = submittedStatus.find(
+    (row) => row.name === ReviewStatusNames.SUBMITTED,
+  )?.id;
+  const draftStatusId = submittedStatus.find(
+    (row) => row.name === ReviewStatusNames.DRAFT,
+  )?.id;
+
+  if (!submittedStatusId || !draftStatusId) {
+    return { ok: false, error: "Status configuration missing" };
+  }
+
   const { data: updateData, error: updateError } = await supabase
     .from("reviews")
     .update({
       content: reviewContent,
       url: reviewUrl,
-      status_id: submittedStatus.id,
+      status_id: submittedStatusId,
       submitted_at: new Date().toISOString(),
     })
     .eq("id", reviewId)
+    .eq("status_id", draftStatusId)
     .select(
       `
 			id,
 			url,
 			content,
+      reviewer_business_id,
 			status:review_statuses!inner (
 				id,
 				name
 			)
-			`
+			`,
     )
     .single();
 
@@ -197,11 +191,15 @@ export async function submitOutgoingReview(
     return { ok: false, error: updateError };
   }
 
-  await tryCompleteConnectionForReview(supabase, reviewId);
-  await tryReleaseOwnSlotAfterOutgoingSubmit(supabase, reviewId);
+  if (updateData.reviewer_business_id != null) {
+    const slots = await adjustSlotsUsed(updateData.reviewer_business_id, -1);
+    if (slots == null) {
+      return { ok: false, error: "Could not update slot counters" };
+    }
+  }
 
-  // Client lists update via submit dialogs (Redux / local state); avoid revalidatePath
-  // here so the dashboard layout and business page do not remount.
+  await tryCloseConnectionForReview(supabase, reviewId);
+
   return {
     ok: true,
     data: updateData,

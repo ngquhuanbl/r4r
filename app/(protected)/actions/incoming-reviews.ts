@@ -1,7 +1,7 @@
 "use server";
 
 import { ReviewStatusNames } from "@/constants/shared";
-import { tryCompleteConnectionForReview } from "@/lib/connections/complete-connection";
+import { tryResolveConnectionForReview } from "@/lib/connections/complete-connection";
 import { createClient } from "@/lib/supabase/server";
 import {
   FetchedReviewsResponse,
@@ -16,11 +16,10 @@ export async function fetchIncomingReviews(
   page: number,
   pageSize: number,
   businessId?: Tables<"businesses">["id"],
-  statusId?: Tables<"review_statuses">["id"]
+  statusId?: Tables<"review_statuses">["id"],
 ): Promise<APIResponse<FetchedReviewsResponse<IncomingReview>>> {
   const supabase = createClient();
 
-  // Create query for fetching data
   const dataQuery = (function () {
     let query = supabase
       .from("reviews")
@@ -34,33 +33,28 @@ export async function fetchIncomingReviews(
 					name
 				),
 				created_at,
-				invitation:review_invitations!inner (
-					business:businesses!review_invitations_business_id_fkey (
-						id,
-						business_name
-					),
-					platform:platforms!inner (
-						id,
-						name
-					),
-					inviter_id,
-					invitee_id,
-					invitee_business_id
+				reviewer_user_id,
+				reviewer_business_id,
+				reviewed_business:businesses!reviews_reviewed_business_id_fkey (
+					id,
+					business_name
+				),
+				platform:platforms!inner (
+					id,
+					name
 				)
-				`
+				`,
       )
-      .eq("invitation.inviter_id", userId)
+      .eq("reviewed_owner_user_id", userId)
       .neq("status.name", ReviewStatusNames.DRAFT);
 
-    // Filter
     if (businessId !== undefined) {
-      query = query.eq("invitation.business_id", businessId);
+      query = query.eq("reviewed_business_id", businessId);
     }
     if (statusId !== undefined) {
       query = query.eq("status.id", statusId);
     }
 
-    // Pagination
     const from = (page - 1) * pageSize;
     const to = from + (pageSize - 1);
     query = query.range(from, to).order("created_at", { ascending: false });
@@ -77,22 +71,15 @@ export async function fetchIncomingReviews(
 					status:review_statuses!inner (
 						id,
 						name
-					),
-					invitation:review_invitations!inner (
-						business:businesses!review_invitations_business_id_fkey (
-							id
-						),
-						inviter_id
 					)
 				`,
-        { count: "exact", head: true }
+        { count: "exact", head: true },
       )
-      .eq("invitation.inviter_id", userId)
+      .eq("reviewed_owner_user_id", userId)
       .neq("status.name", ReviewStatusNames.DRAFT);
 
-    // Filter
     if (businessId !== undefined) {
-      query = query.eq("invitation.business_id", businessId);
+      query = query.eq("reviewed_business_id", businessId);
     }
     if (statusId !== undefined) {
       query = query.eq("status.id", statusId);
@@ -113,7 +100,7 @@ export async function fetchIncomingReviews(
     if (countResult.error) {
       console.error(
         "Failed to count incoming review total page",
-        countResult.error
+        countResult.error,
       );
     }
 
@@ -126,18 +113,15 @@ export async function fetchIncomingReviews(
   const rawRows = dataResult.data ?? [];
   let enriched: IncomingReview[] = rawRows.map((row) => ({
     ...(row as IncomingReview),
-    invitation: {
-      ...(row as IncomingReview).invitation,
-      invitee_business_name: null,
-      invitee_business_cover_image_url: null,
-      invitee_business_location: null,
-    },
+    reviewer_business_name: null,
+    reviewer_business_cover_image_url: null,
+    reviewer_business_location: null,
   }));
 
   const explicitBusinessIds = Array.from(
     new Set(
       enriched
-        .map((r) => r.invitation.invitee_business_id)
+        .map((r) => r.reviewer_business_id)
         .filter((id): id is number => id != null),
     ),
   );
@@ -147,19 +131,14 @@ export async function fetchIncomingReviews(
     {
       name: string;
       cover: string | null;
-      location: Pick<
-        Tables<"businesses">,
-        "address" | "city" | "state"
-      >;
+      location: Pick<Tables<"businesses">, "address" | "city" | "state">;
     }
   >();
 
   if (explicitBusinessIds.length > 0) {
     const { data: explicitRows } = await supabase
       .from("businesses")
-      .select(
-        "id, business_name, cover_image_url, address, city, state",
-      )
+      .select("id, business_name, cover_image_url, address, city, state")
       .in("id", explicitBusinessIds);
 
     for (const row of explicitRows ?? []) {
@@ -175,14 +154,14 @@ export async function fetchIncomingReviews(
     }
   }
 
-  const inviteeIdsNeedingFallback: UserId[] = [];
-  const seenInvitee = new Set<string>();
+  const reviewerIdsNeedingFallback: UserId[] = [];
+  const seenReviewer = new Set<string>();
   for (const r of enriched) {
-    if (r.invitation.invitee_business_id != null) continue;
-    const uid = r.invitation.invitee_id;
-    if (uid && !seenInvitee.has(uid)) {
-      seenInvitee.add(uid);
-      inviteeIdsNeedingFallback.push(uid);
+    if (r.reviewer_business_id != null) continue;
+    const uid = r.reviewer_user_id;
+    if (uid && !seenReviewer.has(uid)) {
+      seenReviewer.add(uid);
+      reviewerIdsNeedingFallback.push(uid);
     }
   }
 
@@ -195,13 +174,13 @@ export async function fetchIncomingReviews(
     }
   >();
 
-  if (inviteeIdsNeedingFallback.length > 0) {
+  if (reviewerIdsNeedingFallback.length > 0) {
     const { data: bizRows } = await supabase
       .from("businesses")
       .select(
         "user_id, business_name, created_at, cover_image_url, address, city, state",
       )
-      .in("user_id", inviteeIdsNeedingFallback)
+      .in("user_id", reviewerIdsNeedingFallback)
       .order("created_at", { ascending: true });
 
     for (const row of bizRows ?? []) {
@@ -221,18 +200,15 @@ export async function fetchIncomingReviews(
   }
 
   enriched = enriched.map((r) => {
-    const bid = r.invitation.invitee_business_id;
+    const bid = r.reviewer_business_id;
     const explicit = bid != null ? partnerByBusinessId.get(bid) : undefined;
-    const fallback = partnerByUser.get(r.invitation.invitee_id as UserId);
+    const fallback = partnerByUser.get(r.reviewer_user_id as UserId);
     const p = explicit ?? fallback;
     return {
       ...r,
-      invitation: {
-        ...r.invitation,
-        invitee_business_name: p?.name ?? null,
-        invitee_business_cover_image_url: p?.cover ?? null,
-        invitee_business_location: p?.location ?? null,
-      },
+      reviewer_business_name: p?.name ?? null,
+      reviewer_business_cover_image_url: p?.cover ?? null,
+      reviewer_business_location: p?.location ?? null,
     };
   });
 
@@ -246,11 +222,10 @@ export async function fetchIncomingReviews(
 }
 
 export async function confirmIncomingReview(
-  reviewId: Tables<"reviews">["id"]
+  reviewId: Tables<"reviews">["id"],
 ): Promise<APIResponse<UpdatedReviewStatus>> {
   const supabase = createClient();
 
-  // Get the VERIFIED status ID
   const { data: verifiedStatus, error: statusError } = await supabase
     .from("review_statuses")
     .select("id")
@@ -262,7 +237,6 @@ export async function confirmIncomingReview(
     return { ok: false, error: statusError };
   }
 
-  // Update the review status
   const { data, error } = await supabase
     .from("reviews")
     .update({
@@ -277,7 +251,7 @@ export async function confirmIncomingReview(
     return { ok: false, error };
   }
 
-  await tryCompleteConnectionForReview(supabase, reviewId);
+  await tryResolveConnectionForReview(supabase, reviewId);
 
   return {
     ok: true,
@@ -292,11 +266,10 @@ export async function confirmIncomingReview(
 }
 
 export async function rejectIncomingReview(
-  reviewId: Tables<"reviews">["id"]
+  reviewId: Tables<"reviews">["id"],
 ): Promise<APIResponse<UpdatedReviewStatus>> {
   const supabase = createClient();
 
-  // Get the VERIFIED status ID
   const { data: rejectedStatus, error: statusError } = await supabase
     .from("review_statuses")
     .select("id")
@@ -308,7 +281,6 @@ export async function rejectIncomingReview(
     return { ok: false, error: statusError };
   }
 
-  // Update the review status
   const { data, error } = await supabase
     .from("reviews")
     .update({
@@ -322,7 +294,7 @@ export async function rejectIncomingReview(
     return { ok: false, error };
   }
 
-  await tryCompleteConnectionForReview(supabase, reviewId);
+  await tryResolveConnectionForReview(supabase, reviewId);
 
   return {
     ok: true,

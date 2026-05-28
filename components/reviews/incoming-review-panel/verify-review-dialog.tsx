@@ -36,12 +36,12 @@ export function VerifyReviewDialog({
   onUpdatedReview,
 }: VerifyReviewDialogProps) {
   const businessEntries = useAppSelector(myBusinessesSelectors.selectEntries);
-  const { url, content, invitation, id } = data;
-  const businessInfo = businessEntries[invitation.business.id];
+  const { url, content, reviewed_business, platform, id } = data;
+  const businessInfo = businessEntries[reviewed_business.id];
   const businessName = businessInfo.business_name;
   const businessAddress = getAddress(businessInfo);
 
-  const platformInfo = invitation.platform;
+  const platformInfo = platform;
   const platformName = platformInfo.name;
 
   const reviewURL = url;
