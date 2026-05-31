@@ -1,0 +1,46 @@
+name: Schema Sync Guard
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "schema.sql"
+
+jobs:
+  enforce-schema-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure schema.sql changed when migrations changed
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.sha }}"
+
+          changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          echo "$changed_files"
+
+          migrations_changed=false
+          schema_changed=false
+
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            if [[ "$file" == supabase/migrations/* ]]; then
+              migrations_changed=true
+            fi
+            if [[ "$file" == "schema.sql" ]]; then
+              schema_changed=true
+            fi
+          done <<< "$changed_files"
+
+          if [[ "$migrations_changed" == true && "$schema_changed" != true ]]; then
+            echo "ERROR: Migration files changed but schema.sql was not updated."
+            echo "Please update schema.sql in the same PR to keep the canonical snapshot in sync."
+            exit 1
+          fi
+
+          echo "Schema sync guard passed."

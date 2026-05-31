@@ -153,7 +153,6 @@ export type Database = {
           created_at: string;
           id: number;
           initiator_business_id: number;
-          partner_acknowledged_at: string | null;
           resolved_at: string | null;
         };
         Insert: {
@@ -163,7 +162,6 @@ export type Database = {
           created_at?: string;
           id?: number;
           initiator_business_id: number;
-          partner_acknowledged_at?: string | null;
           resolved_at?: string | null;
         };
         Update: {
@@ -173,7 +171,6 @@ export type Database = {
           created_at?: string;
           id?: number;
           initiator_business_id?: number;
-          partner_acknowledged_at?: string | null;
           resolved_at?: string | null;
         };
         Relationships: [

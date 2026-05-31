@@ -83,7 +83,6 @@ CREATE TABLE public.connections (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
   closed_at TIMESTAMP WITH TIME ZONE,
   resolved_at TIMESTAMP WITH TIME ZONE,
-  partner_acknowledged_at TIMESTAMP WITH TIME ZONE,
   CONSTRAINT connections_ordered_pair CHECK (business_a_id < business_b_id),
   CONSTRAINT connections_business_pair_unique UNIQUE (business_a_id, business_b_id)
 );

@@ -1,8 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   refetchBusinessBillingContext,
@@ -15,14 +13,11 @@ import type { UserId } from "@/types/shared";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
 
 import { BusinessLeftPanel } from "./business-left-panel";
-import {
-  BusinessReviewsWorkspace,
-  type BusinessReviewsWorkspaceHandle,
-} from "./business-reviews-workspace";
+import { BusinessReviewsWorkspace } from "./business-reviews-workspace";
 
 export function BusinessPageClient({
   userId,
-  business,
+  business: initialBusiness,
   snapshot: initialSnapshot,
   reviewStatuses,
   billingContext,
@@ -33,13 +28,15 @@ export function BusinessPageClient({
   reviewStatuses: Tables<"review_statuses">[];
   billingContext: BusinessBillingSidebarContext;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const reviewsWorkspaceRef = useRef<BusinessReviewsWorkspaceHandle>(null);
+  const [business, setBusiness] = useState<FetchedBusiness>(initialBusiness);
   const [billing, setBilling] =
     useState<BusinessBillingSidebarContext>(billingContext);
   const [snapshot, setSnapshot] =
     useState<BusinessReviewSnapshot>(initialSnapshot);
+
+  useEffect(() => {
+    setBusiness(initialBusiness);
+  }, [initialBusiness]);
 
   useEffect(() => {
     setBilling(billingContext);
@@ -57,6 +54,33 @@ export function BusinessPageClient({
     }
   }, [business.id]);
 
+  const handleConnectionMatchFound = useCallback(
+    ({ slotsDelta }: { slotsDelta: number }) => {
+      // Optimistic capacity update for immediate UI feedback.
+      setBilling((prev) => {
+        const slotsTotal = prev.businessBilling?.slot_limit ?? 1;
+        const nextUsed = Math.min(
+          slotsTotal,
+          Math.max(0, prev.slotsUsed + slotsDelta),
+        );
+        return { ...prev, slotsUsed: nextUsed };
+      });
+
+      // Background reconcile keeps UI in sync if another tab/device changed state.
+      void (async () => {
+        const res = await refetchBusinessBillingContext(business.id);
+        if (res.ok) {
+          setBilling(res.data);
+        }
+      })();
+    },
+    [business.id],
+  );
+
+  const handleBusinessUpdated = useCallback((updated: FetchedBusiness) => {
+    setBusiness(updated);
+  }, []);
+
   return (
     <div className="grid w-full grid-cols-1 gap-8 pt-8 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start lg:gap-x-10 lg:gap-y-0">
       <div className="min-w-0 lg:max-w-sm">
@@ -65,37 +89,12 @@ export function BusinessPageClient({
           business={business}
           snapshot={snapshot}
           billingContext={billing}
-          onBusinessUpdated={() => router.refresh()}
-          onConnectionMatchFound={async () => {
-            reviewsWorkspaceRef.current?.afterConnectionMatch();
-            const next = new URLSearchParams(
-              typeof window !== "undefined" ? window.location.search : "",
-            );
-            next.set("tab", "outgoing");
-            router.replace(`${pathname}?${next.toString()}`, { scroll: false });
-            window.setTimeout(() => {
-              document
-                .getElementById("business-reviews-workspace")
-                ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-            }, 50);
-            const res = await refetchBusinessBillingContext(business.id);
-            if (res.ok) {
-              setBilling(res.data);
-            } else {
-              toast.error("Could not refresh connection capacity", {
-                description:
-                  typeof res.error === "string"
-                    ? res.error
-                    : "Please refresh the page.",
-              });
-            }
-            await refreshSnapshot();
-          }}
+          onBusinessUpdated={handleBusinessUpdated}
+          onConnectionMatchFound={handleConnectionMatchFound}
         />
       </div>
       <div className="min-w-0">
         <BusinessReviewsWorkspace
-          ref={reviewsWorkspaceRef}
           userId={userId}
           businessId={business.id}
           reviewStatuses={reviewStatuses}

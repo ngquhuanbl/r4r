@@ -14,6 +14,34 @@ import {
 import { Tables } from "@/types/database";
 import { APIResponse, UserId } from "@/types/shared";
 
+export type OutgoingTaskNotification = {
+  // Reuse full row shape so Realtime/catch-up notifications can
+  // directly append to UI state without extra per-item fetches.
+} & OutgoingReview;
+
+async function assertBusinessOwnedByCurrentUser(
+  supabase: ReturnType<typeof createClient>,
+  businessId: Tables<"businesses">["id"],
+): Promise<APIResponse<true>> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { ok: false, error: "Unauthorized" };
+  }
+
+  const { data: owned, error } = await supabase
+    .from("businesses")
+    .select("id")
+    .eq("id", businessId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error || !owned) {
+    return { ok: false, error: "Business not found" };
+  }
+  return { ok: true, data: true };
+}
+
 export async function fetchOutgoingReviews(
   userId: UserId,
   page: number,
@@ -132,6 +160,73 @@ export async function fetchOutgoingReviews(
       total_results: countResult.count!,
     },
   };
+}
+
+export async function fetchOutgoingTaskNotificationsSinceCursor(
+  businessId: Tables<"businesses">["id"],
+  sinceCursor: string | null,
+  limit = 6,
+): Promise<APIResponse<OutgoingTaskNotification[]>> {
+  const supabase = createClient();
+  const owned = await assertBusinessOwnedByCurrentUser(supabase, businessId);
+  if (!owned.ok) return owned;
+
+  const { data: draftStatus, error: statusErr } = await supabase
+    .from("review_statuses")
+    .select("id")
+    .eq("name", ReviewStatusNames.DRAFT)
+    .maybeSingle();
+  if (statusErr || !draftStatus) {
+    return { ok: false, error: statusErr?.message ?? "Status configuration missing" };
+  }
+
+  let query = supabase
+    .from("reviews")
+    .select(
+      `
+      id,
+      content,
+      url,
+      created_at,
+      reviewed_owner_user_id,
+      status:review_statuses!inner (
+        id,
+        name
+      ),
+      reviewed_business:businesses!reviews_reviewed_business_id_fkey (
+        id,
+        business_name,
+        address,
+        city,
+        state,
+        zip_code,
+        cover_image_url,
+        business_platforms (
+          platform_id,
+          platform_url
+        )
+      ),
+      platform:platforms!inner (
+        id,
+        name
+      )
+      `,
+    )
+    .eq("reviewer_business_id", businessId)
+    .eq("status_id", draftStatus.id)
+    .order("created_at", { ascending: true })
+    .limit(limit);
+
+  if (sinceCursor) {
+    query = query.gt("created_at", sinceCursor);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  return { ok: true, data: (data ?? []) as OutgoingTaskNotification[] };
 }
 
 export async function submitOutgoingReview(

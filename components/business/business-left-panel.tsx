@@ -14,7 +14,6 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { startConnectionMatch } from "@/app/(protected)/(workspace)/business/[id]/connection-actions";
-import { acknowledgePendingPartnerConnections } from "@/lib/connections/acknowledge-pending-partner-browser";
 import { Platform } from "@/components/dashboard/platform";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -28,6 +27,7 @@ import { DASHBOARD_PRIMARY_BUTTON_CLASSNAME } from "@/components/dashboard/locat
 import { cn } from "@/lib/utils";
 import { Paths } from "@/constants/paths";
 import type { BusinessBillingSidebarContext } from "@/app/(protected)/(workspace)/business/[id]/actions";
+import { buildMatchFeedback } from "@/lib/connections/match-feedback";
 import type { FetchedBusiness } from "@/types/dashboard";
 import { sortPlatformsBySpec } from "@/components/business/create-business/sort-platforms";
 import { useAppSelector } from "@/lib/redux/hooks";
@@ -208,10 +208,10 @@ export function BusinessLeftPanel({
   business: FetchedBusiness;
   snapshot: BusinessReviewSnapshot;
   billingContext: BusinessBillingSidebarContext;
-  /** Full page refresh (e.g. profile edits). */
-  onBusinessUpdated?: () => void;
-  /** After a successful connection match: switch to Outgoing tab and reload that list only. */
-  onConnectionMatchFound?: () => void;
+  /** Local business metadata update after profile edits. */
+  onBusinessUpdated?: (updatedBusiness: FetchedBusiness) => void;
+  /** After a successful connection match: apply post-match local updates. */
+  onConnectionMatchFound?: (payload: { slotsDelta: number }) => void;
 }) {
   const platformList = useAppSelector(platformsSelectors.selectData);
   const ordered = sortPlatformsBySpec(platformList);
@@ -258,24 +258,6 @@ export function BusinessLeftPanel({
     };
   }, []);
 
-  /** Another business matched with you; capacity lives in this column — notify here so it runs regardless of reviews tab. */
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const res = await acknowledgePendingPartnerConnections(business.id);
-      if (cancelled || !res.ok || !res.data.length) return;
-
-      for (const row of res.data) {
-        toast.info("New connection created", {
-          description: `You've been matched with ${row.initiatorBusinessName}`,
-        });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [business.id]);
-
   const ctaLabel = searching ? "Searching…" : "LET'S CONNECT";
 
   const ctaDisabled = searching;
@@ -310,16 +292,15 @@ export function BusinessLeftPanel({
         });
         return;
       }
-      if ("matched" in res.data && res.data.matched === false) {
-        toast.error(
-          "All partners are currently busy. Please try again in a few minutes.",
-        );
+
+      const feedback = buildMatchFeedback(res.data);
+      if (feedback.kind === "error") {
+        toast.error(feedback.message);
         return;
       }
-      toast.success(
-        "Match found! Please check your Outgoing tab and submit your review.",
-      );
-      onConnectionMatchFound?.();
+
+      toast.success(feedback.message);
+      onConnectionMatchFound?.({ slotsDelta: feedback.slotsDelta });
     } catch {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -552,8 +533,8 @@ export function BusinessLeftPanel({
         open={editOpen}
         onOpenChange={setEditOpen}
         data={business}
-        onUpdatedData={() => {
-          onBusinessUpdated?.();
+        onUpdatedData={(updated) => {
+          onBusinessUpdated?.(updated);
           setEditOpen(false);
         }}
       />

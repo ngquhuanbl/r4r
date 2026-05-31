@@ -20,18 +20,20 @@ The service role is required for privileged flows (e.g. account deletion, admin-
 
 ---
 
-## 2. Schema (migrations)
+## 2. Schema (canonical snapshot)
 
-**Source of truth:** `supabase/migrations/*.sql` only. Do not maintain a second full-schema dump that can drift.
+**Source of truth for fresh setup:** [`../schema.sql`](../schema.sql) (full up-to-date snapshot).
 
-**With Supabase CLI** (from repo root):
+**With Supabase CLI** (from repo root), use this only to apply migrations to an existing environment where you explicitly want that history replay:
 
 ```bash
 supabase link    # once, to the target project
 supabase db push # applies migrations in order
 ```
 
-**Without CLI:** in the SQL Editor, run each file under `supabase/migrations/` **in filename (timestamp) order**.
+`schema.sql` is the canonical bootstrap for an empty database. `supabase/migrations/*.sql` is retained for history/audit.
+
+**Without CLI:** run `schema.sql` in SQL Editor for fresh setup.
 
 More context: [`supabase/README.md`](../supabase/README.md).
 
@@ -116,7 +118,7 @@ Located in `supabase/scripts/`. **Never run against production** unless you inte
 
 | Script | Effect |
 |--------|--------|
-| `01_reset_app_data.sql` | Deletes app rows (reviews, invitations, connections, businesses, billing prefs, etc.). Keeps `auth.users` and lookup tables like `platforms`, statuses. **Does not** delete hosted `storage.objects` via SQL in many Supabase plans — clean buckets in Dashboard if needed. |
+| `01_reset_app_data.sql` | Deletes app rows (reviews, connections, businesses, billing prefs, etc.). Keeps `auth.users` and lookup tables like `platforms`, `review_statuses`. **Does not** delete hosted `storage.objects` via SQL in many Supabase plans — clean buckets in Dashboard if needed. |
 | `02_reset_auth_users.sql` | Deletes **all** `auth.users`. Use only when you want an empty Auth directory. |
 
 **Typical hosted workflow:** SQL Editor → paste script → Run. Re-seed auth users afterward if needed.
@@ -155,9 +157,20 @@ supabase db reset
 
 Reapplies migrations from scratch and runs `supabase/seed.sql` **if present**. It does **not** automatically run `supabase/scripts/*.sql` unless you wire them into seed.
 
+## 12. Pre-launch full reset (clean slate)
+
+Since this product has not launched yet, use this when you intentionally want to rebuild the environment:
+
+1. Optional: wipe auth users with `supabase/scripts/02_reset_auth_users.sql`.
+2. Wipe app data with `supabase/scripts/01_reset_app_data.sql`.
+3. Re-apply canonical schema snapshot by running [`../schema.sql`](../schema.sql) in SQL Editor.
+
+4. Seed demo users via `npm run seed:test-users` if needed.
+5. Recreate test businesses and platform links.
+
 ---
 
-## 12. Verification checklist (new environment)
+## 13. Verification checklist (new environment)
 
 - Magic link and/or Google sign-in completes and lands on `/dashboard` (or intended post-auth route).
 - `/auth/callback` is on Supabase redirect allowlist.

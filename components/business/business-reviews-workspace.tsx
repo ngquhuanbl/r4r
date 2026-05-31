@@ -4,35 +4,43 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import {
-  forwardRef,
   useCallback,
   useEffect,
-  useImperativeHandle,
   useLayoutEffect,
   useMemo,
   useState,
 } from "react";
 import { toast } from "sonner";
 
+import type { OutgoingTaskNotification } from "@/app/(protected)/actions/outgoing-reviews";
 import {
   fetchIncomingReviews,
   fetchOutgoingReviews,
+  fetchOutgoingTaskNotificationsSinceCursor,
 } from "@/app/(protected)/actions/review-actions";
-import { Platform } from "@/components/dashboard/platform";
-import { ViewReviewDialog } from "@/components/reviews/incoming-review-panel/view-review-dialog";
 import { SubmitReviewDialog } from "@/components/business/submit-review-dialog";
 import { VerifyReviewDialog } from "@/components/business/verify-review-dialog";
+import { Platform } from "@/components/dashboard/platform";
+import { ViewReviewDialog } from "@/components/reviews/incoming-review-panel/view-review-dialog";
 import { ViewOutgoingReviewDialog } from "@/components/reviews/outgoing-review-panel/view-review-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { DataTable } from "@/components/ui/data-table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Pulse } from "@/components/ui/pulse";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -41,27 +49,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   INCOMING_REVIEWS_PAGE_SIZE,
   OUTGOING_REVIEWS_PAGE_SIZE,
   REVIEW_STATUS_FILTER_ALL_OPTION,
 } from "@/constants/reviews";
 import { ReviewStatusNames } from "@/constants/shared";
+import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { useLocalStorageKey } from "@/lib/hooks/use-local-storage-key";
 import { cn } from "@/lib/utils";
 import type {
   IncomingReview,
@@ -73,9 +75,10 @@ import type { Tables } from "@/types/database";
 import type { UserId } from "@/types/shared";
 import { ReviewUtils } from "@/utils/review";
 import { getAddress, getTotalPage } from "@/utils/shared";
+import { createOutgoingLastCursorStorageKey } from "@/utils/storage-keys";
 
-import fallbackBusinessAvatarSrc from "@/public/dashboard/fallback_business_avatar.png";
 import fallbackBusinessAvatarDarkSrc from "@/public/dashboard/fallback_business_avatar--dark.png";
+import fallbackBusinessAvatarSrc from "@/public/dashboard/fallback_business_avatar.png";
 
 function statusBadgeClass(name: string) {
   if (ReviewUtils.isVerifiedReviewStatus(name as any))
@@ -88,7 +91,8 @@ function statusBadgeClass(name: string) {
 }
 
 function incomingLabel(statusName: string) {
-  if (ReviewUtils.isDraftReviewStatus(statusName as any)) return "Wait to verify";
+  if (ReviewUtils.isDraftReviewStatus(statusName as any))
+    return "Wait to verify";
   if (ReviewUtils.isSubmittedReviewStatus(statusName as any))
     return "Ready to verify";
   if (ReviewUtils.isVerifiedReviewStatus(statusName as any)) return "Accepted";
@@ -98,7 +102,8 @@ function incomingLabel(statusName: string) {
 
 function outgoingLabel(statusName: string) {
   if (ReviewUtils.isDraftReviewStatus(statusName as any)) return "To submit";
-  if (ReviewUtils.isSubmittedReviewStatus(statusName as any)) return "Submitted";
+  if (ReviewUtils.isSubmittedReviewStatus(statusName as any))
+    return "Submitted";
   if (ReviewUtils.isVerifiedReviewStatus(statusName as any)) return "Accepted";
   if (ReviewUtils.isRejectedReviewStatus(statusName as any)) return "Rejected";
   return statusName;
@@ -267,7 +272,10 @@ function ReviewStatusBadgeWithTooltip({
           </Badge>
         </span>
       </TooltipTrigger>
-      <TooltipContent side="top" className={REVIEW_STATUS_TOOLTIP_CONTENT_CLASS}>
+      <TooltipContent
+        side="top"
+        className={REVIEW_STATUS_TOOLTIP_CONTENT_CLASS}
+      >
         <p>{tooltip}</p>
       </TooltipContent>
     </Tooltip>
@@ -284,27 +292,16 @@ type WorkspaceProps = {
   onReviewStatsMayHaveChanged?: () => void | Promise<void>;
 };
 
-export type BusinessReviewsWorkspaceHandle = {
-  /** After a connection match: show Outgoing tab and reload that list only (no full page refresh). */
-  afterConnectionMatch: () => void;
-};
-
 /**
  * Fetches lists via server actions (isolated from global Redux filters on the dashboard hub).
  */
-export const BusinessReviewsWorkspace = forwardRef<
-  BusinessReviewsWorkspaceHandle,
-  WorkspaceProps
->(function BusinessReviewsWorkspace(
-  {
-    userId,
-    businessId,
-    reviewStatuses,
-    onOutgoingReviewSubmitted,
-    onReviewStatsMayHaveChanged,
-  },
-  ref,
-) {
+export function BusinessReviewsWorkspace({
+  userId,
+  businessId,
+  reviewStatuses,
+  onOutgoingReviewSubmitted,
+  onReviewStatsMayHaveChanged,
+}: WorkspaceProps) {
   const reviewsTabStorageKey = useMemo(
     () => `r4r:reviews-workspace-tab:${businessId}`,
     [businessId],
@@ -321,8 +318,6 @@ export const BusinessReviewsWorkspace = forwardRef<
   const [outgoing, setOutgoing] = useState<OutgoingReview[]>([]);
   const [outgoingTotal, setOutgoingTotal] = useState(0);
   const [outgoingPage, setOutgoingPage] = useState(1);
-  /** Bumps when we need to refetch outgoing while already on that tab (e.g. new match). */
-  const [outgoingReloadNonce, setOutgoingReloadNonce] = useState(0);
 
   const [loading, setLoading] = useState(true);
 
@@ -330,6 +325,8 @@ export const BusinessReviewsWorkspace = forwardRef<
   const [viewInOpen, setViewInOpen] = useState<IncomingReview | null>(null);
   const [submitOpen, setSubmitOpen] = useState<OutgoingReview | null>(null);
   const [viewOutOpen, setViewOutOpen] = useState<OutgoingReview | null>(null);
+  const { getItem: getOutgoingCursor, setItem: setOutgoingCursor } =
+    useLocalStorageKey(createOutgoingLastCursorStorageKey(businessId));
 
   /** Restore tab after remounts (e.g. layout revalidation) so submit/verify does not jump to Incoming. */
   useLayoutEffect(() => {
@@ -354,6 +351,56 @@ export const BusinessReviewsWorkspace = forwardRef<
     [reviewStatuses],
   );
 
+  const upsertOutgoingReview = useCallback((review: OutgoingReview) => {
+    setOutgoing((prev) => {
+      const idx = prev.findIndex((r) => r.id === review.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = review;
+        return next;
+      }
+      setOutgoingTotal((v) => v + 1);
+      return [review, ...prev];
+    });
+  }, []);
+
+  /**
+   * Handles a normalized batch of "new outgoing task" rows:
+   * - emits anti-spam toasts (single summary for larger bursts),
+   * - merges rows into the outgoing table state when they match active filters,
+   * - advances the local cursor so reconnect catch-up is incremental.
+   */
+  const notifyOutgoingTasks = useCallback(
+    async (tasks: OutgoingTaskNotification[]) => {
+      if (!tasks.length) return;
+
+      const newestCursor = tasks[tasks.length - 1]?.created_at;
+      if (tasks.length >= 6) {
+        toast.info("You have 5+ new outgoing tasks");
+      } else {
+        for (const task of tasks) {
+          toast.info("New outgoing task", {
+            description: `You have a new review task for ${task.reviewed_business.business_name}`,
+          });
+        }
+      }
+
+      for (const task of tasks) {
+        const matchesFilter =
+          statusFilter === REVIEW_STATUS_FILTER_ALL_OPTION.id ||
+          task.status.id === statusFilter;
+        if (matchesFilter) {
+          upsertOutgoingReview(task);
+        }
+      }
+
+      if (newestCursor) {
+        setOutgoingCursor(newestCursor);
+      }
+    },
+    [setOutgoingCursor, statusFilter, upsertOutgoingReview],
+  );
+
   const refetchIncomingOnly = useCallback(async () => {
     const res = await fetchIncomingReviews(
       userId,
@@ -365,7 +412,9 @@ export const BusinessReviewsWorkspace = forwardRef<
         : (statusFilter as Tables<"review_statuses">["id"]),
     );
     if (!res.ok) {
-      toast.error("Failed to load incoming reviews", { description: res.error });
+      toast.error("Failed to load incoming reviews", {
+        description: res.error,
+      });
       return;
     }
     setIncoming(res.data.data);
@@ -387,7 +436,9 @@ export const BusinessReviewsWorkspace = forwardRef<
       businessId,
     );
     if (!res.ok) {
-      toast.error("Failed to load outgoing reviews", { description: res.error });
+      toast.error("Failed to load outgoing reviews", {
+        description: res.error,
+      });
       return;
     }
     setOutgoing(res.data.data);
@@ -398,6 +449,11 @@ export const BusinessReviewsWorkspace = forwardRef<
     await refetchOutgoingOnly();
   }, [refetchOutgoingOnly]);
 
+  /**
+   * Mount/reload catch-up:
+   * fetch tasks newer than local cursor to cover offline gaps and
+   * events missed before Realtime subscription is active.
+   */
   useEffect(() => {
     if (tab !== "incoming") return;
     let cancelled = false;
@@ -414,6 +470,15 @@ export const BusinessReviewsWorkspace = forwardRef<
     };
   }, [tab, loadIncoming]);
 
+  /**
+   * Realtime listener for outgoing tasks.
+   *
+   * We treat postgres_changes as a trigger signal (not direct payload source)
+   * and run a debounced cursor-based fetch. This keeps one consistent path for:
+   * - normal realtime updates,
+   * - reconnect/missed-event recovery,
+   * - burst coalescing and dedupe.
+   */
   useEffect(() => {
     if (tab !== "outgoing") return;
     let cancelled = false;
@@ -428,22 +493,82 @@ export const BusinessReviewsWorkspace = forwardRef<
     return () => {
       cancelled = true;
     };
-  }, [tab, loadOutgoing, outgoingReloadNonce]);
+  }, [tab, loadOutgoing]);
 
-  useImperativeHandle(ref, () => ({
-    afterConnectionMatch: () => {
-      setStatusFilter(REVIEW_STATUS_FILTER_ALL_OPTION.id);
-      setIncomingPage(1);
-      setOutgoingPage(1);
-      setTab("outgoing");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const sinceCursor = getOutgoingCursor();
+      const res = await fetchOutgoingTaskNotificationsSinceCursor(
+        businessId,
+        sinceCursor,
+        6,
+      );
+      if (cancelled || !res.ok || res.data.length === 0) return;
+      await notifyOutgoingTasks(res.data);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [businessId, getOutgoingCursor, notifyOutgoingTasks]);
+
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
+    let flushTimer: number | null = null;
+    let running = false;
+
+    const flush = async () => {
+      if (running) return;
+      running = true;
       try {
-        sessionStorage.setItem(reviewsTabStorageKey, "outgoing");
-      } catch {
-        /* private mode */
+        const sinceCursor = getOutgoingCursor();
+        const res = await fetchOutgoingTaskNotificationsSinceCursor(
+          businessId,
+          sinceCursor,
+          6,
+        );
+        if (res.ok && res.data.length > 0) {
+          await notifyOutgoingTasks(res.data);
+        }
+      } finally {
+        running = false;
       }
-      setOutgoingReloadNonce((n) => n + 1);
-    },
-  }));
+    };
+
+    const queueFlush = () => {
+      if (flushTimer != null) window.clearTimeout(flushTimer);
+      flushTimer = window.setTimeout(() => {
+        flushTimer = null;
+        void flush();
+      }, 1200);
+    };
+
+    const channel = supabase
+      .channel(`outgoing-task-notify-${businessId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "reviews",
+          filter: `reviewer_business_id=eq.${businessId}`,
+        },
+        () => {
+          queueFlush();
+        },
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          // Run an immediate catch-up once channel is ready.
+          queueFlush();
+        }
+      });
+
+    return () => {
+      if (flushTimer != null) window.clearTimeout(flushTimer);
+      void supabase.removeChannel(channel);
+    };
+  }, [businessId, getOutgoingCursor, notifyOutgoingTasks]);
 
   const incomingColumns: ColumnDef<IncomingReview>[] = useMemo(
     () => [
@@ -475,16 +600,19 @@ export const BusinessReviewsWorkspace = forwardRef<
       {
         id: "platform",
         header: "Platform",
-        cell: ({ row }) => (
-          <Platform name={row.original.platform.name} />
-        ),
+        cell: ({ row }) => <Platform name={row.original.platform.name} />,
       },
       {
         id: "status",
         header: "Status",
         cell: ({ row }) => {
           const name = row.original.status.name;
-          return <ReviewStatusBadgeWithTooltip statusName={name} variant="incoming" />;
+          return (
+            <ReviewStatusBadgeWithTooltip
+              statusName={name}
+              variant="incoming"
+            />
+          );
         },
       },
       {
@@ -505,7 +633,11 @@ export const BusinessReviewsWorkspace = forwardRef<
             );
           }
           return (
-            <Button variant="link" className="px-0" onClick={() => setViewInOpen(item)}>
+            <Button
+              variant="link"
+              className="px-0"
+              onClick={() => setViewInOpen(item)}
+            >
               View detail
             </Button>
           );
@@ -529,7 +661,9 @@ export const BusinessReviewsWorkspace = forwardRef<
                 alt={b.business_name || "Partner business"}
               />
               <div>
-                <p className="font-semibold text-foreground">{b.business_name}</p>
+                <p className="font-semibold text-foreground">
+                  {b.business_name}
+                </p>
                 <p className="text-xs text-muted-foreground">{getAddress(b)}</p>
               </div>
             </div>
@@ -539,16 +673,19 @@ export const BusinessReviewsWorkspace = forwardRef<
       {
         id: "platform",
         header: "Platform",
-        cell: ({ row }) => (
-          <Platform name={row.original.platform.name} />
-        ),
+        cell: ({ row }) => <Platform name={row.original.platform.name} />,
       },
       {
         id: "status",
         header: "Status",
         cell: ({ row }) => {
           const name = row.original.status.name;
-          return <ReviewStatusBadgeWithTooltip statusName={name} variant="outgoing" />;
+          return (
+            <ReviewStatusBadgeWithTooltip
+              statusName={name}
+              variant="outgoing"
+            />
+          );
         },
       },
       {
@@ -568,7 +705,11 @@ export const BusinessReviewsWorkspace = forwardRef<
             return <span className="text-sm text-muted-foreground">—</span>;
           }
           return (
-            <Button variant="link" className="px-0" onClick={() => setViewOutOpen(item)}>
+            <Button
+              variant="link"
+              className="px-0"
+              onClick={() => setViewOutOpen(item)}
+            >
               View detail
             </Button>
           );
@@ -587,262 +728,270 @@ export const BusinessReviewsWorkspace = forwardRef<
         id="business-reviews-workspace"
         className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm md:p-6"
       >
-      <Tabs
-        value={tab}
-        onValueChange={(v) => {
-          const next = v as "incoming" | "outgoing";
-          setTab(next);
-          try {
-            sessionStorage.setItem(reviewsTabStorageKey, next);
-          } catch {
-            /* private mode */
-          }
-          setStatusFilter(REVIEW_STATUS_FILTER_ALL_OPTION.id);
-          setIncomingPage(1);
-          setOutgoingPage(1);
-        }}
-        className="w-full"
-      >
-        <TabsList className="grid h-auto w-full grid-cols-1 gap-2 bg-transparent p-0 md:grid-cols-2">
-          <TabsTrigger
-            value="incoming"
-            className="flex h-auto flex-col items-start gap-1 border bg-muted/40 px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-background"
-          >
-            <span className="flex items-center gap-2 text-sm font-semibold uppercase">
-              <ArrowDownLeft className="h-4 w-4" aria-hidden />
-              Incoming review
-            </span>
-            <span className="text-left text-xs font-normal text-muted-foreground">
-              Review for your business
-            </span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="outgoing"
-            className="flex h-auto flex-col items-start gap-1 border bg-muted/40 px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-background"
-          >
-            <span className="flex items-center gap-2 text-sm font-semibold uppercase">
-              <ArrowUpRight className="h-4 w-4" aria-hidden />
-              Outgoing review
-            </span>
-            <span className="text-left text-xs font-normal text-muted-foreground">
-              Review from you
-            </span>
-          </TabsTrigger>
-        </TabsList>
+        <Tabs
+          value={tab}
+          onValueChange={(v) => {
+            const next = v as "incoming" | "outgoing";
+            setTab(next);
+            try {
+              sessionStorage.setItem(reviewsTabStorageKey, next);
+            } catch {
+              /* private mode */
+            }
+            setStatusFilter(REVIEW_STATUS_FILTER_ALL_OPTION.id);
+            setIncomingPage(1);
+            setOutgoingPage(1);
+          }}
+          className="w-full"
+        >
+          <TabsList className="grid h-auto w-full grid-cols-1 gap-2 bg-transparent p-0 md:grid-cols-2">
+            <TabsTrigger
+              value="incoming"
+              className="flex h-auto flex-col items-start gap-1 border bg-muted/40 px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-background"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold uppercase">
+                <ArrowDownLeft className="h-4 w-4" aria-hidden />
+                Incoming review
+              </span>
+              <span className="text-left text-xs font-normal text-muted-foreground">
+                Review for your business
+              </span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="outgoing"
+              className="flex h-auto flex-col items-start gap-1 border bg-muted/40 px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-background"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold uppercase">
+                <ArrowUpRight className="h-4 w-4" aria-hidden />
+                Outgoing review
+              </span>
+              <span className="text-left text-xs font-normal text-muted-foreground">
+                Review from you
+              </span>
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Select
-            value={String(statusFilter)}
-            onValueChange={(v) => {
-              setStatusFilter(+v);
-              setIncomingPage(1);
-              setOutgoingPage(1);
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <Select
+              value={String(statusFilter)}
+              onValueChange={(v) => {
+                setStatusFilter(+v);
+                setIncomingPage(1);
+                setOutgoingPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((s) => (
+                  <SelectItem key={s.id} value={String(s.id)}>
+                    {s.id === REVIEW_STATUS_FILTER_ALL_OPTION.id
+                      ? "All statuses"
+                      : statusFilterOptionLabel(s.name, tab)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <TabsContent value="incoming" className="mt-4 space-y-4">
+            {loading ? (
+              <ReviewsWorkspaceTableSkeleton />
+            ) : (
+              <DataTable
+                columns={incomingColumns}
+                data={incoming}
+                getRowClassName={(r) =>
+                  rowMuted(r.status.name) ? "opacity-60" : undefined
+                }
+              />
+            )}
+            {incomingPages > 1 && (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (incomingPage > 1) setIncomingPage((p) => p - 1);
+                      }}
+                      className={
+                        incomingPage <= 1
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: incomingPages }, (_, i) => i + 1).map(
+                    (p) => (
+                      <PaginationItem key={p}>
+                        <button
+                          type="button"
+                          className={cn(
+                            "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm",
+                            p === incomingPage
+                              ? "border-primary bg-background"
+                              : "border-transparent",
+                          )}
+                          onClick={() => setIncomingPage(p)}
+                        >
+                          {p}
+                        </button>
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (incomingPage < incomingPages)
+                          setIncomingPage((p) => p + 1);
+                      }}
+                      className={
+                        incomingPage >= incomingPages
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </TabsContent>
+
+          <TabsContent value="outgoing" className="mt-4 space-y-4">
+            {loading ? (
+              <ReviewsWorkspaceTableSkeleton />
+            ) : (
+              <DataTable
+                columns={outgoingColumns}
+                data={outgoing}
+                getRowClassName={(r) =>
+                  rowMuted(r.status.name) ? "opacity-60" : undefined
+                }
+              />
+            )}
+            {outgoingPages > 1 && (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (outgoingPage > 1) setOutgoingPage((p) => p - 1);
+                      }}
+                      className={
+                        outgoingPage <= 1
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: outgoingPages }, (_, i) => i + 1).map(
+                    (p) => (
+                      <PaginationItem key={p}>
+                        <button
+                          type="button"
+                          className={cn(
+                            "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm",
+                            p === outgoingPage
+                              ? "border-primary bg-background"
+                              : "border-transparent",
+                          )}
+                          onClick={() => setOutgoingPage(p)}
+                        >
+                          {p}
+                        </button>
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (outgoingPage < outgoingPages)
+                          setOutgoingPage((p) => p + 1);
+                      }}
+                      className={
+                        outgoingPage >= outgoingPages
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {verifyOpen && (
+          <VerifyReviewDialog
+            open={!!verifyOpen}
+            data={verifyOpen}
+            onOpenChange={(o) => !o && setVerifyOpen(null)}
+            onUpdatedReview={async (updated: UpdatedReviewStatus) => {
+              const matchesFilter =
+                statusFilter === REVIEW_STATUS_FILTER_ALL_OPTION.id ||
+                updated.status.id === statusFilter;
+              if (matchesFilter) {
+                setIncoming((prev) =>
+                  prev.map((r) =>
+                    r.id === updated.id ? { ...r, status: updated.status } : r,
+                  ),
+                );
+              } else {
+                await refetchIncomingOnly();
+              }
+              setVerifyOpen(null);
+              await onReviewStatsMayHaveChanged?.();
             }}
-          >
-            <SelectTrigger className="w-full sm:w-[220px]">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((s) => (
-                <SelectItem key={s.id} value={String(s.id)}>
-                  {s.id === REVIEW_STATUS_FILTER_ALL_OPTION.id
-                    ? "All statuses"
-                    : statusFilterOptionLabel(s.name, tab)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <TabsContent value="incoming" className="mt-4 space-y-4">
-          {loading ? (
-            <ReviewsWorkspaceTableSkeleton />
-          ) : (
-            <DataTable
-              columns={incomingColumns}
-              data={incoming}
-              getRowClassName={(r) =>
-                rowMuted(r.status.name) ? "opacity-60" : undefined
+          />
+        )}
+        {viewInOpen && (
+          <ViewReviewDialog
+            open={!!viewInOpen}
+            data={viewInOpen}
+            onOpenChange={(o) => !o && setViewInOpen(null)}
+          />
+        )}
+        {submitOpen && (
+          <SubmitReviewDialog
+            open={!!submitOpen}
+            data={submitOpen}
+            onOpenChange={(o) => !o && setSubmitOpen(null)}
+            onUpdatedReview={async (updated: SubmitReviewResponse) => {
+              const matchesFilter =
+                statusFilter === REVIEW_STATUS_FILTER_ALL_OPTION.id ||
+                updated.status.id === statusFilter;
+              if (matchesFilter) {
+                setOutgoing((prev) =>
+                  prev.map((r) =>
+                    r.id === updated.id ? { ...r, ...updated } : r,
+                  ),
+                );
+              } else {
+                await refetchOutgoingOnly();
               }
-            />
-          )}
-          {incomingPages > 1 && (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (incomingPage > 1) setIncomingPage((p) => p - 1);
-                    }}
-                    className={
-                      incomingPage <= 1 ? "pointer-events-none opacity-50" : undefined
-                    }
-                  />
-                </PaginationItem>
-                {Array.from({ length: incomingPages }, (_, i) => i + 1).map((p) => (
-                  <PaginationItem key={p}>
-                    <button
-                      type="button"
-                      className={cn(
-                        "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm",
-                        p === incomingPage ? "border-primary bg-background" : "border-transparent",
-                      )}
-                      onClick={() => setIncomingPage(p)}
-                    >
-                      {p}
-                    </button>
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (incomingPage < incomingPages) setIncomingPage((p) => p + 1);
-                    }}
-                    className={
-                      incomingPage >= incomingPages
-                        ? "pointer-events-none opacity-50"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-        </TabsContent>
-
-        <TabsContent value="outgoing" className="mt-4 space-y-4">
-          {loading ? (
-            <ReviewsWorkspaceTableSkeleton />
-          ) : (
-            <DataTable
-              columns={outgoingColumns}
-              data={outgoing}
-              getRowClassName={(r) =>
-                rowMuted(r.status.name) ? "opacity-60" : undefined
-              }
-            />
-          )}
-          {outgoingPages > 1 && (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (outgoingPage > 1) setOutgoingPage((p) => p - 1);
-                    }}
-                    className={
-                      outgoingPage <= 1 ? "pointer-events-none opacity-50" : undefined
-                    }
-                  />
-                </PaginationItem>
-                {Array.from({ length: outgoingPages }, (_, i) => i + 1).map((p) => (
-                  <PaginationItem key={p}>
-                    <button
-                      type="button"
-                      className={cn(
-                        "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm",
-                        p === outgoingPage ? "border-primary bg-background" : "border-transparent",
-                      )}
-                      onClick={() => setOutgoingPage(p)}
-                    >
-                      {p}
-                    </button>
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (outgoingPage < outgoingPages) setOutgoingPage((p) => p + 1);
-                    }}
-                    className={
-                      outgoingPage >= outgoingPages
-                        ? "pointer-events-none opacity-50"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {verifyOpen && (
-        <VerifyReviewDialog
-          open={!!verifyOpen}
-          data={verifyOpen}
-          onOpenChange={(o) => !o && setVerifyOpen(null)}
-          onUpdatedReview={async (updated: UpdatedReviewStatus) => {
-            const matchesFilter =
-              statusFilter === REVIEW_STATUS_FILTER_ALL_OPTION.id ||
-              updated.status.id === statusFilter;
-            if (matchesFilter) {
-              setIncoming((prev) =>
-                prev.map((r) =>
-                  r.id === updated.id
-                    ? { ...r, status: updated.status }
-                    : r,
-                ),
-              );
-            } else {
-              await refetchIncomingOnly();
-            }
-            setVerifyOpen(null);
-            await onReviewStatsMayHaveChanged?.();
-          }}
-        />
-      )}
-      {viewInOpen && (
-        <ViewReviewDialog
-          open={!!viewInOpen}
-          data={viewInOpen}
-          onOpenChange={(o) => !o && setViewInOpen(null)}
-        />
-      )}
-      {submitOpen && (
-        <SubmitReviewDialog
-          open={!!submitOpen}
-          data={submitOpen}
-          onOpenChange={(o) => !o && setSubmitOpen(null)}
-          onUpdatedReview={async (updated: SubmitReviewResponse) => {
-            const matchesFilter =
-              statusFilter === REVIEW_STATUS_FILTER_ALL_OPTION.id ||
-              updated.status.id === statusFilter;
-            if (matchesFilter) {
-              setOutgoing((prev) =>
-                prev.map((r) =>
-                  r.id === updated.id
-                    ? { ...r, ...updated }
-                    : r,
-                ),
-              );
-            } else {
-              await refetchOutgoingOnly();
-            }
-            setSubmitOpen(null);
-            await onOutgoingReviewSubmitted?.();
-            await onReviewStatsMayHaveChanged?.();
-          }}
-        />
-      )}
-      {viewOutOpen && (
-        <ViewOutgoingReviewDialog
-          open={!!viewOutOpen}
-          data={viewOutOpen}
-          onOpenChange={(o) => !o && setViewOutOpen(null)}
-        />
-      )}
+              setSubmitOpen(null);
+              await onOutgoingReviewSubmitted?.();
+              await onReviewStatsMayHaveChanged?.();
+            }}
+          />
+        )}
+        {viewOutOpen && (
+          <ViewOutgoingReviewDialog
+            open={!!viewOutOpen}
+            data={viewOutOpen}
+            onOpenChange={(o) => !o && setViewOutOpen(null)}
+          />
+        )}
       </div>
-      </TooltipProvider>
+    </TooltipProvider>
   );
-});
-
-BusinessReviewsWorkspace.displayName = "BusinessReviewsWorkspace";
+}
