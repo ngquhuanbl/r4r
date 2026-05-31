@@ -7,6 +7,8 @@ alter table public.businesses enable row level security;
 alter table public.business_platforms enable row level security;
 alter table public.connections enable row level security;
 alter table public.reviews enable row level security;
+alter table public.review_statuses disable row level security;
+alter table public.platforms disable row level security;
 
 -- ---------------------------------------------------------------------------
 -- 2) businesses: owner-scoped CRUD
@@ -27,13 +29,6 @@ create policy "Businesses select related rows by connection or review"
   to authenticated
   using (
     exists (
-      select 1
-      from public.connections c
-      join public.businesses me on me.user_id = auth.uid()
-      where me.id in (c.business_a_id, c.business_b_id)
-        and businesses.id in (c.business_a_id, c.business_b_id)
-    )
-    or exists (
       select 1
       from public.reviews r
       where (r.reviewer_user_id = auth.uid() or r.reviewed_owner_user_id = auth.uid())

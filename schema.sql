@@ -256,6 +256,8 @@ ALTER TABLE public.businesses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.business_platforms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.connections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.review_statuses DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platforms DISABLE ROW LEVEL SECURITY;
 
 -- businesses: owner-scoped CRUD + related read access
 DROP POLICY IF EXISTS "Businesses select own rows" ON public.businesses;
@@ -274,13 +276,6 @@ CREATE POLICY "Businesses select related rows by connection or review"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1
-      FROM public.connections c
-      JOIN public.businesses me ON me.user_id = auth.uid()
-      WHERE me.id IN (c.business_a_id, c.business_b_id)
-        AND businesses.id IN (c.business_a_id, c.business_b_id)
-    )
-    OR EXISTS (
       SELECT 1
       FROM public.reviews r
       WHERE (r.reviewer_user_id = auth.uid() OR r.reviewed_owner_user_id = auth.uid())
