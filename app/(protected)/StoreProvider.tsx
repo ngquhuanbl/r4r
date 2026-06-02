@@ -3,10 +3,6 @@ import { useEffect, useRef } from "react";
 import { Provider } from "react-redux";
 
 import { authActions } from "@/lib/redux/slices/auth";
-import { incomingReviewsActions } from "@/lib/redux/slices/incoming-review";
-import { metricActions } from "@/lib/redux/slices/metric";
-import { myBusinessesActions } from "@/lib/redux/slices/my-business";
-import { outgoingReviewsActions } from "@/lib/redux/slices/outgoing-review";
 import { platformsActions } from "@/lib/redux/slices/platform";
 import { reviewStatusesActions } from "@/lib/redux/slices/review-status";
 import { AppStore, makeStore } from "@/lib/redux/store";
@@ -26,28 +22,40 @@ interface Props {
   };
 }
 
+/**
+ * Root Redux provider for all authenticated routes under `app/(protected)`.
+ *
+ * Responsibilities:
+ * - creates the Redux store once on first client mount
+ * - seeds global catalog/session slices (`auth`, `reviewStatuses`, `platforms`)
+ * - exposes the store to nested route groups (including `(workspace)`)
+ *
+ * Note: workspace-specific data (businesses/reviews/metrics) is intentionally
+ * hydrated in `app/(protected)/(workspace)/workspace-hydrator.tsx` to keep
+ * non-workspace routes such as account/billing lightweight.
+ */
 export const StoreProvider = ({ initialData, children }: Props) => {
   const storeRef = useRef<AppStore | null>(null);
 
   if (!storeRef.current) {
     const store = makeStore();
 
+    /**
+     * Base bootstrap for the whole protected shell.
+     *
+     * Why initialize these slices here?
+     * - `auth`, `reviewStatuses`, and `platforms` are general catalog/session data
+     *   used across all protected routes (workspace, account, billing, header, etc.).
+     * - They should exist before any route-specific hydration so selectors can read
+     *   a stable baseline immediately after mount.
+     * - Workspace-heavy slices (businesses/reviews/metrics) are intentionally hydrated
+     *   in `app/(protected)/(workspace)` to keep account/billing lighter.
+     */
     store.dispatch(authActions.setCredentials(initialData.user));
     store.dispatch(
       reviewStatusesActions.loadInitData(initialData.reviewStatuses),
     );
     store.dispatch(platformsActions.loadInitData(initialData.platforms));
-
-    // Workspace routes hydrate businesses, reviews, and metrics.
-    store.dispatch(incomingReviewsActions.loadInitData({ data: [], total_results: 0 }));
-    store.dispatch(outgoingReviewsActions.loadInitData({ data: [], total_results: 0 }));
-    store.dispatch(myBusinessesActions.loadInitData([]));
-    store.dispatch(metricActions.setMetric({
-      total_incoming_all: 0,
-      total_incoming_verified: 0,
-      total_outgoing_all: 0,
-      total_outgoing_verified: 0,
-    }));
 
     storeRef.current = store;
   }

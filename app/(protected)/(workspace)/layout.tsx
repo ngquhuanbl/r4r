@@ -4,7 +4,7 @@ import {
 } from "../actions/review-actions";
 import { fetchBusinesses } from "../actions/business-actions";
 import { fetchMetrics } from "../metrics/actions";
-import { WorkspaceHydrator } from "../workspace-hydrator";
+import { WorkspaceHydrator } from "./workspace-hydrator";
 import { createClient } from "@/lib/supabase/server";
 import {
   INCOMING_REVIEWS_PAGE_SIZE,
