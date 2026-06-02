@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   description: `Manage all your businesses in one place. Track review tasks, monitor performance, and start new review exchanges on R4R.`,
 };
 
+/**
+ * Dashboard page:
+ * * Display business list in grid layout and provide create business dialog.
+ * * Handle profile completion dialog for new users.
+ */
 export default async function Page() {
   const supabase = createClient();
   const {

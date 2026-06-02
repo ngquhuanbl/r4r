@@ -5,6 +5,7 @@ export enum Paths {
   SIGN_IN = "/sign-in",
   SIGN_UP = "/sign-up",
   AUTH_CALLBACK = "/auth/callback",
+  AUTH_ERROR = "/auth/error",
   /** Locations grid and primary post-login overview. */
   DASHBOARD = "/dashboard",
   ACCOUNT = "/account",

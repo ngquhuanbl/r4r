@@ -23,7 +23,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { DASHBOARD_PRIMARY_BUTTON_CLASSNAME } from "@/components/dashboard/locations/constants";
 import { cn } from "@/lib/utils";
 import { Paths } from "@/constants/paths";
 import type { BusinessBillingSidebarContext } from "@/app/(protected)/(workspace)/business/[id]/actions";
@@ -398,6 +397,7 @@ export function BusinessLeftPanel({
       ) : null}
       <Button
         type="button"
+        variant="ocean"
         size="lg"
         disabled={ctaDisabled}
         aria-disabled={isFull ? true : undefined}
@@ -405,7 +405,6 @@ export function BusinessLeftPanel({
         onClick={() => void onConnectClick()}
         className={cn(
           "h-12 w-full rounded-lg text-sm font-semibold uppercase tracking-wide",
-          DASHBOARD_PRIMARY_BUTTON_CLASSNAME,
           isFull &&
             "cursor-not-allowed opacity-50 hover:bg-[#007AFF] hover:opacity-50 dark:hover:bg-[#0A84FF]",
         )}

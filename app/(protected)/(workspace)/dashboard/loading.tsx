@@ -1,5 +1,8 @@
 import { Pulse } from "@/components/ui/pulse";
 
+/**
+ * Loading skeleton for the dashboard page.
+ */
 export default function Loading() {
   return (
     <section

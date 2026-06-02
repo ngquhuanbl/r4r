@@ -1,9 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { Paths } from "@/constants/paths";
+import { isAuthEntryRoute, isPublicRoute } from "@/utils/routing";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 export const updateSession = async (request: NextRequest) => {
+  const path = request.nextUrl.pathname;
+  const authEntryRoute = isAuthEntryRoute(path);
+  const publicPath = isPublicRoute(path);
+
   function nextResponse(): NextResponse {
     return NextResponse.next({
       request,
@@ -55,27 +60,36 @@ export const updateSession = async (request: NextRequest) => {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const path = request.nextUrl.pathname;
-    const regexForAuthRoutes =
-      /^\/(login|sign-in\/password|forgot-password|new-password)($|\/)/;
-    const isAuthEntryRoute = regexForAuthRoutes.test(path);
-    const isPublicPath =
-      /^\/(auth\/callback|terms|privacy)($|\/)/.test(path);
-
-    if (isAuthEntryRoute) {
+    if (authEntryRoute) {
       if (user) {
         const url = request.nextUrl.clone();
         url.pathname = Paths.DASHBOARD;
         return NextResponse.redirect(url);
       }
-    } else if (!isPublicPath && !user) {
+    } else if (!publicPath && !user) {
       const url = request.nextUrl.clone();
       url.pathname = Paths.LOGIN;
       return NextResponse.redirect(url);
     }
 
     return response;
-  } catch {
-    return nextResponse();
+  } catch (error) {
+    console.error("[auth-middleware] session check failed", {
+      path,
+      error:
+        error instanceof Error
+          ? { name: error.name, message: error.message }
+          : "unknown_error",
+    });
+
+    if (publicPath || authEntryRoute) {
+      // Continue to the next route for public or auth entry routes.
+      return nextResponse();
+    }
+
+    // Redirect to auth error page for failed session validation on protected routes.
+    const url = request.nextUrl.clone();
+    url.pathname = Paths.AUTH_ERROR;
+    return NextResponse.redirect(url);
   }
 };

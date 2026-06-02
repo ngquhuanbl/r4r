@@ -1,14 +1,12 @@
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 import businessWithReviewIllustration from "@/public/dashboard/business_with_review.png";
 import businessWithReviewIllustrationDark from "@/public/dashboard/business_with_review--dark.png";
 
 import { Plus } from "lucide-react";
 
-import { DASHBOARD_PRIMARY_BUTTON_CLASSNAME } from "./constants";
 
 export function NoBusinessesEmptyState({ onAdd }: { onAdd: () => void }) {
   return (
@@ -25,10 +23,8 @@ export function NoBusinessesEmptyState({ onAdd }: { onAdd: () => void }) {
         </div>
         <Button
           type="button"
-          className={cn(
-            "mt-6 h-11 rounded-md px-6 font-medium",
-            DASHBOARD_PRIMARY_BUTTON_CLASSNAME,
-          )}
+          variant="ocean"
+          className="mt-6 h-11 rounded-md px-6 font-medium"
           onClick={onAdd}
         >
           <Plus className="h-4 w-4" aria-hidden />

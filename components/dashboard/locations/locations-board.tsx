@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { Plus, Search } from "lucide-react";
 
-import { DASHBOARD_PRIMARY_BUTTON_CLASSNAME } from "./constants";
 import { AddBusinessTile } from "./add-business-tile";
 import { LocationCard } from "./location-card";
 import type { DashboardLocation } from "./types";
@@ -45,10 +43,8 @@ export function LocationsBoard({
             </div>
             <Button
               type="button"
-              className={cn(
-                "h-10 shrink-0 rounded-md px-4 font-medium sm:w-auto",
-                DASHBOARD_PRIMARY_BUTTON_CLASSNAME,
-              )}
+              variant="ocean"
+              className="h-10 shrink-0 rounded-md px-4 font-medium sm:w-auto"
               onClick={onAddBusiness}
             >
               <Plus className="h-4 w-4" aria-hidden />
