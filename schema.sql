@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS public.businesses (
   city TEXT NOT NULL,
   state TEXT NOT NULL,
   zip_code TEXT NOT NULL,
+  cover_image_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
@@ -112,128 +113,35 @@ CREATE TABLE IF NOT EXISTS public.reviews (
   CONSTRAINT reviews_reviewed_ne_reviewer_business CHECK (reviewed_business_id <> reviewer_business_id)
 );
 
--- ---------------------------------------------------------------------------
--- Compatibility guards for partially-migrated databases.
--- These keep schema.sql runnable when legacy tables already exist.
--- ---------------------------------------------------------------------------
-ALTER TABLE public.connections
-  ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMP WITH TIME ZONE;
+-- User account/product preferences
+CREATE TABLE IF NOT EXISTS public.user_preferences (
+  user_id UUID NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  notify_new_connection BOOLEAN NOT NULL DEFAULT true,
+  notify_weekly_summary BOOLEAN NOT NULL DEFAULT false,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
 
-ALTER TABLE public.reviews
-  ADD COLUMN IF NOT EXISTS connection_id INTEGER,
-  ADD COLUMN IF NOT EXISTS platform_id INTEGER,
-  ADD COLUMN IF NOT EXISTS reviewed_business_id INTEGER,
-  ADD COLUMN IF NOT EXISTS reviewed_owner_user_id UUID,
-  ADD COLUMN IF NOT EXISTS reviewer_user_id UUID,
-  ADD COLUMN IF NOT EXISTS reviewer_business_id INTEGER,
-  ADD COLUMN IF NOT EXISTS content TEXT,
-  ADD COLUMN IF NOT EXISTS url TEXT,
-  ADD COLUMN IF NOT EXISTS status_id INTEGER,
-  ADD COLUMN IF NOT EXISTS rejection_reason TEXT,
-  ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP WITH TIME ZONE,
-  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT now();
+-- Stripe billing cache (user-level + per-business)
+CREATE TABLE IF NOT EXISTS public.user_billing (
+  user_id UUID NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  stripe_customer_id TEXT NOT NULL,
+  stripe_subscription_id TEXT,
+  subscription_current_period_end TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
 
--- Add missing FK targets used by current app flows/policies.
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'reviews_platform_id_fkey'
-      AND conrelid = 'public.reviews'::regclass
-  ) THEN
-    ALTER TABLE public.reviews
-      ADD CONSTRAINT reviews_platform_id_fkey
-      FOREIGN KEY (platform_id) REFERENCES public.platforms(id);
-  END IF;
-END $$;
+CREATE TABLE IF NOT EXISTS public.business_billing (
+  business_id INTEGER NOT NULL PRIMARY KEY REFERENCES public.businesses(id) ON DELETE CASCADE,
+  tier SMALLINT NOT NULL DEFAULT 0 CHECK (tier >= 0 AND tier <= 2),
+  slot_limit INT NOT NULL DEFAULT 1 CHECK (slot_limit > 0),
+  slots_used INT NOT NULL DEFAULT 0 CHECK (slots_used >= 0),
+  stripe_subscription_item_id TEXT,
+  current_period_end TIMESTAMP WITH TIME ZONE,
+  cancel_at_period_end BOOLEAN NOT NULL DEFAULT false,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'reviews_reviewed_business_id_fkey'
-      AND conrelid = 'public.reviews'::regclass
-  ) THEN
-    ALTER TABLE public.reviews
-      ADD CONSTRAINT reviews_reviewed_business_id_fkey
-      FOREIGN KEY (reviewed_business_id) REFERENCES public.businesses(id) ON DELETE CASCADE;
-  END IF;
-END $$;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'reviews_reviewed_owner_user_id_fkey'
-      AND conrelid = 'public.reviews'::regclass
-  ) THEN
-    ALTER TABLE public.reviews
-      ADD CONSTRAINT reviews_reviewed_owner_user_id_fkey
-      FOREIGN KEY (reviewed_owner_user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
-  END IF;
-END $$;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'reviews_reviewer_user_id_fkey'
-      AND conrelid = 'public.reviews'::regclass
-  ) THEN
-    ALTER TABLE public.reviews
-      ADD CONSTRAINT reviews_reviewer_user_id_fkey
-      FOREIGN KEY (reviewer_user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
-  END IF;
-END $$;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'reviews_status_id_fkey'
-      AND conrelid = 'public.reviews'::regclass
-  ) THEN
-    ALTER TABLE public.reviews
-      ADD CONSTRAINT reviews_status_id_fkey
-      FOREIGN KEY (status_id) REFERENCES public.review_statuses(id);
-  END IF;
-END $$;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'reviews_connection_id_fkey'
-      AND conrelid = 'public.reviews'::regclass
-  ) THEN
-    ALTER TABLE public.reviews
-      ADD CONSTRAINT reviews_connection_id_fkey
-      FOREIGN KEY (connection_id) REFERENCES public.connections(id) ON DELETE CASCADE;
-  END IF;
-END $$;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'reviews_reviewer_business_id_fkey'
-      AND conrelid = 'public.reviews'::regclass
-  ) THEN
-    ALTER TABLE public.reviews
-      ADD CONSTRAINT reviews_reviewer_business_id_fkey
-      FOREIGN KEY (reviewer_business_id) REFERENCES public.businesses(id) ON DELETE SET NULL;
-  END IF;
-END $$;
+CREATE INDEX IF NOT EXISTS business_billing_tier_idx ON public.business_billing (tier);
 
 CREATE INDEX IF NOT EXISTS reviews_connection_id_idx ON public.reviews (connection_id);
 CREATE INDEX IF NOT EXISTS reviews_reviewer_user_id_idx ON public.reviews (reviewer_user_id);
@@ -256,6 +164,9 @@ ALTER TABLE public.businesses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.business_platforms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.connections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_billing ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.business_billing ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.review_statuses DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.platforms DISABLE ROW LEVEL SECURITY;
 
@@ -435,12 +346,6 @@ CREATE POLICY "Reviews select own related rows"
   USING (
     reviewer_user_id = auth.uid()
     OR reviewed_owner_user_id = auth.uid()
-    OR EXISTS (
-      SELECT 1
-      FROM public.businesses b
-      WHERE b.user_id = auth.uid()
-        AND b.id IN (reviews.reviewed_business_id, COALESCE(reviews.reviewer_business_id, -1))
-    )
   );
 
 CREATE POLICY "Reviews insert own initiated connection rows"
@@ -480,4 +385,84 @@ CREATE POLICY "Reviews delete own initiated connection rows"
         AND b.user_id = auth.uid()
     )
   );
+
+-- user_preferences: own row only
+DROP POLICY IF EXISTS "Users select own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users insert own preferences" ON public.user_preferences;
+DROP POLICY IF EXISTS "Users update own preferences" ON public.user_preferences;
+
+CREATE POLICY "Users select own preferences"
+  ON public.user_preferences FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users insert own preferences"
+  ON public.user_preferences FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users update own preferences"
+  ON public.user_preferences FOR UPDATE
+  TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- user_billing: own row read access
+DROP POLICY IF EXISTS "Users select own user_billing" ON public.user_billing;
+
+CREATE POLICY "Users select own user_billing"
+  ON public.user_billing FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+
+-- business_billing: readable for owned businesses
+DROP POLICY IF EXISTS "Users select own business_billing" ON public.business_billing;
+
+CREATE POLICY "Users select own business_billing"
+  ON public.business_billing FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.businesses b
+      WHERE b.id = business_billing.business_id
+        AND b.user_id = auth.uid()
+    )
+  );
+
+-- Ordered account data cleanup, used by account deletion flow.
+CREATE OR REPLACE FUNCTION public.delete_user_account_data(target_user_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  DELETE FROM public.reviews
+  WHERE reviewer_user_id = target_user_id
+     OR reviewed_owner_user_id = target_user_id
+     OR reviewer_business_id IN (
+       SELECT id FROM public.businesses WHERE user_id = target_user_id
+     )
+     OR reviewed_business_id IN (
+       SELECT id FROM public.businesses WHERE user_id = target_user_id
+     );
+
+  DELETE FROM public.business_platforms
+  WHERE business_id IN (
+    SELECT id FROM public.businesses WHERE user_id = target_user_id
+  );
+
+  DELETE FROM public.business_billing
+  WHERE business_id IN (
+    SELECT id FROM public.businesses WHERE user_id = target_user_id
+  );
+
+  DELETE FROM public.businesses WHERE user_id = target_user_id;
+  DELETE FROM public.user_preferences WHERE user_id = target_user_id;
+  DELETE FROM public.user_billing WHERE user_id = target_user_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.delete_user_account_data(UUID) FROM public;
+GRANT EXECUTE ON FUNCTION public.delete_user_account_data(UUID) TO service_role;
 
