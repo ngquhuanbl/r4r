@@ -123,10 +123,10 @@ function OutgoingStatCell({ count }: { count: number }) {
   );
 }
 
-export function LocationCard({ location }: { location: DashboardLocation }) {
+export function BusinessProfileCard({ data }: { data: DashboardLocation }) {
   return (
     <Link
-      href={businessPath(location.id)}
+      href={businessPath(data.id)}
       className="group block rounded-lg outline-none transition-transform duration-200 ease-out hover:-translate-y-1 active:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <Card
@@ -136,10 +136,10 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
         <CardHeader className="gap-1 space-y-1 px-6 pb-3 pt-4">
           <div className="flex items-center justify-between gap-3 ">
             <CardTitle className="text-xl font-semibold leading-tight text-card-foreground">
-              {location.name}
+              {data.name}
             </CardTitle>
             <div className="flex min-h-9 shrink-0 items-center justify-end self-start">
-              {location.status === "loading" ? (
+              {data.status === "loading" ? (
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border/80 bg-muted/50 text-muted-foreground"
                   aria-label="Loading connection status"
@@ -147,7 +147,7 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
                   <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
                 </span>
               ) : (
-                <ConnectionStatusBadge status={location.status} />
+                <ConnectionStatusBadge status={data.status} />
               )}
             </div>
           </div>
@@ -162,19 +162,19 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
             >
               <path d="M536.5-503.5Q560-527 560-560t-23.5-56.5Q513-640 480-640t-56.5 23.5Q400-593 400-560t23.5 56.5Q447-480 480-480t56.5-23.5ZM480-80Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z" />
             </svg>
-            <span>{location.address}</span>
+            <span>{data.address}</span>
           </div>
         </CardHeader>
 
         <CardContent className="relative h-[220px] w-full bg-muted p-0 sm:h-[240px] md:h-[265px]">
-          {location.imageSrc ? (
+          {data.imageSrc ? (
             <Image
-              src={location.imageSrc}
-              alt={location.imageAlt}
+              src={data.imageSrc}
+              alt={data.imageAlt}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 50vw"
-              priority={location.id === "1"}
+              priority={data.id === "1"}
             />
           ) : (
             <div
@@ -187,7 +187,7 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
                 fill
                 className="object-cover dark:hidden"
                 sizes="(max-width: 768px) 100vw, 50vw"
-                priority={location.id === "1"}
+                priority={data.id === "1"}
               />
               <Image
                 src={fallbackBusinessAvatarDarkSrc}
@@ -195,19 +195,19 @@ export function LocationCard({ location }: { location: DashboardLocation }) {
                 fill
                 className="hidden object-cover dark:block"
                 sizes="(max-width: 768px) 100vw, 50vw"
-                priority={location.id === "1"}
+                priority={data.id === "1"}
               />
             </div>
           )}
         </CardContent>
 
         <CardFooter className="flex border-t border-border p-0">
-          <IncomingStatCell count={location.left.count} />
+          <IncomingStatCell count={data.left.count} />
           <div
             className="my-4 w-px shrink-0 self-stretch bg-border"
             aria-hidden
           />
-          <OutgoingStatCell count={location.right.count} />
+          <OutgoingStatCell count={data.right.count} />
         </CardFooter>
       </Card>
     </Link>

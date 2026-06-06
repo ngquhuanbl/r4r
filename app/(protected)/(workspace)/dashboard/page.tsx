@@ -1,8 +1,7 @@
 import { Metadata } from "next";
-import { Suspense } from "react";
 
 import { FinishProfileDialog } from "@/components/dashboard/finish-profile-dialog";
-import { DashboardLocationsGrid } from "@/components/dashboard/locations/dashboard-locations-grid";
+import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -25,9 +24,7 @@ export default async function Page() {
     <>
       {user ? <FinishProfileDialog user={user} /> : null}
       <section className="flex w-full min-w-0 flex-1 flex-col py-7 pb-16">
-        <Suspense fallback={null}>
-          <DashboardLocationsGrid />
-        </Suspense>
+        <DashboardContent />
       </section>
     </>
   );

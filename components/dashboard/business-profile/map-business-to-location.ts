@@ -1,4 +1,4 @@
-import type { BusinessActionCounts } from "@/app/(protected)/(workspace)/dashboard/actions";
+import type { BusinessTaskCounts } from "@/app/(protected)/(workspace)/dashboard/actions";
 import { FetchedBusiness } from "@/types/dashboard";
 import { getAddress } from "@/utils/shared";
 
@@ -6,7 +6,7 @@ import type { DashboardLocation } from "./types";
 
 export function mapBusinessToLocation(
   b: FetchedBusiness,
-  counts: BusinessActionCounts | undefined,
+  counts: BusinessTaskCounts | undefined,
 ): DashboardLocation {
   if (!counts) {
     return {
@@ -24,11 +24,11 @@ export function mapBusinessToLocation(
   return {
     id: String(b.id),
     name: b.business_name,
-    status: counts.connectionFull ? "full" : "ready",
+    status: counts.isReady ? "full" : "ready",
     address: getAddress(b),
     imageSrc: b.cover_image_url,
     imageAlt: b.business_name ? `${b.business_name} storefront` : "",
-    left: { count: counts.incomingAction },
-    right: { count: counts.outgoingAction },
+    left: { count: counts.incoming },
+    right: { count: counts.outgoing },
   };
 }

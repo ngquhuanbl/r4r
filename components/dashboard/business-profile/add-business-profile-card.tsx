@@ -1,4 +1,4 @@
-export function AddBusinessTile({ onClick }: { onClick: () => void }) {
+export function AddBusinessProfileCard({ onClick }: { onClick: () => void }) {
   return (
     <li className="flex h-full min-h-[320px]">
       <button
