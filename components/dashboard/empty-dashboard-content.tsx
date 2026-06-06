@@ -7,14 +7,16 @@ import businessWithReviewIllustrationDark from "@/public/dashboard/business_with
 
 import { Plus } from "lucide-react";
 
-
-export function NoBusinessesEmptyState({ onAdd }: { onAdd: () => void }) {
+/**
+ * Empty state for the dashboard when there are no businesses.
+ */
+export function EmptyDashboardContent({ onAddNewBusinessProfile }: { onAddNewBusinessProfile: () => void }) {
   return (
     <div className="my-auto w-full min-w-0 self-stretch font-inter">
       <div className="flex flex-col items-center">
         <div className="flex flex-col gap-3 text-center">
           <h2 className="text-4xl font-normal tracking-tight text-foreground sm:text-5xl">
-            Start by adding your first business
+            Start by adding your first business profile
           </h2>
           <p className="text-base text-muted-foreground">
             Connect with other businesses and grow your reputation through
@@ -25,10 +27,10 @@ export function NoBusinessesEmptyState({ onAdd }: { onAdd: () => void }) {
           type="button"
           variant="ocean"
           className="mt-6 h-11 rounded-md px-6 font-medium"
-          onClick={onAdd}
+          onClick={onAddNewBusinessProfile}
         >
           <Plus className="h-4 w-4" aria-hidden />
-          Add Your First Business
+          Add Your First Business Profile
         </Button>
         <div className="relative aspect-[16/9] w-full max-w-lg mt-3">
           <Image

@@ -21,6 +21,9 @@ interface PlatformProps {
   href?: string | null;
 }
 
+/**
+ * Platform UI component for displaying platform icons and its link if provided.
+ */
 export function Platform({ name, href }: PlatformProps) {
   let src = null;
   let description = null;

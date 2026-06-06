@@ -20,7 +20,7 @@ import {
 } from "@/app/(protected)/actions/review-actions";
 import { SubmitReviewDialog } from "@/components/business/submit-review-dialog";
 import { VerifyReviewDialog } from "@/components/business/verify-review-dialog";
-import { Platform } from "@/components/dashboard/platform";
+import { Platform } from "@/components/shared/platform";
 import { ViewReviewDialog } from "@/components/reviews/incoming-review-panel/view-review-dialog";
 import { ViewOutgoingReviewDialog } from "@/components/reviews/outgoing-review-panel/view-review-dialog";
 import { Badge } from "@/components/ui/badge";

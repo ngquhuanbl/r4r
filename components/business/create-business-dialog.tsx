@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import { createBusiness } from "@/app/(protected)/actions/business-actions";
 import { ADDRESS_SEARCH_TEMPORARILY_DISABLED } from "@/constants/address-search";
-import { DASHBOARD_ACCENT } from "@/components/dashboard/business-profile/constants";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
@@ -334,9 +333,9 @@ export function CreateBusinessDialog({
             </DialogClose>
             <Button
               type="submit"
+              variant="ocean"
               disabled={!canSubmit || isPending}
               className={cn("font-medium text-white")}
-              style={{ backgroundColor: DASHBOARD_ACCENT }}
             >
               {isPending && <Loader2Icon className="animate-spin" />}
               Save

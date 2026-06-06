@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { startConnectionMatch } from "@/app/(protected)/(workspace)/business/[id]/connection-actions";
-import { Platform } from "@/components/dashboard/platform";
+import { Platform } from "@/components/shared/platform";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {

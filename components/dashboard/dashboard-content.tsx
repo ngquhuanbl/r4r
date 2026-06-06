@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Plus, Search } from "lucide-react";
 
 import {
   fetchDashboardBusinessTaskCounts,
-  type BusinessTaskCounts,
+  type BusinessTaskAndCapacityInfo,
 } from "@/app/(protected)/(workspace)/dashboard/actions";
 import { CreateBusinessDialog } from "@/components/business/create-business-dialog";
 import { Button } from "@/components/ui/button";
@@ -16,17 +17,22 @@ import {
   myBusinessesSelectors,
 } from "@/lib/redux/slices/my-business";
 import { FetchedBusiness } from "@/types/dashboard";
-import { Plus, Search } from "lucide-react";
 
 import { AddBusinessProfileCard } from "./business-profile/add-business-profile-card";
-import { BusinessProfileCard } from "./business-profile/business-profile-card";
-import { mapBusinessToLocation } from "./business-profile/map-business-to-location";
-import { NoBusinessesEmptyState } from "./business-profile/no-businesses-empty-state";
+import {
+  BusinessProfileCard,
+  type DisplayedBusinessProfile,
+} from "./business-profile/business-profile-card";
+import { EmptyDashboardContent } from "./empty-dashboard-content";
 
-const zeroCounts = (): BusinessTaskCounts => ({
+import type { Tables } from "@/types/database";
+import { getAddress } from "@/utils/shared";
+
+const zeroCounts = (): BusinessTaskAndCapacityInfo => ({
   incoming: 0,
   outgoing: 0,
-  isReady: false,
+  slotLimit: 0,
+  slotsUsed: 0,
 });
 
 /**
@@ -48,27 +54,49 @@ export function DashboardContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [shouldShowCreateProfileDialog, setShouldShowCreateProfileDialog] =
     useState(false);
-  /** Per-business action counters used to build dashboard location cards. */
-  const [actionByBusiness, setActionByBusiness] = useState<
-    Record<number, BusinessTaskCounts>
-  >({});
 
-  /** Business cards merged with server action counts for rendering. */
+  // While the business card can be rendered immediately,
+  // their task and capacity info is will arrive later
+  const [taskAndCapacityInfoByBusiness, setTaskAndCapacityInfoByBusiness] =
+    useState<Record<Tables<"businesses">["id"], BusinessTaskAndCapacityInfo>>(
+      {},
+    );
+
+  /** Business cards merged with server task and capacity info for rendering. */
   const items = useMemo(
-    () =>
-      myBusinesses.map((business) =>
-        mapBusinessToLocation(business, actionByBusiness[business.id]),
-      ),
-    [myBusinesses, actionByBusiness],
+    () => {
+      const result = [];
+      for (const business of myBusinesses) {
+        const item: DisplayedBusinessProfile = {
+          id: String(business.id),
+          name: business.business_name,
+          status: "loading",
+          address: getAddress(business),
+          imageSrc: business.cover_image_url,
+          imageAlt: business.business_name ? `${business.business_name} storefront` : "",
+          incoming: null,
+          outgoing: null,
+        }
+        
+        const taskAndCapacityInfo = taskAndCapacityInfoByBusiness[business.id];
+        if (taskAndCapacityInfo) {
+          // If the task and capacity info is available, display it
+          item.status = taskAndCapacityInfo.slotsUsed >= taskAndCapacityInfo.slotLimit ? "full" : "ready";
+          item.incoming = taskAndCapacityInfo.incoming;
+          item.outgoing = taskAndCapacityInfo.outgoing;
+        }
+        result.push(item);
+      }
+      return result;
+    },
+    [myBusinesses, taskAndCapacityInfoByBusiness],
   );
 
   /** Search-filtered business cards shown in the dashboard grid. */
-  const filtered = useMemo(() => {
+  const filteredItems = useMemo(() => {
     const search = searchQuery.trim().toLowerCase();
     if (!search) return items;
-    return items.filter((item) =>
-      item.name.toLowerCase().includes(search),
-    );
+    return items.filter((item) => item.name.toLowerCase().includes(search));
   }, [searchQuery, items]);
 
   //
@@ -94,10 +122,10 @@ export function DashboardContent() {
   // EFFECTS
   //
 
-  /** Loads per-business action counts whenever user or business list changes. */
+  /** Loads per-business task and capacity info whenever user or business list changes. */
   useEffect(() => {
     if (!userId || myBusinesses.length === 0) {
-      setActionByBusiness({});
+      setTaskAndCapacityInfoByBusiness({});
       return;
     }
 
@@ -108,15 +136,15 @@ export function DashboardContent() {
       const res = await fetchDashboardBusinessTaskCounts(userId, ids);
       if (cancelled) return;
       if (!res.ok) {
-        setActionByBusiness(
+        setTaskAndCapacityInfoByBusiness(
           Object.fromEntries(ids.map((id) => [id, zeroCounts()])) as Record<
             number,
-            BusinessTaskCounts
+            BusinessTaskAndCapacityInfo
           >,
         );
         return;
       }
-      setActionByBusiness(res.data);
+      setTaskAndCapacityInfoByBusiness(res.data);
     })();
 
     return () => {
@@ -134,7 +162,7 @@ export function DashboardContent() {
   return (
     <>
       {!hasBusinesses ? (
-        <NoBusinessesEmptyState onAdd={openCreate} />
+        <EmptyDashboardContent onAddNewBusinessProfile={openCreate} />
       ) : (
         <div className="w-full min-w-0 self-stretch font-inter">
           <div className="flex w-full flex-col gap-8">
@@ -170,7 +198,7 @@ export function DashboardContent() {
             </div>
 
             <ul className="grid list-none grid-cols-1 gap-5 p-0 md:grid-cols-2 md:gap-6">
-              {filtered.map((item) => (
+              {filteredItems.map((item) => (
                 <li key={item.id}>
                   <BusinessProfileCard data={item} />
                 </li>

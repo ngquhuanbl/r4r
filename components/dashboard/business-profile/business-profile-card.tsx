@@ -23,7 +23,29 @@ import { cn } from "@/lib/utils";
 import fallbackBusinessAvatarSrc from "@/public/dashboard/fallback_business_avatar.png";
 import fallbackBusinessAvatarDarkSrc from "@/public/dashboard/fallback_business_avatar--dark.png";
 
-import type { DashboardLocation } from "./types";
+/**
+ * Capacity status for a business profile.
+ * * `ready` - The business profile has available slots.
+ * * `full` - The business profile is at capacity.
+ * * `loading` - The data is still loading.
+ */
+export type CapacityStatus = "ready" | "full" | "loading";
+
+/**
+ * Business profile data for display in the dashboard.
+ */
+export type DisplayedBusinessProfile = {
+  id: string;
+  name: string;
+  status: CapacityStatus;
+  address: string;
+  imageSrc: string | null;
+  imageAlt: string;
+  /** The number of incoming tasks for the business. */
+  incoming: number | null;
+  /** The number of outgoing tasks for the business. */
+  outgoing: number | null;
+};
 
 function ConnectionStatusBadge({ status }: { status: "ready" | "full" }) {
   const ready = status === "ready";
@@ -71,59 +93,17 @@ function ConnectionStatusBadge({ status }: { status: "ready" | "full" }) {
   );
 }
 
-function verifyLabel(n: number) {
-  if (n === 0) return "0 to verify";
-  if (n === 1) return "1 to verify";
-  return `${n} to verify`;
-}
-
-function submitLabel(n: number) {
-  if (n === 0) return "0 to submit";
-  if (n === 1) return "1 to submit";
-  return `${n} to submit`;
-}
-
-/** Fixed “down” icon — incoming / verify. */
-function IncomingStatCell({ count }: { count: number }) {
-  return (
-    <div className="flex flex-1 items-center justify-center gap-2 py-5 text-sm text-muted-foreground">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        height="24px"
-        viewBox="0 -960 960 960"
-        width="24px"
-        className="shrink-0 text-muted-foreground"
-        fill="currentColor"
-        aria-hidden
-      >
-        <path d="M440-800v487L216-537l-56 57 320 320 320-320-56-57-224 224v-487h-80Z" />
-      </svg>
-      <span>{verifyLabel(count)}</span>
-    </div>
-  );
-}
-
-/** Fixed “up” icon — outgoing / submit. */
-function OutgoingStatCell({ count }: { count: number }) {
-  return (
-    <div className="flex flex-1 items-center justify-center gap-2 py-5 text-sm text-muted-foreground">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        height="24px"
-        viewBox="0 -960 960 960"
-        width="24px"
-        className="shrink-0 text-muted-foreground"
-        fill="currentColor"
-        aria-hidden
-      >
-        <path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z" />
-      </svg>
-      <span>{submitLabel(count)}</span>
-    </div>
-  );
-}
-
-export function BusinessProfileCard({ data }: { data: DashboardLocation }) {
+/**
+ * Business profile card for the dashboard.
+ * * Displays the business profile name, address, image, and capacity status.
+ * * Displays the number of incoming and outgoing tasks for the business.
+ * * Displays the business profile link to the business profile page.
+ */
+export function BusinessProfileCard({
+  data,
+}: {
+  data: DisplayedBusinessProfile;
+}) {
   return (
     <Link
       href={businessPath(data.id)}
@@ -202,12 +182,56 @@ export function BusinessProfileCard({ data }: { data: DashboardLocation }) {
         </CardContent>
 
         <CardFooter className="flex border-t border-border p-0">
-          <IncomingStatCell count={data.left.count} />
+          <div className="flex flex-1 items-center justify-center gap-2 py-5 text-sm text-muted-foreground">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="24px"
+              viewBox="0 -960 960 960"
+              width="24px"
+              className="shrink-0 text-muted-foreground"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M440-800v487L216-537l-56 57 320 320 320-320-56-57-224 224v-487h-80Z" />
+            </svg>
+            {data.incoming == null ? (
+              <span
+                className="inline-flex items-center gap-2"
+                aria-label="Loading verify count"
+              >
+                <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
+              </span>
+            ) : (
+              <span>{`${data.incoming} to verify`}</span>
+            )}
+          </div>
           <div
             className="my-4 w-px shrink-0 self-stretch bg-border"
             aria-hidden
           />
-          <OutgoingStatCell count={data.right.count} />
+          <div className="flex flex-1 items-center justify-center gap-2 py-5 text-sm text-muted-foreground">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="24px"
+              viewBox="0 -960 960 960"
+              width="24px"
+              className="shrink-0 text-muted-foreground"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z" />
+            </svg>
+            {data.outgoing == null ? (
+              <span
+                className="inline-flex items-center gap-2"
+                aria-label="Loading submit count"
+              >
+                <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
+              </span>
+            ) : (
+              <span>{`${data.outgoing} to submit`}</span>
+            )}
+          </div>
         </CardFooter>
       </Card>
     </Link>

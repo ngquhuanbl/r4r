@@ -1,3 +1,6 @@
+/**
+ * Placeholder card for adding a new business.
+ */
 export function AddBusinessProfileCard({ onClick }: { onClick: () => void }) {
   return (
     <li className="flex h-full min-h-[320px]">

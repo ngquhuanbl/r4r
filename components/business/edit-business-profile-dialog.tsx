@@ -12,7 +12,6 @@ import { toast } from "sonner";
 
 import { updateBusiness } from "@/app/(protected)/actions/business-actions";
 import { ADDRESS_SEARCH_TEMPORARILY_DISABLED } from "@/constants/address-search";
-import { DASHBOARD_ACCENT } from "@/components/dashboard/business-profile/constants";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
 import {
@@ -370,7 +369,7 @@ export function EditBusinessProfileDialog({
               type="submit"
               disabled={!canSubmit || isPending}
               className={cn("font-medium text-white")}
-              style={{ backgroundColor: DASHBOARD_ACCENT }}
+              variant="ocean"
             >
               {isPending && <Loader2Icon className="animate-spin" />}
               Save changes
