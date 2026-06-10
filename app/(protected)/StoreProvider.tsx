@@ -30,7 +30,7 @@ interface Props {
  * - seeds global catalog/session slices (`auth`, `reviewStatuses`, `platforms`)
  * - exposes the store to nested route groups (including `(workspace)`)
  *
- * Note: workspace-specific data (businesses/reviews/metrics) is intentionally
+ * Note: workspace-specific business data is intentionally
  * hydrated in `app/(protected)/(workspace)/workspace-hydrator.tsx` to keep
  * non-workspace routes such as account/billing lightweight.
  */
@@ -48,8 +48,7 @@ export const StoreProvider = ({ initialData, children }: Props) => {
      *   used across all protected routes (workspace, account, billing, header, etc.).
      * - They should exist before any route-specific hydration so selectors can read
      *   a stable baseline immediately after mount.
-     * - Workspace-heavy slices (businesses/reviews/metrics) are intentionally hydrated
-     *   in `app/(protected)/(workspace)` to keep account/billing lighter.
+     * - Workspace-heavy business data remains in `app/(protected)/(workspace)`.
      */
     store.dispatch(authActions.setCredentials(initialData.user));
     store.dispatch(

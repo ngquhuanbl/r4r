@@ -311,7 +311,7 @@ export function BusinessLeftPanel({
     <div className="flex min-w-0 flex-col gap-6">
       <Link
         href={Paths.DASHBOARD}
-        className="inline-flex w-max items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        className="hidden shrink-0 md:inline-flex w-max items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" aria-hidden />
         Back to Dashboard

@@ -47,6 +47,7 @@ Canonical path helpers live in `constants/paths.ts` (`Paths`, `businessPath`).
 3. **`app/(protected)/layout.tsx`** (outer shell) loads the user and **catalog data** only: `review_statuses` and `platforms`. It wraps the app in **`StoreProvider`** (user + catalogs + empty workspace slices).
 
 4. **`app/(protected)/(workspace)/layout.tsx`** runs only for `/dashboard` and `/business/[id]`. It fetches businesses, metrics, and incoming/outgoing reviews (first page), then **`WorkspaceHydrator`** dispatches them into the existing Redux store.
+5. **Realtime dirty queue** (in `WorkspaceHydrator`) subscribes to `public.reviews` changes and marks impacted owned business ids dirty in Redux. It does not trigger immediate dashboard refetches.
 
 5. **`/account` and `/billing`** use the outer layout only — they never run the workspace layout, so they do not pay for review list or business list queries at layout time.
 
@@ -55,8 +56,9 @@ Canonical path helpers live in `constants/paths.ts` (`Paths`, `businessPath`).
 | File | Role |
 |------|------|
 | `app/(protected)/StoreProvider.tsx` | Creates the store once per client mount; seeds user, platforms, review statuses; initializes empty workspace slices. |
-| `app/(protected)/workspace-hydrator.tsx` | Client component; on workspace routes, dispatches businesses, metrics, and reviews into the store. |
+| `app/(protected)/(workspace)/workspace-hydrator.tsx` | Client component; on workspace routes, dispatches businesses/metrics/reviews and runs workspace-wide Realtime dirty-marking for dashboard task/capacity cache. |
 | `app/(protected)/(workspace)/layout.tsx` | Server layout that fetches workspace data and renders `WorkspaceHydrator`. |
+| `lib/redux/slices/dashboard-task-capacity.ts` | Shared cache for per-business dashboard task/capacity rows (`byBusinessId`, dirty ids, in-flight ids, freshness metadata). |
 
 Review list pagination constants live in `constants/reviews.ts`.
 
@@ -66,12 +68,11 @@ Review list pagination constants live in `constants/reviews.ts`.
 |------|----------|--------|
 | Review workflows | `app/(protected)/actions/` | `incoming-reviews.ts`, `outgoing-reviews.ts`, `catalog.ts`; `review-actions.ts` is a **barrel** (`export *`) without `"use server"`. |
 | Businesses (CRUD, fetches) | `app/(protected)/actions/business-actions.ts` | Used by workspace layout and business UI. |
-| Metrics (header / hamburger) | `app/(protected)/metrics/actions.ts` | Fetched in workspace layout. |
 | Per-business page data | `app/(protected)/(workspace)/business/[id]/actions.ts` | Ownership checks and business-scoped reads. |
 | Connection matching | `app/(protected)/(workspace)/business/[id]/connection-actions.ts` | `startConnectionMatch` and related server-only logic. |
 | Auth (magic link, OAuth helpers) | `app/actions/auth.ts`, `app/actions/auth-entry.ts` | Used from login / sign-in routes. |
 
-After mutations, actions typically call `revalidatePath` for affected routes (dashboard, business page, etc.). Business workspace review lists additionally use client-side merge/reload behavior with Realtime-assisted updates for new outgoing tasks.
+After mutations, actions typically call `revalidatePath` for affected routes (dashboard, business page, etc.). Business workspace review lists additionally use client-side merge/reload behavior with Realtime-assisted updates for new outgoing tasks. For dashboard card counts, business mutations and Realtime only mark dirty business ids; the dashboard performs deferred fetch on revisit/focus.
 
 ## Components organization
 

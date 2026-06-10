@@ -5,7 +5,6 @@ import Logo from "@/components/shared/logo";
 import { getAvatarUrl, getDisplayName } from "@/lib/account/profile";
 
 import { BusinessHeaderSwitcher } from "./business-header-switcher";
-import { HamburgerMenu } from "./hamburger-menu";
 import { PageTitle } from "./page-title";
 import { ProfileMenu } from "./profile-menu";
 import { Theme } from "./theme";
@@ -14,8 +13,7 @@ interface HeaderProps {
   user: User;
 }
 
-const billingEnabled =
-  process.env.NEXT_PUBLIC_BILLING_ENABLED === "true";
+const billingEnabled = process.env.NEXT_PUBLIC_BILLING_ENABLED === "true";
 
 export async function Header({ user }: HeaderProps) {
   const imageURL = getAvatarUrl(user) ?? "";
@@ -27,7 +25,13 @@ export async function Header({ user }: HeaderProps) {
         <div className="flex w-full items-center justify-between gap-2 pt-2 md:gap-4 md:pt-0">
           <div className="flex min-w-0 flex-1 items-center gap-3 md:gap-4">
             <div className="md:hidden">
-              <HamburgerMenu />
+              <Link
+                href="/"
+                className="inline-flex items-center rounded-md hover:cursor-pointer"
+                aria-label="Go to dashboard"
+              >
+                <Logo mode="compact" />
+              </Link>
             </div>
             <div className="hidden shrink-0 md:block">
               <Link href="/" className="hover:cursor-pointer">

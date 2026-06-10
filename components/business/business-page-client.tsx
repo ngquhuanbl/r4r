@@ -7,8 +7,9 @@ import {
   type BusinessBillingSidebarContext,
 } from "@/app/(protected)/(workspace)/business/[id]/actions";
 import { refreshBusinessReviewSnapshot } from "@/lib/business/refresh-business-review-snapshot-browser";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { reviewStatusesSelectors } from "@/lib/redux/slices/review-status";
 import type { FetchedBusiness } from "@/types/dashboard";
-import type { Tables } from "@/types/database";
 import type { UserId } from "@/types/shared";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
 
@@ -19,15 +20,14 @@ export function BusinessPageClient({
   userId,
   business: initialBusiness,
   snapshot: initialSnapshot,
-  reviewStatuses,
   billingContext,
 }: {
   userId: UserId;
   business: FetchedBusiness;
   snapshot: BusinessReviewSnapshot;
-  reviewStatuses: Tables<"review_statuses">[];
   billingContext: BusinessBillingSidebarContext;
 }) {
+  const reviewStatuses = useAppSelector(reviewStatusesSelectors.selectData);
   const [business, setBusiness] = useState<FetchedBusiness>(initialBusiness);
   const [billing, setBilling] =
     useState<BusinessBillingSidebarContext>(billingContext);

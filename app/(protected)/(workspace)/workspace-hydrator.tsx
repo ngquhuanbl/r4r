@@ -5,20 +5,11 @@ import { useMemo, useRef } from "react";
 import { useSetupRealtime } from "@/lib/hooks/realtime/use-set-up-realtime";
 import { useSubscribeToTopics } from "@/lib/hooks/realtime/use-subscribe-to-topics";
 import { realtimeTopic } from "@/lib/hooks/realtime/topics";
-import { incomingReviewsActions } from "@/lib/redux/slices/incoming-review";
-import { metricActions } from "@/lib/redux/slices/metric";
 import { myBusinessesActions } from "@/lib/redux/slices/my-business";
-import { outgoingReviewsActions } from "@/lib/redux/slices/outgoing-review";
 import { businessTaskCapacityActions } from "@/lib/redux/slices/business-task-capacity";
 import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import type {
-  FetchedBusiness,
-  FetchedReviewsResponse,
-  IncomingReview,
-  OutgoingReview,
-} from "@/types/dashboard";
-import type { Metrics } from "@/types/metric";
+import type { FetchedBusiness } from "@/types/dashboard";
 import type { UserId } from "@/types/shared";
 
 import type { ReactNode } from "react";
@@ -26,9 +17,6 @@ import type { ReactNode } from "react";
 export interface WorkspaceInitialData {
   userId: UserId;
   myBusinesses: FetchedBusiness[];
-  incomingReviews: FetchedReviewsResponse<IncomingReview>;
-  outgoingReviews: FetchedReviewsResponse<OutgoingReview>;
-  metrics: Metrics;
 }
 
 interface Props {
@@ -43,9 +31,6 @@ export function WorkspaceHydrator({ data, children }: Props) {
 
   if (!hydrated.current) {
     dispatch(myBusinessesActions.loadInitData(data.myBusinesses));
-    dispatch(incomingReviewsActions.loadInitData(data.incomingReviews));
-    dispatch(outgoingReviewsActions.loadInitData(data.outgoingReviews));
-    dispatch(metricActions.setMetric(data.metrics));
     hydrated.current = true;
   }
 

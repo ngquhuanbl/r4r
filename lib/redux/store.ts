@@ -7,7 +7,6 @@ import {
 import { authSlice } from "./slices/auth";
 import { businessTaskCapacitySlice } from "./slices/business-task-capacity";
 import { incomingReviewsSlice } from "./slices/incoming-review";
-import { metricSlice } from "./slices/metric";
 import { myBusinessesSlice } from "./slices/my-business";
 import { outgoingReviewsSlice } from "./slices/outgoing-review";
 import { platformsSlice } from "./slices/platform";
@@ -23,7 +22,6 @@ const rootReducer = combineSlices(
   outgoingReviewsSlice,
   platformsSlice,
   authSlice,
-  metricSlice,
   businessTaskCapacitySlice,
   realtimeSignalSlice,
 );

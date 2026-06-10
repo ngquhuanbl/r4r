@@ -3,9 +3,10 @@ import { cn } from "@/lib/utils";
 interface LogoProps {
   style?: "colored" | "mono";
   size?: "lg" | "md" | "sm";
+  mode?: "default" | "compact";
 }
 
-export default function Logo({ style = "colored" }: LogoProps) {
+export default function Logo({ style = "colored", mode = "default" }: LogoProps) {
   return (
     <div className="flex items-center justify-center flex-row gap-2 sm:gap-4">
       <svg
@@ -25,30 +26,32 @@ export default function Logo({ style = "colored" }: LogoProps) {
         />
       </svg>
 
-      <div className="flex flex-col text-start">
-        <span
-          className={cn(
-            "font-inter font-semibold text-sm sm:text-base tracking-tight",
-            {
-              "text-black dark:text-white": style === "colored",
-              "text-white": style !== "colored",
-            },
-          )}
-        >
-          Review4Review
-        </span>
-        <span
-          className={cn(
-            "font-inter font-light text-xs tracking-tight flex items-center",
-            {
-              "text-black dark:text-white": style === "colored",
-              "text-white": style !== "colored",
-            },
-          )}
-        >
-          A peer to peer review network
-        </span>
-      </div>
+      {mode === "default" ? (
+        <div className="flex flex-col text-start">
+          <span
+            className={cn(
+              "font-inter font-semibold text-sm sm:text-base tracking-tight",
+              {
+                "text-black dark:text-white": style === "colored",
+                "text-white": style !== "colored",
+              },
+            )}
+          >
+            Review4Review
+          </span>
+          <span
+            className={cn(
+              "font-inter font-light text-xs tracking-tight flex items-center",
+              {
+                "text-black dark:text-white": style === "colored",
+                "text-white": style !== "colored",
+              },
+            )}
+          >
+            A peer to peer review network
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }

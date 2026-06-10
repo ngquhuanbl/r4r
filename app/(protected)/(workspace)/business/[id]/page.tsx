@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BusinessPageClient } from "@/components/business/business-page-client";
-import { fetchReviewStatuses } from "@/app/(protected)/actions/review-actions";
 import { getUser, getUserOrRedirect } from "@/lib/supabase/server";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
 import type { Tables } from "@/types/database";
@@ -53,21 +52,18 @@ export default async function BusinessPage({ params }: PageProps) {
     notFound();
   }
 
-  const [snapshotRes, statusesRes, billingContext] = await Promise.all([
+  const [snapshotRes, billingContext] = await Promise.all([
     fetchBusinessReviewSnapshot(user.id, business.id),
-    fetchReviewStatuses(),
     fetchBusinessBillingContext(user.id, business.id),
   ]);
 
   const snapshot = snapshotRes.ok ? snapshotRes.data : emptySnapshot();
-  const reviewStatuses = statusesRes.ok ? statusesRes.data : [];
 
   return (
     <BusinessPageClient
       userId={user.id}
       business={business}
       snapshot={snapshot}
-      reviewStatuses={reviewStatuses}
       billingContext={billingContext}
     />
   );
