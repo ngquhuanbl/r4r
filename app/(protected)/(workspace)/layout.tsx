@@ -5,7 +5,7 @@ import {
 import { fetchBusinesses } from "../actions/business-actions";
 import { fetchMetrics } from "../metrics/actions";
 import { WorkspaceHydrator } from "./workspace-hydrator";
-import { createClient } from "@/lib/supabase/server";
+import { getUserOrRedirect } from "@/lib/supabase/server";
 import {
   INCOMING_REVIEWS_PAGE_SIZE,
   OUTGOING_REVIEWS_PAGE_SIZE,
@@ -17,12 +17,8 @@ interface LayoutProps {
 }
 
 export default async function WorkspaceLayout({ children }: LayoutProps) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const userId = user!.id;
+  const user = await getUserOrRedirect();
+  const userId = user.id;
 
   const [myBusinesses, metrics, incomingReviews, outgoingReviews] =
     await Promise.all([
