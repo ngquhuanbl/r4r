@@ -35,6 +35,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps) {
   return (
     <WorkspaceHydrator
       data={{
+        userId,
         myBusinesses,
         metrics,
         incomingReviews,

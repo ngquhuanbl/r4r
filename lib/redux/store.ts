@@ -5,11 +5,13 @@ import {
 } from "@reduxjs/toolkit";
 
 import { authSlice } from "./slices/auth";
+import { businessTaskCapacitySlice } from "./slices/business-task-capacity";
 import { incomingReviewsSlice } from "./slices/incoming-review";
 import { metricSlice } from "./slices/metric";
 import { myBusinessesSlice } from "./slices/my-business";
 import { outgoingReviewsSlice } from "./slices/outgoing-review";
 import { platformsSlice } from "./slices/platform";
+import { realtimeSignalSlice } from "./slices/realtime-signal";
 import { reviewStatusesSlice } from "./slices/review-status";
 
 // `combineSlices` automatically combines the reducers using
@@ -21,7 +23,9 @@ const rootReducer = combineSlices(
   outgoingReviewsSlice,
   platformsSlice,
   authSlice,
-  metricSlice
+  metricSlice,
+  businessTaskCapacitySlice,
+  realtimeSignalSlice,
 );
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>;

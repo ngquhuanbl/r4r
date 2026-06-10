@@ -3,15 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 
-import {
-  fetchDashboardBusinessTaskCounts,
-  type BusinessTaskAndCapacityInfo,
-} from "@/app/(protected)/(workspace)/dashboard/actions";
 import { CreateBusinessDialog } from "@/components/business/create-business-dialog";
+import { TASK_CAPACITY_TTL_MS } from "@/constants/dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
+import {
+  businessTaskCapacityActions,
+  businessTaskCapacitySelectors,
+} from "@/lib/redux/slices/business-task-capacity";
 import {
   myBusinessesActions,
   myBusinessesSelectors,
@@ -25,15 +26,7 @@ import {
 } from "./business-profile/business-profile-card";
 import { EmptyDashboardContent } from "./empty-dashboard-content";
 
-import type { Tables } from "@/types/database";
 import { getAddress } from "@/utils/shared";
-
-const zeroCounts = (): BusinessTaskAndCapacityInfo => ({
-  incoming: 0,
-  outgoing: 0,
-  slotLimit: 0,
-  slotsUsed: 0,
-});
 
 /**
  * Content of the dashboard page.
@@ -51,18 +44,14 @@ export function DashboardContent() {
   const dispatch = useAppDispatch();
   const userId = useAppSelector(authSelectors.selectUserId);
   const myBusinesses = useAppSelector(myBusinessesSelectors.selectData);
+  const taskAndCapacityInfoByBusiness = useAppSelector(
+    businessTaskCapacitySelectors.selectByBusinessId,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [shouldShowCreateProfileDialog, setShouldShowCreateProfileDialog] =
     useState(false);
 
-  // While the business card can be rendered immediately,
-  // their task and capacity info is will arrive later
-  const [taskAndCapacityInfoByBusiness, setTaskAndCapacityInfoByBusiness] =
-    useState<Record<Tables<"businesses">["id"], BusinessTaskAndCapacityInfo>>(
-      {},
-    );
-
-  /** Business cards merged with server task and capacity info for rendering. */
+  /** Business cards merged with task and capacity info for rendering. */
   const items = useMemo(
     () => {
       const result = [];
@@ -122,35 +111,65 @@ export function DashboardContent() {
   // EFFECTS
   //
 
-  /** Loads per-business task and capacity info whenever user or business list changes. */
+  /** Deferred refresh policy on mount/revisit: init, dirty IDs, and missing card rows. */
   useEffect(() => {
-    if (!userId || myBusinesses.length === 0) {
-      setTaskAndCapacityInfoByBusiness({});
-      return;
-    }
+    if (!userId || myBusinesses.length === 0) return;
+    void dispatch(
+      businessTaskCapacityActions.orchestrateRefresh(
+        userId,
+        "mount",
+        TASK_CAPACITY_TTL_MS,
+      ),
+    );
+  }, [
+    dispatch,
+    myBusinesses,
+    userId,
+  ]);
 
-    let cancelled = false;
-    const ids = myBusinesses.map((business) => business.id);
+  /** Safety recovery on focus/visibility/online: prefer dirty-only refresh before fallback full refresh. */
+  useEffect(() => {
+    if (!userId || myBusinesses.length === 0) return;
 
-    void (async () => {
-      const res = await fetchDashboardBusinessTaskCounts(userId, ids);
-      if (cancelled) return;
-      if (!res.ok) {
-        setTaskAndCapacityInfoByBusiness(
-          Object.fromEntries(ids.map((id) => [id, zeroCounts()])) as Record<
-            number,
-            BusinessTaskAndCapacityInfo
-          >,
-        );
-        return;
+    let timer: number | null = null;
+
+    const scheduleRefresh = (reason: "focus" | "visibility" | "online") => {
+      if (timer != null) {
+        window.clearTimeout(timer);
       }
-      setTaskAndCapacityInfoByBusiness(res.data);
-    })();
+      timer = window.setTimeout(() => {
+        timer = null;
+        void dispatch(
+          businessTaskCapacityActions.orchestrateRefresh(
+            userId,
+            reason,
+            TASK_CAPACITY_TTL_MS,
+          ),
+        );
+      }, 250);
+    };
+
+    const onFocus = () => scheduleRefresh("focus");
+    const onOnline = () => scheduleRefresh("online");
+    const onVisibility = () => {
+      if (!document.hidden) scheduleRefresh("visibility");
+    };
+
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("online", onOnline);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
-      cancelled = true;
+      if (timer != null) window.clearTimeout(timer);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("online", onOnline);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [userId, myBusinesses]);
+  }, [
+    dispatch,
+    myBusinesses,
+    userId,
+  ]);
 
   //
   // RENDER

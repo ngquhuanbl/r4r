@@ -212,6 +212,7 @@ CREATE POLICY "Businesses delete own rows"
 
 -- business_platforms: only through owned businesses
 DROP POLICY IF EXISTS "Business platforms select own business rows" ON public.business_platforms;
+DROP POLICY IF EXISTS "Business platforms select review-related rows" ON public.business_platforms;
 DROP POLICY IF EXISTS "Business platforms insert own business rows" ON public.business_platforms;
 DROP POLICY IF EXISTS "Business platforms update own business rows" ON public.business_platforms;
 DROP POLICY IF EXISTS "Business platforms delete own business rows" ON public.business_platforms;
@@ -225,6 +226,21 @@ CREATE POLICY "Business platforms select own business rows"
       FROM public.businesses b
       WHERE b.id = business_platforms.business_id
         AND b.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Business platforms select review-related rows"
+  ON public.business_platforms FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.reviews r
+      WHERE r.reviewed_business_id = business_platforms.business_id
+        AND (
+          r.reviewer_user_id = auth.uid()
+          OR r.reviewed_owner_user_id = auth.uid()
+        )
     )
   );
 
@@ -428,6 +444,26 @@ CREATE POLICY "Users select own business_billing"
         AND b.user_id = auth.uid()
     )
   );
+
+-- Ensure Realtime receives changes from reviews in fresh bootstraps.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_publication
+    WHERE pubname = 'supabase_realtime'
+  ) THEN
+    IF NOT EXISTS (
+      SELECT 1
+      FROM pg_publication_tables
+      WHERE pubname = 'supabase_realtime'
+        AND schemaname = 'public'
+        AND tablename = 'reviews'
+    ) THEN
+      ALTER PUBLICATION supabase_realtime ADD TABLE public.reviews;
+    END IF;
+  END IF;
+END $$;
 
 -- Ordered account data cleanup, used by account deletion flow.
 CREATE OR REPLACE FUNCTION public.delete_user_account_data(target_user_id UUID)

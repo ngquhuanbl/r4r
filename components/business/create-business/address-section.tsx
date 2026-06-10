@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { parseAddressComponents } from "@/lib/places/parse-place-address";
+import { parseAddressComponents } from "@/utils/places";
 import { cn } from "@/lib/utils";
 
 export type AddressFields = {

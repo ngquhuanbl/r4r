@@ -181,7 +181,7 @@ export function CreateBusinessDialog({
           const formData = buildFormData();
           const result = await createBusiness(userId, formData);
           if (result.ok) {
-            toast.success("Business created successfully");
+            toast.success("Business profile created successfully");
             if (result.coverPhotoWarning) {
               toast.warning("Storefront photo not saved", {
                 description: result.coverPhotoWarning,
@@ -193,7 +193,7 @@ export function CreateBusinessDialog({
             throw result.error;
           }
         } catch (e) {
-          toast.error("Failed to create business", {
+          toast.error("Failed to create business profile", {
             description: ErrorUtils.serializeError(e),
           });
         }

@@ -8,6 +8,7 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { toast } from "sonner";
@@ -62,8 +63,9 @@ import {
   REVIEW_STATUS_FILTER_ALL_OPTION,
 } from "@/constants/reviews";
 import { ReviewStatusNames } from "@/constants/shared";
-import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { useSubscribeToTopics } from "@/lib/hooks/realtime/use-subscribe-to-topics";
 import { useLocalStorageKey } from "@/lib/hooks/use-local-storage-key";
+import { realtimeTopic } from "@/lib/hooks/realtime/topics";
 import { cn } from "@/lib/utils";
 import type {
   IncomingReview,
@@ -302,6 +304,10 @@ export function BusinessReviewsWorkspace({
   onOutgoingReviewSubmitted,
   onReviewStatsMayHaveChanged,
 }: WorkspaceProps) {
+  const outgoingSignalTopic = useMemo(
+    () => realtimeTopic.reviewsOutgoingBusiness.getKey({ businessId }),
+    [businessId],
+  );
   const reviewsTabStorageKey = useMemo(
     () => `r4r:reviews-workspace-tab:${businessId}`,
     [businessId],
@@ -327,6 +333,8 @@ export function BusinessReviewsWorkspace({
   const [viewOutOpen, setViewOutOpen] = useState<OutgoingReview | null>(null);
   const { getItem: getOutgoingCursor, setItem: setOutgoingCursor } =
     useLocalStorageKey(createOutgoingLastCursorStorageKey(businessId));
+  const isOutgoingFlushRunningRef = useRef(false);
+  const outgoingFlushTimerRef = useRef<number | null>(null);
 
   /** Restore tab after remounts (e.g. layout revalidation) so submit/verify does not jump to Incoming. */
   useLayoutEffect(() => {
@@ -351,16 +359,27 @@ export function BusinessReviewsWorkspace({
     [reviewStatuses],
   );
 
-  const upsertOutgoingReview = useCallback((review: OutgoingReview) => {
+  const upsertOutgoingReviewsMany = useCallback((reviews: OutgoingReview[]) => {
+    if (reviews.length === 0) return;
+
     setOutgoing((prev) => {
-      const idx = prev.findIndex((r) => r.id === review.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = review;
-        return next;
+      const next = [...prev];
+      let addedCount = 0;
+
+      for (const review of reviews) {
+        const idx = next.findIndex((r) => r.id === review.id);
+        if (idx >= 0) {
+          next[idx] = review;
+        } else {
+          next.unshift(review);
+          addedCount += 1;
+        }
       }
-      setOutgoingTotal((v) => v + 1);
-      return [review, ...prev];
+
+      if (addedCount > 0) {
+        setOutgoingTotal((v) => v + addedCount);
+      }
+      return next;
     });
   }, []);
 
@@ -385,20 +404,18 @@ export function BusinessReviewsWorkspace({
         }
       }
 
-      for (const task of tasks) {
-        const matchesFilter =
+      const matchingTasks = tasks.filter(
+        (task) =>
           statusFilter === REVIEW_STATUS_FILTER_ALL_OPTION.id ||
-          task.status.id === statusFilter;
-        if (matchesFilter) {
-          upsertOutgoingReview(task);
-        }
-      }
+          task.status.id === statusFilter,
+      );
+      upsertOutgoingReviewsMany(matchingTasks);
 
       if (newestCursor) {
         setOutgoingCursor(newestCursor);
       }
     },
-    [setOutgoingCursor, statusFilter, upsertOutgoingReview],
+    [setOutgoingCursor, statusFilter, upsertOutgoingReviewsMany],
   );
 
   const refetchIncomingOnly = useCallback(async () => {
@@ -448,6 +465,34 @@ export function BusinessReviewsWorkspace({
   const loadOutgoing = useCallback(async () => {
     await refetchOutgoingOnly();
   }, [refetchOutgoingOnly]);
+
+  const flushOutgoingTaskNotifications = useCallback(async () => {
+    if (isOutgoingFlushRunningRef.current) return;
+    isOutgoingFlushRunningRef.current = true;
+    try {
+      const sinceCursor = getOutgoingCursor();
+      const res = await fetchOutgoingTaskNotificationsSinceCursor(
+        businessId,
+        sinceCursor,
+        6,
+      );
+      if (res.ok && res.data.length > 0) {
+        await notifyOutgoingTasks(res.data);
+      }
+    } finally {
+      isOutgoingFlushRunningRef.current = false;
+    }
+  }, [businessId, getOutgoingCursor, notifyOutgoingTasks]);
+
+  const queueOutgoingFlush = useCallback(() => {
+    if (outgoingFlushTimerRef.current != null) {
+      window.clearTimeout(outgoingFlushTimerRef.current);
+    }
+    outgoingFlushTimerRef.current = window.setTimeout(() => {
+      outgoingFlushTimerRef.current = null;
+      void flushOutgoingTaskNotifications();
+    }, 1200);
+  }, [flushOutgoingTaskNotifications]);
 
   /**
    * Mount/reload catch-up:
@@ -513,62 +558,16 @@ export function BusinessReviewsWorkspace({
   }, [businessId, getOutgoingCursor, notifyOutgoingTasks]);
 
   useEffect(() => {
-    const supabase = createBrowserSupabaseClient();
-    let flushTimer: number | null = null;
-    let running = false;
-
-    const flush = async () => {
-      if (running) return;
-      running = true;
-      try {
-        const sinceCursor = getOutgoingCursor();
-        const res = await fetchOutgoingTaskNotificationsSinceCursor(
-          businessId,
-          sinceCursor,
-          6,
-        );
-        if (res.ok && res.data.length > 0) {
-          await notifyOutgoingTasks(res.data);
-        }
-      } finally {
-        running = false;
+    return () => {
+      if (outgoingFlushTimerRef.current != null) {
+        window.clearTimeout(outgoingFlushTimerRef.current);
       }
     };
+  }, []);
 
-    const queueFlush = () => {
-      if (flushTimer != null) window.clearTimeout(flushTimer);
-      flushTimer = window.setTimeout(() => {
-        flushTimer = null;
-        void flush();
-      }, 1200);
-    };
-
-    const channel = supabase
-      .channel(`outgoing-task-notify-${businessId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "reviews",
-          filter: `reviewer_business_id=eq.${businessId}`,
-        },
-        () => {
-          queueFlush();
-        },
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          // Run an immediate catch-up once channel is ready.
-          queueFlush();
-        }
-      });
-
-    return () => {
-      if (flushTimer != null) window.clearTimeout(flushTimer);
-      void supabase.removeChannel(channel);
-    };
-  }, [businessId, getOutgoingCursor, notifyOutgoingTasks]);
+  useSubscribeToTopics([outgoingSignalTopic], () => {
+    queueOutgoingFlush();
+  });
 
   const incomingColumns: ColumnDef<IncomingReview>[] = useMemo(
     () => [

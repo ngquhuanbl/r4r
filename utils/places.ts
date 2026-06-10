@@ -23,8 +23,9 @@ export function parseAddressComponents(
     if (types.includes("route")) route = comp.long_name;
     if (types.includes("subpremise")) subpremise = comp.long_name;
     if (types.includes("locality")) city = comp.long_name;
-    if (types.includes("administrative_area_level_1"))
+    if (types.includes("administrative_area_level_1")) {
       state = comp.short_name;
+    }
     if (types.includes("postal_code")) zip = comp.long_name;
   }
 

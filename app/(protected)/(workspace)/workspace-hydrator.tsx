@@ -1,12 +1,17 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 
+import { useSetupRealtime } from "@/lib/hooks/realtime/use-set-up-realtime";
+import { useSubscribeToTopics } from "@/lib/hooks/realtime/use-subscribe-to-topics";
+import { realtimeTopic } from "@/lib/hooks/realtime/topics";
 import { incomingReviewsActions } from "@/lib/redux/slices/incoming-review";
 import { metricActions } from "@/lib/redux/slices/metric";
 import { myBusinessesActions } from "@/lib/redux/slices/my-business";
 import { outgoingReviewsActions } from "@/lib/redux/slices/outgoing-review";
-import { useAppDispatch } from "@/lib/redux/hooks";
+import { businessTaskCapacityActions } from "@/lib/redux/slices/business-task-capacity";
+import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import type {
   FetchedBusiness,
   FetchedReviewsResponse,
@@ -14,10 +19,12 @@ import type {
   OutgoingReview,
 } from "@/types/dashboard";
 import type { Metrics } from "@/types/metric";
+import type { UserId } from "@/types/shared";
 
 import type { ReactNode } from "react";
 
 export interface WorkspaceInitialData {
+  userId: UserId;
   myBusinesses: FetchedBusiness[];
   incomingReviews: FetchedReviewsResponse<IncomingReview>;
   outgoingReviews: FetchedReviewsResponse<OutgoingReview>;
@@ -31,6 +38,7 @@ interface Props {
 
 export function WorkspaceHydrator({ data, children }: Props) {
   const dispatch = useAppDispatch();
+  const myBusinesses = useAppSelector(myBusinessesSelectors.selectData);
   const hydrated = useRef(false);
 
   if (!hydrated.current) {
@@ -40,6 +48,52 @@ export function WorkspaceHydrator({ data, children }: Props) {
     dispatch(metricActions.setMetric(data.metrics));
     hydrated.current = true;
   }
+
+  const businessReviewTopics = useMemo(
+    () =>
+      myBusinesses.flatMap((business) => [
+        realtimeTopic.reviewsIncomingBusiness.getKey({
+          businessId: business.id,
+        }),
+        realtimeTopic.reviewsOutgoingBusiness.getKey({
+          businessId: business.id,
+        }),
+      ]),
+    [myBusinesses],
+  );
+
+  useSetupRealtime({
+    userId: data.userId,
+  });
+
+  /**
+   * Consumes realtime topic ticks and converts them into dashboard dirty IDs.
+   * This keeps channel setup isolated from cache invalidation policy.
+   */
+  useSubscribeToTopics(
+    businessReviewTopics,
+    (changedTopics) => {
+      const impacted = new Set<number>();
+      for (const topic of changedTopics) {
+        const id =
+          realtimeTopic.reviewsBusiness.getArgsFromKey(topic)?.businessId;
+        if (id == null) continue;
+        impacted.add(id);
+      }
+      dispatch(
+        businessTaskCapacityActions.maybeMarkDirty(Array.from(impacted)),
+      );
+    },
+    { enabled: businessReviewTopics.length > 0 },
+  );
+
+  /** Consumes channel health topic and updates cache trust flag. */
+  useSubscribeToTopics(
+    [realtimeTopic.reviewsChannelUnhealthyUser.getKey({ userId: data.userId })],
+    () => {
+      dispatch(businessTaskCapacityActions.setCanTrustCurrentDirtySet(false));
+    },
+  );
 
   return children;
 }
