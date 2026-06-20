@@ -2,7 +2,7 @@ import {
   fetchBusinessBillingInfoCached,
   fetchUserSubscriptionPeriodEndCached,
 } from "@/app/(protected)/billing/actions";
-import { ConnectionCapacityClient } from "@/components/business/connect-capacity/connection-capacity-client";
+import { ConnectionCapacityClient } from "@/components/business/left-section/business-capacity-subsection/connection-capacity-client";
 import type { UserId } from "@/types/shared";
 
 interface ConnectionCapacityServerProps {

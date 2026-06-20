@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { revalidateTag, unstable_cache } from "next/cache";
 
 import { Paths, businessPath } from "@/constants/paths";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { uploadBusinessCoverPhoto } from "@/lib/supabase/business-cover-photo";
 import { createClient } from "@/lib/supabase/server";
 import { formatUsPhoneMask, normalizeUsPhoneDigits } from "@/lib/phone-us";
@@ -21,7 +22,7 @@ export type BusinessMutationResponse =
   | { ok: true; data: FetchedBusiness; coverPhotoWarning?: string }
   | { ok: false; error: unknown };
 
-export function getBusinessListTag(userId: UserId): string {
+function getBusinessListTag(userId: UserId): string {
   return `business-list:${userId}`;
 }
 
@@ -81,7 +82,55 @@ export async function fetchBusinessesCached(
   userId: UserId,
 ): Promise<APIResponse<FetchedBusiness[]>> {
   const cached = unstable_cache(
-    async (cachedUserId: UserId) => fetchBusinesses(cachedUserId),
+    async (cachedUserId: UserId): Promise<APIResponse<FetchedBusiness[]>> => {
+      try {
+        const supabase = createServiceRoleClient();
+        const { data, error } = await supabase
+          .from("businesses")
+          .select(
+            `
+				id,
+				business_name,
+				phone,
+				address,
+				city,
+				state,
+				zip_code,
+				cover_image_url,
+				created_at,
+				updated_at,
+				platforms:business_platforms (
+					id,
+					platform_id,
+					platform_url
+				)
+				`,
+          )
+          .eq("user_id", cachedUserId);
+
+        if (error) {
+          console.error("Failed to fetch business list (cached)", error);
+          return { ok: false, error: error.message };
+        }
+
+        const finalData = data.map((item) => {
+          const { platforms, ...rest } = item;
+          const platform_urls: FetchedBusiness["platform_urls"] = {};
+          platforms.forEach(({ platform_id, platform_url }) => {
+            platform_urls[platform_id] = platform_url;
+          });
+          return {
+            ...rest,
+            platform_urls,
+          };
+        });
+
+        return { ok: true, data: finalData || [] };
+      } catch (e: any) {
+        console.error("Unexpected error during cached business list fetching", e);
+        return { ok: false, error: e.message || "Unexpected error" };
+      }
+    },
     ["business-list"],
     { tags: [getBusinessListTag(userId)] },
   );
