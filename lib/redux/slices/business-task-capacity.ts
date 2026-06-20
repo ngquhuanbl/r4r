@@ -6,7 +6,6 @@ import {
 import type { BusinessTaskAndCapacityInfo } from "@/app/(protected)/(workspace)/dashboard/actions";
 import type { Tables } from "@/types/database";
 
-import { myBusinessesActions, myBusinessesSelectors } from "./my-business";
 import type { AppThunk, RootState } from "../store";
 
 export enum BusinessTaskCapacityLifecycleStatus {
@@ -62,10 +61,6 @@ const initialState: DashboardTaskCapacityState = {
 function mergeUniqueIds(current: BusinessId[], next: BusinessId[]): BusinessId[] {
   if (next.length === 0) return current;
   return Array.from(new Set<BusinessId>([...current, ...next]));
-}
-
-function pruneIds(ids: BusinessId[], allowedIds: Set<BusinessId>): BusinessId[] {
-  return ids.filter((id) => allowedIds.has(id));
 }
 
 export const businessTaskCapacitySlice = createSlice({
@@ -147,35 +142,6 @@ export const businessTaskCapacitySlice = createSlice({
     selectInFlightBusinessIds: (state) => state.inFlightBusinessIds,
     selectCanTrustCurrentDirtySet: (state) => state.canTrustCurrentDirtySet,
   },
-  extraReducers: (builder) => {
-    builder
-      .addCase(myBusinessesActions.loadInitData, (state, action) => {
-        const ids = action.payload.map((business) => business.id);
-        if (ids.length === 0) {
-          return { ...initialState };
-        }
-
-        const allowedIds = new Set(ids);
-
-        for (const rawKey of Object.keys(state.byBusinessId)) {
-          const id = Number(rawKey);
-          if (!allowedIds.has(id)) {
-            delete state.byBusinessId[id];
-          }
-        }
-
-        state.dirtyBusinessIds = pruneIds(state.dirtyBusinessIds, allowedIds);
-        state.inFlightBusinessIds = pruneIds(state.inFlightBusinessIds, allowedIds);
-      })
-      .addCase(myBusinessesActions.deleteById, (state, action) => {
-        const id = action.payload;
-        delete state.byBusinessId[id];
-        state.dirtyBusinessIds = state.dirtyBusinessIds.filter((x) => x !== id);
-        state.inFlightBusinessIds = state.inFlightBusinessIds.filter(
-          (x) => x !== id,
-        );
-      });
-  },
 });
 
 export const businessTaskCapacityActions = {
@@ -188,6 +154,7 @@ export const businessTaskCapacityActions = {
       userId: string,
       reason: RefreshOrchestrationReason,
       ttlMs: number,
+      visibleIds: BusinessId[],
     ): AppThunk<Promise<void>> =>
     async (dispatch) => {
       if (isRefreshOrchestrationInFlight) return;
@@ -200,12 +167,18 @@ export const businessTaskCapacityActions = {
         }
 
         if (reason === "mount") {
-          await dispatch(businessTaskCapacityActions.refreshVisibleByPolicy(userId));
+          await dispatch(
+            businessTaskCapacityActions.refreshVisibleByPolicy(userId, visibleIds),
+          );
           return;
         }
 
         await dispatch(
-          businessTaskCapacityActions.refreshVisibleOnRecovery(userId, ttlMs),
+          businessTaskCapacityActions.refreshVisibleOnRecovery(
+            userId,
+            ttlMs,
+            visibleIds,
+          ),
         );
       } finally {
         isRefreshOrchestrationInFlight = false;
@@ -216,13 +189,9 @@ export const businessTaskCapacityActions = {
    * init/failed full refresh, then dirty-only refresh, then missing-row backfill.
    */
   refreshVisibleByPolicy:
-    (userId: string): AppThunk<Promise<void>> =>
+    (userId: string, visibleIds: BusinessId[]): AppThunk<Promise<void>> =>
     async (dispatch, getState) => {
       const state = getState();
-      // Resolve the current visible business IDs from Redux.
-      const visibleIds = myBusinessesSelectors
-        .selectData(state)
-        .map((business) => business.id);
       if (visibleIds.length === 0) return;
 
       const status = businessTaskCapacitySelectors.selectStatus(state);
@@ -257,13 +226,13 @@ export const businessTaskCapacityActions = {
    * dirty-visible first, otherwise full-visible when dirty set is untrusted or stale.
    */
   refreshVisibleOnRecovery:
-    (userId: string, ttlMs: number): AppThunk<Promise<void>> =>
+    (
+      userId: string,
+      ttlMs: number,
+      visibleIds: BusinessId[],
+    ): AppThunk<Promise<void>> =>
     async (dispatch, getState) => {
       const state = getState();
-      // Resolve the current visible business IDs from Redux.
-      const visibleIds = myBusinessesSelectors
-        .selectData(state)
-        .map((business) => business.id);
       if (visibleIds.length === 0) return;
 
       const dirtySet = new Set(

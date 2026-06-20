@@ -77,6 +77,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the a
 - **State Management**: Redux Toolkit (client) with SSR bootstrap in the protected layout; see [`docs/architecture-and-codebase.md`](docs/architecture-and-codebase.md)
 - **API**: Next.js Server Actions
 
+## Dashboard Freshness Model
+
+- Dashboard task/capacity data is cached in Redux (`business_task_capacity`) and keyed by business id.
+- Business-page mutations and workspace Realtime events mark business ids as dirty (deferred invalidation).
+- The dashboard refreshes only visible dirty ids when revisited/focused, and skips network calls when cache is still fresh.
+- A staleness/reconnect guard performs a wider refresh when needed (for example after reconnect or missed Realtime windows).
+
 ## Project Structure
 
 ```

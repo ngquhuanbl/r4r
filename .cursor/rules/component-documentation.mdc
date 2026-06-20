@@ -1,0 +1,68 @@
+---
+description: JSDoc and comments for React component state, variables, and functions (including handlers)
+globs:
+  - "components/**/*.tsx"
+  - "app/**/*.tsx"
+alwaysApply: false
+---
+
+# Component Documentation (JSDoc and comments)
+
+When adding or editing React components and their local helpers, document intent so future readers understand behavior without re-reading all call sites.
+
+## Variables and state
+
+- Add a **JSDoc block** above each significant `const` / `let` that holds state, derived data, or configuration (including `useState` tuple destructuring when documenting the state value), **when the name and type are not enough** on their own.
+- Describe **what the value represents** and, when useful, **how it is updated** (which user action, effect, or prop change drives changes).
+- **Do not** add JSDoc that only **restates** the variable name, type, or `null` meaning, or that names a specific child component as the sole explanation. If a note is only for maintainers in this file, use a short **`//`** on the line above the state, or omit.
+
+Example:
+
+```tsx
+/** Whether the row is expanded to show secondary metadata; toggled by the chevron control only. */
+const [isExpanded, setIsExpanded] = useState(false)
+```
+
+## Functions
+
+- Add a **JSDoc block** above every function (including handlers and `useCallback` wrappers).
+- Summarize **what the function does**. For event handlers, start with **handler for ...**.
+- For non-trivial logic, either extend the JSDoc with **how** the behavior works or add **short inline comments** on important branches.
+
+### Consumer-agnostic JSDoc for props and callbacks
+
+JSDoc on **props, callback props, and exported members** is read by multiple consumers. Treat the description as a **public contract**, not a note for one call site.
+
+- Describe **when** the callback runs and what **success** (or **failure** / no-op) means, in neutral terms any host can rely on.
+- **Do not** narrow the audience with one consumer’s name or scenario.
+- **Do** mention behavior that is part of the real contract when it affects callback timing, without tying it to a single product area.
+
+If motivation is feature-specific, document that in PR notes, feature docs, or `//` comments at the call site, not in shared JSDoc.
+
+### Avoid implementation-specific JSDoc
+
+JSDoc should stay stable when internals change. Prefer **what** the symbol is for and the user-facing outcome, not a recipe naming specific hooks, utilities, or dispatch targets from other files.
+
+Put wiring details (specific imports, parity with another hook's internal implementation) in `//` comments near the code, or in feature docs.
+
+Example:
+
+```tsx
+/** Handler for keyboard activation on the row; mirrors click selection for accessibility. */
+const handleRowKeyDown = useCallback(
+  (event: React.KeyboardEvent) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return
+    }
+    // Prevent page scroll when Space is used as activation.
+    event.preventDefault()
+    onSelect(item.id)
+  },
+  [item.id, onSelect],
+)
+```
+
+## Scope
+
+- Apply especially to **exported** components and **non-trivial** local logic.
+- Trivial inline JSX lambdas (for example, `onClick={() => setOpen(true)}`) do not need separate named functions with JSDoc unless behavior is non-obvious.

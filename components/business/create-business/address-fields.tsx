@@ -1,7 +1,7 @@
 "use client";
 
 import { importLibrary, setOptions } from "@googlemaps/js-api-loader";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,33 +18,35 @@ export type AddressFields = {
 };
 
 type AddressSectionProps = {
-  manualMode: boolean;
-  onManualModeChange: (_manual: boolean) => void;
-  addressSearch: string;
-  onAddressSearchChange: (_v: string) => void;
   fields: AddressFields;
   onFieldsChange: (_next: Partial<AddressFields>) => void;
-  /** When Places is unavailable (no API key), only manual fields are shown */
-  placesDisabled: boolean;
-  dialogOpen: boolean;
-  /** When true, hides search + toggle without treating it as "no API key" (temporary manual-only). */
-  addressSearchTemporarilyDisabled?: boolean;
 };
 
-export function AddressSection({
-  manualMode,
-  onManualModeChange,
-  addressSearch,
-  onAddressSearchChange,
-  fields,
-  onFieldsChange,
-  placesDisabled,
-  dialogOpen,
-  addressSearchTemporarilyDisabled = false,
-}: AddressSectionProps) {
+export function AddressFields({ fields, onFieldsChange }: AddressSectionProps) {
+  //
+  // PROPS
+  //
+
+  //
+  // STATE
+  //
+  /** Search input text for Google Places autocomplete mode. */
+  const [addressSearch, setAddressSearch] = useState("");
+  /** Toggles between manual address form and Places search mode. */
+  const [manualModeEnabled, setManualModeEnabled] = useState(true);
+
+  //
+  // REFS
+  //
+  /** Input used by Google Places autocomplete when search mode is enabled. */
   const searchInputRef = useRef<HTMLInputElement>(null);
+  /** Active Places listener so we can reliably unsubscribe on mode/dialog changes. */
   const listenerRef = useRef<google.maps.MapsEventListener | null>(null);
 
+  //
+  // EVENTS
+  //
+  /** Applies parsed address components into parent-managed address fields. */
   const applyParsed = useCallback(
     (parsed: ReturnType<typeof parseAddressComponents>) => {
       onFieldsChange({
@@ -58,9 +60,21 @@ export function AddressSection({
     [onFieldsChange],
   );
 
+  //
+  // EFFECTS
+  //
+  const addressSearchEnabled =
+    process.env.NEXT_PUBLIC_ADDRESS_SEARCH_ENABLED?.toLowerCase() === "true";
+  const placesDisabled = !process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const addressSearchTemporarilyDisabled = !addressSearchEnabled;
+
   useEffect(() => {
-    if (!dialogOpen || manualMode || placesDisabled || addressSearchTemporarilyDisabled) {
-      if (listenerRef.current && typeof window !== "undefined" && window.google?.maps?.event) {
+    if (manualModeEnabled || placesDisabled || addressSearchTemporarilyDisabled) {
+      if (
+        listenerRef.current &&
+        typeof window !== "undefined" &&
+        window.google?.maps?.event
+      ) {
         google.maps.event.removeListener(listenerRef.current);
         listenerRef.current = null;
       }
@@ -88,8 +102,9 @@ export function AddressSection({
           if (!place.address_components?.length) return;
           const parsed = parseAddressComponents(place.address_components);
           applyParsed(parsed);
-          if (place.formatted_address)
-            onAddressSearchChange(place.formatted_address);
+          if (place.formatted_address) {
+            setAddressSearch(place.formatted_address);
+          }
         });
       } catch {
         /* Places failed — user can use manual mode */
@@ -98,22 +113,27 @@ export function AddressSection({
 
     return () => {
       cancelled = true;
-      if (listenerRef.current && typeof window !== "undefined" && window.google?.maps?.event) {
+      if (
+        listenerRef.current &&
+        typeof window !== "undefined" &&
+        window.google?.maps?.event
+      ) {
         google.maps.event.removeListener(listenerRef.current);
         listenerRef.current = null;
       }
     };
   }, [
-    dialogOpen,
-    manualMode,
+    manualModeEnabled,
     placesDisabled,
     addressSearchTemporarilyDisabled,
     applyParsed,
-    onAddressSearchChange,
   ]);
 
+  //
+  // RENDER
+  //
   const showSearch =
-    !manualMode && !placesDisabled && !addressSearchTemporarilyDisabled;
+    !manualModeEnabled && !placesDisabled && !addressSearchTemporarilyDisabled;
 
   return (
     <div className="space-y-4">
@@ -133,11 +153,13 @@ export function AddressSection({
             variant="link"
             className="h-auto p-0 text-xs"
             onClick={() => {
-              onManualModeChange(!manualMode);
-              if (!manualMode) onAddressSearchChange("");
+              setManualModeEnabled((prev) => !prev);
+              if (!manualModeEnabled) setAddressSearch("");
             }}
           >
-            {manualMode ? "Search for address instead" : "Enter address manually"}
+            {manualModeEnabled
+              ? "Search for address instead"
+              : "Enter address manually"}
           </Button>
         ) : null}
       </div>
@@ -149,7 +171,7 @@ export function AddressSection({
             ref={searchInputRef}
             id="address-search"
             value={addressSearch}
-            onChange={(e) => onAddressSearchChange(e.target.value)}
+            onChange={(e) => setAddressSearch(e.target.value)}
             placeholder="Start typing your street address…"
             autoComplete="off"
             className="text-sm"

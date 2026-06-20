@@ -7,7 +7,6 @@ import {
 import { authSlice } from "./slices/auth";
 import { businessTaskCapacitySlice } from "./slices/business-task-capacity";
 import { incomingReviewsSlice } from "./slices/incoming-review";
-import { myBusinessesSlice } from "./slices/my-business";
 import { outgoingReviewsSlice } from "./slices/outgoing-review";
 import { platformsSlice } from "./slices/platform";
 import { realtimeSignalSlice } from "./slices/realtime-signal";
@@ -18,7 +17,6 @@ import { reviewStatusesSlice } from "./slices/review-status";
 const rootReducer = combineSlices(
   reviewStatusesSlice,
   incomingReviewsSlice,
-  myBusinessesSlice,
   outgoingReviewsSlice,
   platformsSlice,
   authSlice,

@@ -1,25 +1,19 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
-import { BusinessPageClient } from "@/components/business/business-page-client";
+import { BusinessCapacitySkeleton } from "@/components/business/left-section/business-capacity-subsection/business-capacity-skeleton";
+import { BusinessInfoSubSectionClient } from "@/components/business/left-section/business-info-subsection/business-info-client";
+import { BusinessMetricsSkeleton } from "@/components/business/left-section/business-metrics-skeleton";
 import { getUser, getUserOrRedirect } from "@/lib/supabase/server";
-import type { BusinessReviewSnapshot } from "@/types/business-page";
 import type { Tables } from "@/types/database";
 
-import {
-  fetchBusinessBillingContext,
-  fetchBusinessReviewSnapshot,
-  getBusinessForUser,
-} from "./actions";
+import { getBusinessForUser } from "./actions";
+import { BusinessReviewsWorkspaceServer } from "./right-section/business-reviews-workspace-server";
+import { ConnectionCapacityServer } from "./left-section/connection-capacity-server";
+import { BusinessMetricsServer } from "./left-section/business-metrics-server";
 
 type PageProps = { params: { id: string } };
-
-function emptySnapshot(): BusinessReviewSnapshot {
-  return {
-    received: { accepted: 0, rejected: 0, other: 0 },
-    given: { accepted: 0, rejected: 0, other: 0 },
-  };
-}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const id = Number.parseInt(params.id, 10);
@@ -40,6 +34,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+/**
+ * Business detail page, displays 2 main sections:
+ * 1. Left sidebar: Business info, capacity and metrics
+ * 2. Right sidebar: Reviews workspace
+ */
 export default async function BusinessPage({ params }: PageProps) {
   const id = Number.parseInt(params.id, 10);
   if (Number.isNaN(id)) {
@@ -52,19 +51,24 @@ export default async function BusinessPage({ params }: PageProps) {
     notFound();
   }
 
-  const [snapshotRes, billingContext] = await Promise.all([
-    fetchBusinessReviewSnapshot(user.id, business.id),
-    fetchBusinessBillingContext(user.id, business.id),
-  ]);
-
-  const snapshot = snapshotRes.ok ? snapshotRes.data : emptySnapshot();
-
   return (
-    <BusinessPageClient
-      userId={user.id}
-      business={business}
-      snapshot={snapshot}
-      billingContext={billingContext}
-    />
+    <div className="grid w-full grid-cols-1 gap-8 pt-8 pb-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start lg:gap-x-10 lg:gap-y-0">
+      <div className="flex min-w-0 flex-col gap-6 lg:max-w-sm">
+        <BusinessInfoSubSectionClient business={business} />
+        <Suspense fallback={<BusinessCapacitySkeleton />}>
+          <ConnectionCapacityServer
+            userId={user.id}
+            businessId={business.id}
+            businessName={business.business_name}
+          />
+        </Suspense>
+        <Suspense fallback={<BusinessMetricsSkeleton />}>
+          <BusinessMetricsServer userId={user.id} businessId={business.id} />
+        </Suspense>
+      </div>
+      <div className="min-w-0">
+        <BusinessReviewsWorkspaceServer userId={user.id} businessId={business.id} />
+      </div>
+    </div>
   );
 }

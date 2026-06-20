@@ -1,6 +1,12 @@
 "use server";
 
+import { revalidateTag } from "next/cache";
+
 import { ReviewStatusNames } from "@/constants/shared";
+import {
+  getBusinessBillingInfoTag,
+  getBusinessSnapshotTag,
+} from "@/lib/business/business-page-cache-tags";
 import {
   tryCloseConnectionForReview,
 } from "@/lib/connections/complete-connection";
@@ -273,6 +279,7 @@ export async function submitOutgoingReview(
 			url,
 			content,
       reviewer_business_id,
+      reviewed_business_id,
 			status:review_statuses!inner (
 				id,
 				name
@@ -291,6 +298,11 @@ export async function submitOutgoingReview(
     if (slots == null) {
       return { ok: false, error: "Could not update slot counters" };
     }
+    revalidateTag(getBusinessBillingInfoTag(updateData.reviewer_business_id));
+    revalidateTag(getBusinessSnapshotTag(updateData.reviewer_business_id));
+  }
+  if (updateData.reviewed_business_id != null) {
+    revalidateTag(getBusinessSnapshotTag(updateData.reviewed_business_id));
   }
 
   await tryCloseConnectionForReview(supabase, reviewId);

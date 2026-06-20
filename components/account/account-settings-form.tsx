@@ -31,6 +31,7 @@ import {
   getProviderBadge,
 } from "@/lib/account/profile";
 import { cn } from "@/lib/utils";
+import { orDash } from "@/utils/display";
 
 type Props = {
   user: User;
@@ -204,7 +205,7 @@ export function AccountSettingsForm({ user }: Props) {
         <div className="space-y-1 pt-2">
           <Label className="text-muted-foreground">Email</Label>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm">{user.email ?? "—"}</span>
+            <span className="text-sm">{orDash(user.email)}</span>
             <Badge variant="secondary" className="font-normal">
               <span className="mr-1 font-semibold">[{provider.short}]</span>
               {provider.label} connected

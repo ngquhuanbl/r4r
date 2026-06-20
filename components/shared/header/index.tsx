@@ -1,10 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import type { User } from "@supabase/supabase-js";
 
+import { BusinessHeaderSwitcherServer } from "@/app/(protected)/business-header-switcher-server";
 import Logo from "@/components/shared/logo";
 import { getAvatarUrl, getDisplayName } from "@/lib/account/profile";
-
-import { BusinessHeaderSwitcher } from "./business-header-switcher";
 import { PageTitle } from "./page-title";
 import { ProfileMenu } from "./profile-menu";
 import { Theme } from "./theme";
@@ -38,7 +38,16 @@ export async function Header({ user }: HeaderProps) {
                 <Logo />
               </Link>
             </div>
-            <BusinessHeaderSwitcher />
+            <Suspense
+              fallback={
+                <div
+                  className="h-10 w-[12rem] max-w-[20rem] animate-pulse rounded-md border border-border bg-muted/40"
+                  aria-hidden
+                />
+              }
+            >
+              <BusinessHeaderSwitcherServer userId={user.id} />
+            </Suspense>
             <PageTitle />
           </div>
           <div className="flex shrink-0 items-center gap-3 md:gap-10">

@@ -1,8 +1,10 @@
 import { Metadata } from "next";
 
+import { fetchBusinessesCached } from "@/app/(protected)/actions/business-actions";
 import { FinishProfileDialog } from "@/components/dashboard/finish-profile-dialog";
-import { DashboardContent } from "@/components/dashboard/dashboard-content";
+import { DashboardContentClient } from "@/components/dashboard/dashboard-content-client";
 import { getUserOrRedirect } from "@/lib/supabase/server";
+import { unwrap } from "@/utils/api";
 
 export const metadata: Metadata = {
   title: "Dashboard | R4R",
@@ -16,12 +18,13 @@ export const metadata: Metadata = {
  */
 export default async function Page() {
   const user = await getUserOrRedirect();
+  const businesses = await unwrap(fetchBusinessesCached(user.id));
 
   return (
     <>
       <FinishProfileDialog user={user} />
       <section className="flex w-full min-w-0 flex-1 flex-col py-7 pb-16">
-        <DashboardContent />
+        <DashboardContentClient initialBusinesses={businesses} />
       </section>
     </>
   );

@@ -1,5 +1,5 @@
-import { fetchBusinesses } from "../actions/business-actions";
-import { WorkspaceHydrator } from "./workspace-hydrator";
+import { fetchBusinessesCached } from "../actions/business-actions";
+import { WorkspaceRealtimeBridge } from "./workspace-realtime-bridge";
 import { getUserOrRedirect } from "@/lib/supabase/server";
 import { unwrap } from "@/utils/api";
 
@@ -11,16 +11,16 @@ export default async function WorkspaceLayout({ children }: LayoutProps) {
   const user = await getUserOrRedirect();
   const userId = user.id;
 
-  const myBusinesses = await unwrap(fetchBusinesses(userId));
+  const businesses = await unwrap(fetchBusinessesCached(userId));
 
   return (
-    <WorkspaceHydrator
+    <WorkspaceRealtimeBridge
       data={{
         userId,
-        myBusinesses,
+        businessIds: businesses.map((business) => business.id),
       }}
     >
       {children}
-    </WorkspaceHydrator>
+    </WorkspaceRealtimeBridge>
   );
 }

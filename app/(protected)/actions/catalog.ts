@@ -31,7 +31,10 @@ export async function fetchPlatforms(): Promise<
 > {
   try {
     const supabase = createClient();
-    const { data, error } = await supabase.from("platforms").select("*");
+    const { data, error } = await supabase
+      .from("platforms")
+      .select("*")
+      .order("name", { ascending: true });
 
     if (error) {
       console.error("Failed to fetch platforms", error);

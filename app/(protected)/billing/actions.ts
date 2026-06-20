@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { headers } from "next/headers";
 
 import { stripeErrorToUserMessage } from "@/lib/billing/stripe-errors";
@@ -14,6 +14,9 @@ import { createClient } from "@/lib/supabase/server";
 import { syncStripeSubscriptionToDatabase } from "@/lib/stripe/sync-subscription";
 import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
 import { Paths } from "@/constants/paths";
+import { getBusinessBillingInfoTag } from "@/lib/business/business-page-cache-tags";
+import type { UserId } from "@/types/shared";
+import type { Tables } from "@/types/database";
 
 function appOrigin(): string {
   const h = headers();
@@ -306,4 +309,50 @@ export async function getDefaultPaymentMethodSummary(): Promise<
     expMonth: card?.exp_month ?? null,
     expYear: card?.exp_year ?? null,
   };
+}
+
+export async function fetchUserSubscriptionPeriodEnd(
+  userId: UserId,
+): Promise<string | null> {
+  const admin = createServiceRoleClient();
+  const { data: ub } = await admin
+    .from("user_billing")
+    .select("subscription_current_period_end")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return ub?.subscription_current_period_end ?? null;
+}
+
+export async function fetchUserSubscriptionPeriodEndCached(
+  userId: UserId,
+): Promise<string | null> {
+  const cached = unstable_cache(
+    async (cachedUserId: UserId) => fetchUserSubscriptionPeriodEnd(cachedUserId),
+    ["user-subscription-period-end"],
+  );
+  return cached(userId);
+}
+
+export async function fetchBusinessBillingInfo(
+  businessId: Tables<"businesses">["id"],
+): Promise<Tables<"business_billing"> | null> {
+  const admin = createServiceRoleClient();
+  const { data: billing } = await admin
+    .from("business_billing")
+    .select("*")
+    .eq("business_id", businessId)
+    .maybeSingle();
+  return billing;
+}
+
+export async function fetchBusinessBillingInfoCached(
+  businessId: Tables<"businesses">["id"],
+): Promise<Tables<"business_billing"> | null> {
+  const cached = unstable_cache(
+    async (cachedBusinessId: Tables<"businesses">["id"]) =>
+      fetchBusinessBillingInfo(cachedBusinessId),
+    ["business-billing-info"],
+    { tags: [getBusinessBillingInfoTag(businessId)] },
+  );
+  return cached(businessId);
 }

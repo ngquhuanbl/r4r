@@ -3,6 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -19,8 +20,8 @@ import {
   fetchOutgoingReviews,
   fetchOutgoingTaskNotificationsSinceCursor,
 } from "@/app/(protected)/actions/review-actions";
-import { SubmitReviewDialog } from "@/components/business/submit-review-dialog";
-import { VerifyReviewDialog } from "@/components/business/verify-review-dialog";
+import { SubmitReviewDialog } from "@/components/business/right-section/submit-review-dialog";
+import { VerifyReviewDialog } from "@/components/business/right-section/verify-review-dialog";
 import { Platform } from "@/components/shared/platform";
 import { ViewReviewDialog } from "@/components/reviews/incoming-review-panel/view-review-dialog";
 import { ViewOutgoingReviewDialog } from "@/components/reviews/outgoing-review-panel/view-review-dialog";
@@ -66,6 +67,8 @@ import { ReviewStatusNames } from "@/constants/shared";
 import { useSubscribeToTopics } from "@/lib/hooks/realtime/use-subscribe-to-topics";
 import { useLocalStorageKey } from "@/lib/hooks/use-local-storage-key";
 import { realtimeTopic } from "@/lib/hooks/realtime/topics";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { reviewStatusesSelectors } from "@/lib/redux/slices/review-status";
 import { cn } from "@/lib/utils";
 import type {
   IncomingReview,
@@ -75,6 +78,7 @@ import type {
 } from "@/types/dashboard";
 import type { Tables } from "@/types/database";
 import type { UserId } from "@/types/shared";
+import { orDash } from "@/utils/display";
 import { ReviewUtils } from "@/utils/review";
 import { getAddress, getTotalPage } from "@/utils/shared";
 import { createOutgoingLastCursorStorageKey } from "@/utils/storage-keys";
@@ -287,23 +291,30 @@ function ReviewStatusBadgeWithTooltip({
 type WorkspaceProps = {
   userId: UserId;
   businessId: Tables<"businesses">["id"];
-  reviewStatuses: Tables<"review_statuses">[];
-  /** After outgoing submit: refresh sidebar slot counts without a full page reload. */
-  onOutgoingReviewSubmitted?: () => void | Promise<void>;
-  /** Recompute left-panel performance chart after verify/submit (browser Supabase). */
-  onReviewStatsMayHaveChanged?: () => void | Promise<void>;
+  currentBusiness: {
+    id: Tables<"businesses">["id"];
+    business_name: string;
+    address: string;
+    city: string;
+    state: string;
+    zip_code: string;
+  };
 };
 
 /**
  * Fetches lists via server actions (isolated from global Redux filters on the dashboard hub).
  */
-export function BusinessReviewsWorkspace({
+export function BusinessReviewsWorkspaceClient({
   userId,
   businessId,
-  reviewStatuses,
-  onOutgoingReviewSubmitted,
-  onReviewStatsMayHaveChanged,
+  currentBusiness,
 }: WorkspaceProps) {
+  const router = useRouter();
+  const reviewStatuses = useAppSelector(reviewStatusesSelectors.selectData);
+  const refreshRoute = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
   const outgoingSignalTopic = useMemo(
     () => realtimeTopic.reviewsOutgoingBusiness.getKey({ businessId }),
     [businessId],
@@ -589,7 +600,7 @@ export function BusinessReviewsWorkspace({
               <div>
                 <p className="font-semibold text-foreground">{partnerName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {addressLine?.trim() ? addressLine : "—"}
+                  {orDash(addressLine)}
                 </p>
               </div>
             </div>
@@ -701,7 +712,9 @@ export function BusinessReviewsWorkspace({
             );
           }
           if (name === ReviewStatusNames.SUBMITTED) {
-            return <span className="text-sm text-muted-foreground">—</span>;
+            return (
+              <span className="text-sm text-muted-foreground">{orDash(null)}</span>
+            );
           }
           return (
             <Button
@@ -948,7 +961,7 @@ export function BusinessReviewsWorkspace({
                 await refetchIncomingOnly();
               }
               setVerifyOpen(null);
-              await onReviewStatsMayHaveChanged?.();
+              refreshRoute();
             }}
           />
         )}
@@ -956,6 +969,7 @@ export function BusinessReviewsWorkspace({
           <ViewReviewDialog
             open={!!viewInOpen}
             data={viewInOpen}
+            currentBusiness={currentBusiness}
             onOpenChange={(o) => !o && setViewInOpen(null)}
           />
         )}
@@ -978,8 +992,7 @@ export function BusinessReviewsWorkspace({
                 await refetchOutgoingOnly();
               }
               setSubmitOpen(null);
-              await onOutgoingReviewSubmitted?.();
-              await onReviewStatsMayHaveChanged?.();
+              refreshRoute();
             }}
           />
         )}

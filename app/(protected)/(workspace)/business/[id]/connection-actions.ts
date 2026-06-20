@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 import { Paths } from "@/constants/paths";
 import { ReviewStatusNames } from "@/constants/shared";
@@ -15,6 +15,7 @@ import {
   type MatchReason,
   type MatchSummary,
 } from "@/lib/connections/match-summary";
+import { getBusinessBillingInfoTag } from "@/lib/business/business-page-cache-tags";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { APIResponse, UserId } from "@/types/shared";
@@ -317,6 +318,7 @@ export async function startConnectionMatch(
   // 10) Revalidate dashboard only when at least one new connection was created.
   if (matchedCount > 0) {
     revalidatePath(Paths.DASHBOARD);
+    revalidateTag(getBusinessBillingInfoTag(businessId));
     // Do not revalidate business profile URLs here: the user may be on that page;
     // revalidation remounts client state and resets UI (e.g. reviews tab). Billing
     // and lists are refreshed via client actions on the business page instead.

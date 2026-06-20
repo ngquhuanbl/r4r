@@ -11,7 +11,6 @@ import {
 import { toast } from "sonner";
 
 import { updateBusiness } from "@/app/(protected)/actions/business-actions";
-import { ADDRESS_SEARCH_TEMPORARILY_DISABLED } from "@/constants/address-search";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
 import {
@@ -29,12 +28,11 @@ import { ErrorUtils } from "@/utils/error";
 import { FieldNames } from "@/utils/my-business";
 
 import {
-  AddressSection,
-  type AddressFields,
-} from "@/components/business/create-business/address-section";
+  AddressFields,
+  type AddressFields as AddressFieldsValue,
+} from "@/components/business/create-business/address-fields";
 import { BusinessImageField } from "@/components/business/create-business/business-image-field";
 import { PlatformUrlRow } from "@/components/business/create-business/platform-url-row";
-import { sortPlatformsBySpec } from "@/components/business/create-business/sort-platforms";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,22 +46,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-
-function emptyAddress(): AddressFields {
-  return { street: "", line2: "", city: "", state: "", zip: "" };
-}
-
-function addressFromBusiness(b: FetchedBusiness): AddressFields {
-  return {
-    street: b.address ?? "",
-    line2: "",
-    city: b.city ?? "",
-    state: b.state ?? "",
-    zip: b.zip_code ?? "",
-  };
-}
-
-const hasMapsKey = Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 
 interface EditBusinessProfileDialogProps {
   open: boolean;
@@ -87,19 +69,14 @@ export function EditBusinessProfileDialog({
   const platforms = useAppSelector(platformsSelectors.selectData);
 
   const [businessName, setBusinessName] = useState("");
-  const [manualAddress, setManualAddress] = useState(true);
-  const [addressSearch, setAddressSearch] = useState("");
   const [addressFields, setAddressFields] =
-    useState<AddressFields>(emptyAddress);
+    useState<AddressFieldsValue>({ street: "", line2: "", city: "", state: "", zip: "" });
   const [phoneDigits, setPhoneDigits] = useState("");
   const [platformUrls, setPlatformUrls] = useState<Record<number, string>>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const sortedPlatforms = useMemo(
-    () => sortPlatformsBySpec(platforms),
-    [platforms],
-  );
+  const sortedPlatforms = platforms;
 
   useEffect(() => {
     if (!platforms.length) return;
@@ -125,9 +102,13 @@ export function EditBusinessProfileDialog({
   useEffect(() => {
     if (!open) return;
     setBusinessName(data.business_name);
-    setManualAddress(true);
-    setAddressSearch("");
-    setAddressFields(addressFromBusiness(data));
+    setAddressFields({
+      street: data.address ?? "",
+      line2: "",
+      city: data.city ?? "",
+      state: data.state ?? "",
+      zip: data.zip_code ?? "",
+    });
     setPhoneDigits(normalizeUsPhoneDigits(data.phone ?? ""));
     setImageFile(null);
     setPreviewUrl(null);
@@ -136,9 +117,9 @@ export function EditBusinessProfileDialog({
       next[p.id] = data.platform_urls[p.id] ?? "";
     }
     setPlatformUrls(next);
-  }, [open, data.id, sortedPlatforms]);
+  }, [open, data, sortedPlatforms]);
 
-  const setField = useCallback((patch: Partial<AddressFields>) => {
+  const setField = useCallback((patch: Partial<AddressFieldsValue>) => {
     setAddressFields((prev) => ({ ...prev, ...patch }));
   }, []);
 
@@ -246,8 +227,9 @@ export function EditBusinessProfileDialog({
           <DialogHeader>
             <DialogTitle>Edit business profile</DialogTitle>
             <DialogDescription>
-              Same fields as creating a business: identity, location, phone, at
-              least one valid platform link, and an optional storefront photo.
+              Update identity, location, phone, and keep at least one platform
+              link valid. <br />
+              Add or replace storefront photo when you&apos;re ready.
             </DialogDescription>
           </DialogHeader>
 
@@ -272,19 +254,7 @@ export function EditBusinessProfileDialog({
 
             <Separator />
 
-            <AddressSection
-              manualMode={manualAddress}
-              onManualModeChange={setManualAddress}
-              addressSearch={addressSearch}
-              onAddressSearchChange={setAddressSearch}
-              fields={addressFields}
-              onFieldsChange={setField}
-              placesDisabled={!hasMapsKey}
-              addressSearchTemporarilyDisabled={
-                ADDRESS_SEARCH_TEMPORARILY_DISABLED
-              }
-              dialogOpen={open}
-            />
+            <AddressFields fields={addressFields} onFieldsChange={setField} />
 
             <Separator />
 

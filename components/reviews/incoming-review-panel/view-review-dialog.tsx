@@ -8,26 +8,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useAppSelector } from "@/lib/redux/hooks";
-import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
-import { IncomingReview } from "@/types/dashboard";
+import { FetchedBusiness, IncomingReview } from "@/types/dashboard";
 import { getAddress } from "@/utils/shared";
 
 interface ViewReviewDialogProps {
   open: boolean;
   data: IncomingReview;
+  currentBusiness: Pick<
+    FetchedBusiness,
+    "id" | "business_name" | "address" | "city" | "state" | "zip_code"
+  >;
   onOpenChange: (_open: boolean) => void;
 }
 export function ViewReviewDialog({
   open,
   data,
+  currentBusiness,
   onOpenChange,
 }: ViewReviewDialogProps) {
-  const businessEntries = useAppSelector(myBusinessesSelectors.selectEntries);
-  const { url, content, status, reviewed_business, platform } = data;
-  const businessInfo = businessEntries[reviewed_business.id];
-  const businessName = businessInfo.business_name;
-  const businessAddress = getAddress(businessInfo);
+  const { url, content, status, platform } = data;
+  const businessName = currentBusiness.business_name;
+  const businessAddress = getAddress(currentBusiness);
 
   const platformInfo = platform;
   const platformName = platformInfo.name;

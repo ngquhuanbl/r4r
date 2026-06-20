@@ -38,6 +38,7 @@ import {
 import { Paths } from "@/constants/paths";
 import type { Tables } from "@/types/database";
 import type { FetchedBusiness } from "@/types/dashboard";
+import { orDash } from "@/utils/display";
 
 type Row = {
   business: FetchedBusiness;
@@ -154,7 +155,7 @@ export function BillingPageClient({
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Next renewal</p>
             <p className="text-lg font-medium">
-              {renewalLabel ?? "—"}
+              {orDash(renewalLabel)}
             </p>
           </div>
         </CardContent>
@@ -298,7 +299,7 @@ export function BillingPageClient({
                           PDF
                         </a>
                       ) : (
-                        "—"
+                        orDash(null)
                       )}
                     </TableCell>
                   </TableRow>
@@ -319,7 +320,7 @@ export function BillingPageClient({
           businessId={manage.business.id}
           businessName={manage.business.business_name}
           currentTier={tierForRow(manage.billing)}
-          nextRenewalLabel={renewalLabel}
+          subscriptionPeriodEnd={nextRenewal}
         />
       ) : null}
     </div>

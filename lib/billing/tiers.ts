@@ -1,5 +1,7 @@
 /** Spec 7: Starter (0), Velocity (1), Momentum (2). */
 
+import type { Tables } from "@/types/database";
+
 export const TIER_STARTER = 0;
 export const TIER_VELOCITY = 1;
 export const TIER_MOMENTUM = 2;
@@ -63,4 +65,12 @@ export function getPriceIdForTier(tier: BillingTier): string | null {
   if (tier === TIER_VELOCITY) return process.env.STRIPE_PRICE_VELOCITY ?? null;
   if (tier === TIER_MOMENTUM) return process.env.STRIPE_PRICE_MOMENTUM ?? null;
   return null;
+}
+
+/** Resolves effective billing tier when no billing row exists yet. */
+export function getTierNameFromBillingData(
+  billing: Tables<"business_billing"> | null,
+): BillingTier {
+  if (!billing) return TIER_STARTER;
+  return billing.tier as BillingTier;
 }

@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import {
+  fetchBusinessBillingInfo,
   fetchBillingInvoices,
+  fetchUserSubscriptionPeriodEnd,
   getDefaultPaymentMethodSummary,
 } from "@/app/(protected)/billing/actions";
 import { BillingPageClient } from "@/components/billing/billing-page-client";
@@ -46,21 +48,11 @@ export default async function BillingPage() {
   const businessesRes = await fetchBusinesses(user.id);
   const businesses = businessesRes.ok ? businessesRes.data : [];
 
-  const { data: ub } = await supabase
-    .from("user_billing")
-    .select(
-      "subscription_current_period_end",
-    )
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const subscriptionPeriodEnd = await fetchUserSubscriptionPeriodEnd(user.id);
 
   const businessRows = await Promise.all(
     businesses.map(async (b) => {
-      const { data: billing } = await supabase
-        .from("business_billing")
-        .select("*")
-        .eq("business_id", b.id)
-        .maybeSingle();
+      const billing = await fetchBusinessBillingInfo(b.id);
       return { business: b, billing };
     }),
   );
@@ -78,7 +70,7 @@ export default async function BillingPage() {
     <BillingPageClient
       stripeConfigured={isStripeConfigured()}
       totalMonthlyUsd={totalMonthlyUsd}
-      nextRenewal={ub?.subscription_current_period_end ?? null}
+      nextRenewal={subscriptionPeriodEnd}
       businessRows={businessRows}
       payment={payment}
       invoices={invoices}

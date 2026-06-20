@@ -1,7 +1,16 @@
 "use server";
 
-import { countSlotsUsedForBusiness } from "@/lib/billing/check-slots";
+import { unstable_cache } from "next/cache";
+
+import {
+  fetchBusinessBillingInfo,
+  fetchUserSubscriptionPeriodEnd,
+} from "@/app/(protected)/billing/actions";
+import {
+  getBusinessSnapshotTag,
+} from "@/lib/business/business-page-cache-tags";
 import { computeBusinessReviewSnapshot } from "@/lib/business/compute-business-review-snapshot";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { FetchedBusiness } from "@/types/dashboard";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
@@ -74,6 +83,30 @@ export async function fetchBusinessReviewSnapshot(
   return computeBusinessReviewSnapshot(supabase, userId, businessId);
 }
 
+export async function fetchBusinessReviewSnapshotCached(
+  userId: UserId,
+  businessId: Tables<"businesses">["id"],
+): Promise<APIResponse<BusinessReviewSnapshot>> {
+  const cached = unstable_cache(
+    async (cachedUserId: UserId, cachedBusinessId: Tables<"businesses">["id"]) => {
+      const supabase = createServiceRoleClient();
+      const { data: owned } = await supabase
+        .from("businesses")
+        .select("id")
+        .eq("id", cachedBusinessId)
+        .eq("user_id", cachedUserId)
+        .maybeSingle();
+      if (!owned) {
+        return { ok: false, error: "Business not found" } as const;
+      }
+      return computeBusinessReviewSnapshot(supabase, cachedUserId, cachedBusinessId);
+    },
+    ["business-review-snapshot"],
+    { tags: [getBusinessSnapshotTag(businessId)] },
+  );
+  return cached(userId, businessId);
+}
+
 export type BusinessBillingSidebarContext = {
   businessBilling: Tables<"business_billing"> | null;
   subscriptionPeriodEnd: string | null;
@@ -85,25 +118,15 @@ export async function fetchBusinessBillingContext(
   userId: UserId,
   businessId: Tables<"businesses">["id"],
 ): Promise<BusinessBillingSidebarContext> {
-  const supabase = createClient();
-  const [{ data: bb }, { data: ub }, slotsUsed] = await Promise.all([
-    supabase
-      .from("business_billing")
-      .select("*")
-      .eq("business_id", businessId)
-      .maybeSingle(),
-    supabase
-      .from("user_billing")
-      .select("subscription_current_period_end")
-      .eq("user_id", userId)
-      .maybeSingle(),
-    countSlotsUsedForBusiness(supabase, businessId),
+  const [businessBilling, subscriptionPeriodEnd] = await Promise.all([
+    fetchBusinessBillingInfo(businessId),
+    fetchUserSubscriptionPeriodEnd(userId),
   ]);
 
   return {
-    businessBilling: bb,
-    subscriptionPeriodEnd: ub?.subscription_current_period_end ?? null,
-    slotsUsed,
+    businessBilling,
+    subscriptionPeriodEnd,
+    slotsUsed: businessBilling?.slots_used ?? 0,
   };
 }
 

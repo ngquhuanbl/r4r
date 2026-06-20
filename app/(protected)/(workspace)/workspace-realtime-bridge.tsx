@@ -1,60 +1,46 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 
 import { useSetupRealtime } from "@/lib/hooks/realtime/use-set-up-realtime";
 import { useSubscribeToTopics } from "@/lib/hooks/realtime/use-subscribe-to-topics";
 import { realtimeTopic } from "@/lib/hooks/realtime/topics";
-import { myBusinessesActions } from "@/lib/redux/slices/my-business";
 import { businessTaskCapacityActions } from "@/lib/redux/slices/business-task-capacity";
-import { myBusinessesSelectors } from "@/lib/redux/slices/my-business";
-import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import type { FetchedBusiness } from "@/types/dashboard";
+import { useAppDispatch } from "@/lib/redux/hooks";
 import type { UserId } from "@/types/shared";
 
 import type { ReactNode } from "react";
 
-export interface WorkspaceInitialData {
+export interface WorkspaceRealtimeBridgeData {
   userId: UserId;
-  myBusinesses: FetchedBusiness[];
+  businessIds: number[];
 }
 
 interface Props {
-  readonly data: WorkspaceInitialData;
+  readonly data: WorkspaceRealtimeBridgeData;
   readonly children: ReactNode;
 }
 
-export function WorkspaceHydrator({ data, children }: Props) {
+export function WorkspaceRealtimeBridge({ data, children }: Props) {
   const dispatch = useAppDispatch();
-  const myBusinesses = useAppSelector(myBusinessesSelectors.selectData);
-  const hydrated = useRef(false);
-
-  if (!hydrated.current) {
-    dispatch(myBusinessesActions.loadInitData(data.myBusinesses));
-    hydrated.current = true;
-  }
 
   const businessReviewTopics = useMemo(
     () =>
-      myBusinesses.flatMap((business) => [
+      data.businessIds.flatMap((businessId) => [
         realtimeTopic.reviewsIncomingBusiness.getKey({
-          businessId: business.id,
+          businessId,
         }),
         realtimeTopic.reviewsOutgoingBusiness.getKey({
-          businessId: business.id,
+          businessId,
         }),
       ]),
-    [myBusinesses],
+    [data.businessIds],
   );
 
   useSetupRealtime({
     userId: data.userId,
   });
 
-  /**
-   * Consumes realtime topic ticks and converts them into dashboard dirty IDs.
-   * This keeps channel setup isolated from cache invalidation policy.
-   */
   useSubscribeToTopics(
     businessReviewTopics,
     (changedTopics) => {
@@ -72,7 +58,6 @@ export function WorkspaceHydrator({ data, children }: Props) {
     { enabled: businessReviewTopics.length > 0 },
   );
 
-  /** Consumes channel health topic and updates cache trust flag. */
   useSubscribeToTopics(
     [realtimeTopic.reviewsChannelUnhealthyUser.getKey({ userId: data.userId })],
     () => {

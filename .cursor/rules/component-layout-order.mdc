@@ -1,0 +1,35 @@
+---
+description: Enforce internal section order for React components
+globs: **/*.{tsx,jsx}
+alwaysApply: false
+---
+
+# React Component Internal Layout
+
+When writing or refactoring React component bodies, organize code in this order:
+
+1. `PROPS`
+2. `STATE`
+3. `REFS` (omit if none)
+4. `EVENTS`
+5. `EFFECTS`
+6. `RENDER`
+
+Use section headers in the component body:
+
+```tsx
+//
+// PROPS
+//
+```
+
+Follow these rules:
+
+- Put prop manipulation/derived values in `PROPS`.
+- Put `useState`, `useMemo`, selectors, and data hooks in `STATE`.
+- Put `useRef`/`useImperativeHandle` in `REFS`.
+- Put event handlers and `useCallback` handlers in `EVENTS`.
+- Put `useEffect`/`useLayoutEffect` in `EFFECTS`.
+- Put render-only computed values and `return` JSX in `RENDER`.
+
+Keep this order unless there is a strong technical reason not to.

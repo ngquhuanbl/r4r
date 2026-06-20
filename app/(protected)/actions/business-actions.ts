@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 import { Paths, businessPath } from "@/constants/paths";
 import { uploadBusinessCoverPhoto } from "@/lib/supabase/business-cover-photo";
@@ -19,6 +20,10 @@ import { FieldNames } from "@/utils/my-business";
 export type BusinessMutationResponse =
   | { ok: true; data: FetchedBusiness; coverPhotoWarning?: string }
   | { ok: false; error: unknown };
+
+export function getBusinessListTag(userId: UserId): string {
+  return `business-list:${userId}`;
+}
 
 export async function fetchBusinesses(
   userId: UserId,
@@ -70,6 +75,17 @@ export async function fetchBusinesses(
     console.error("Unexpected error during business list fetching", e);
     return { ok: false, error: e.message || "Unexpected error" };
   }
+}
+
+export async function fetchBusinessesCached(
+  userId: UserId,
+): Promise<APIResponse<FetchedBusiness[]>> {
+  const cached = unstable_cache(
+    async (cachedUserId: UserId) => fetchBusinesses(cachedUserId),
+    ["business-list"],
+    { tags: [getBusinessListTag(userId)] },
+  );
+  return cached(userId);
 }
 
 export async function updateBusiness(
@@ -293,6 +309,9 @@ export async function updateBusiness(
 
   revalidatePath(Paths.DASHBOARD);
   revalidatePath(businessPath(businessId));
+  if (user?.id) {
+    revalidateTag(getBusinessListTag(user.id));
+  }
   return {
     ok: true,
     data: {
@@ -334,6 +353,12 @@ export async function deleteBusiness(
   }
 
   revalidatePath(Paths.DASHBOARD);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user?.id) {
+    revalidateTag(getBusinessListTag(user.id));
+  }
   return { ok: true, data: deleteData };
 }
 
@@ -481,6 +506,7 @@ export async function createBusiness(
   }
 
   revalidatePath(Paths.DASHBOARD);
+  revalidateTag(getBusinessListTag(userId));
   return {
     ok: true,
     data: createdBusiness,

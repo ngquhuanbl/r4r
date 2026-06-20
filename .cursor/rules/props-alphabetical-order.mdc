@@ -1,0 +1,32 @@
+---
+description: Keep React props in alphabetical order
+alwaysApply: true
+---
+
+# Prop Ordering
+
+For React components, keep props sorted alphabetically to reduce diff noise and
+make scanning easier.
+
+- Sort prop keys alphabetically in prop types/interfaces.
+- Sort destructured function props alphabetically in component signatures.
+- Keep the same alphabetical order when forwarding many props.
+- If a grouping is required for readability, add a short comment explaining why.
+
+Example:
+
+```tsx
+type ExampleProps = {
+  addressSearch: string;
+  dialogOpen: boolean;
+  fields: AddressFields;
+  manualMode: boolean;
+}
+
+function Example({
+  addressSearch,
+  dialogOpen,
+  fields,
+  manualMode,
+}: ExampleProps) {}
+```

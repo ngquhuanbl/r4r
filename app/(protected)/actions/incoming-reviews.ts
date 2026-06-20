@@ -1,6 +1,9 @@
 "use server";
 
+import { revalidateTag } from "next/cache";
+
 import { ReviewStatusNames } from "@/constants/shared";
+import { getBusinessSnapshotTag } from "@/lib/business/business-page-cache-tags";
 import { tryResolveConnectionForReview } from "@/lib/connections/complete-connection";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -252,6 +255,12 @@ export async function confirmIncomingReview(
   }
 
   await tryResolveConnectionForReview(supabase, reviewId);
+  if (data[0]?.reviewed_business_id != null) {
+    revalidateTag(getBusinessSnapshotTag(data[0].reviewed_business_id));
+  }
+  if (data[0]?.reviewer_business_id != null) {
+    revalidateTag(getBusinessSnapshotTag(data[0].reviewer_business_id));
+  }
 
   return {
     ok: true,
@@ -295,6 +304,12 @@ export async function rejectIncomingReview(
   }
 
   await tryResolveConnectionForReview(supabase, reviewId);
+  if (data[0]?.reviewed_business_id != null) {
+    revalidateTag(getBusinessSnapshotTag(data[0].reviewed_business_id));
+  }
+  if (data[0]?.reviewer_business_id != null) {
+    revalidateTag(getBusinessSnapshotTag(data[0].reviewer_business_id));
+  }
 
   return {
     ok: true,

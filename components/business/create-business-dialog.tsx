@@ -11,7 +11,6 @@ import {
 import { toast } from "sonner";
 
 import { createBusiness } from "@/app/(protected)/actions/business-actions";
-import { ADDRESS_SEARCH_TEMPORARILY_DISABLED } from "@/constants/address-search";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { authSelectors } from "@/lib/redux/slices/auth";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
@@ -30,12 +29,11 @@ import { ErrorUtils } from "@/utils/error";
 import { FieldNames } from "@/utils/my-business";
 
 import {
-  AddressSection,
-  type AddressFields,
-} from "./create-business/address-section";
+  AddressFields,
+  type AddressFields as AddressFieldsValue,
+} from "./create-business/address-fields";
 import { BusinessImageField } from "./create-business/business-image-field";
 import { PlatformUrlRow } from "./create-business/platform-url-row";
-import { sortPlatformsBySpec } from "./create-business/sort-platforms";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -56,11 +54,9 @@ interface CreateBusinessDialogProps {
   onCreatedData?: (_data: FetchedBusiness) => void;
 }
 
-function emptyAddress(): AddressFields {
+function emptyAddress(): AddressFieldsValue {
   return { street: "", line2: "", city: "", state: "", zip: "" };
 }
-
-const hasMapsKey = Boolean(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
 
 export function CreateBusinessDialog({
   open,
@@ -72,20 +68,14 @@ export function CreateBusinessDialog({
   const userId = useAppSelector(authSelectors.selectUserId);
 
   const [businessName, setBusinessName] = useState("");
-  // TODO: when ADDRESS_SEARCH_TEMPORARILY_DISABLED is false, use !hasMapsKey again for default
-  const [manualAddress, setManualAddress] = useState(true);
-  const [addressSearch, setAddressSearch] = useState("");
   const [addressFields, setAddressFields] =
-    useState<AddressFields>(emptyAddress);
+    useState<AddressFieldsValue>(emptyAddress);
   const [phoneDigits, setPhoneDigits] = useState("");
   const [platformUrls, setPlatformUrls] = useState<Record<number, string>>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const sortedPlatforms = useMemo(
-    () => sortPlatformsBySpec(platforms),
-    [platforms],
-  );
+  const sortedPlatforms = platforms;
 
   useEffect(() => {
     if (!platforms.length) return;
@@ -111,8 +101,6 @@ export function CreateBusinessDialog({
   useEffect(() => {
     if (!open) {
       setBusinessName("");
-      setManualAddress(true);
-      setAddressSearch("");
       setAddressFields(emptyAddress());
       setPhoneDigits("");
       setPlatformUrls({});
@@ -121,7 +109,7 @@ export function CreateBusinessDialog({
     }
   }, [open]);
 
-  const setField = useCallback((patch: Partial<AddressFields>) => {
+  const setField = useCallback((patch: Partial<AddressFieldsValue>) => {
     setAddressFields((prev) => ({ ...prev, ...patch }));
   }, []);
 
@@ -241,19 +229,7 @@ export function CreateBusinessDialog({
 
             <Separator />
 
-            <AddressSection
-              manualMode={manualAddress}
-              onManualModeChange={setManualAddress}
-              addressSearch={addressSearch}
-              onAddressSearchChange={setAddressSearch}
-              fields={addressFields}
-              onFieldsChange={setField}
-              placesDisabled={!hasMapsKey}
-              addressSearchTemporarilyDisabled={
-                ADDRESS_SEARCH_TEMPORARILY_DISABLED
-              }
-              dialogOpen={open}
-            />
+            <AddressFields fields={addressFields} onFieldsChange={setField} />
 
             <Separator />
 

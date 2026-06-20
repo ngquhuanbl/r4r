@@ -28,7 +28,6 @@ import { Paths } from "@/constants/paths";
 import type { BusinessBillingSidebarContext } from "@/app/(protected)/(workspace)/business/[id]/actions";
 import { buildMatchFeedback } from "@/lib/connections/match-feedback";
 import type { FetchedBusiness } from "@/types/dashboard";
-import { sortPlatformsBySpec } from "@/components/business/create-business/sort-platforms";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
 import { ManageSubscriptionDialog } from "@/components/billing/manage-subscription-dialog";
@@ -39,10 +38,11 @@ import {
   TIER_STARTER,
   type BillingTier,
 } from "@/lib/billing/tiers";
+import { orDash } from "@/utils/display";
 
-import { ConnectionCapacityInfoDialog } from "./connection-capacity-info-dialog";
-import { EditBusinessProfileDialog } from "./edit-business-profile-dialog";
-import { ReviewSnapshotChart } from "./review-snapshot-chart";
+import { ConnectionCapacityInfoDialog } from "./business-capacity-subsection/connection-capacity-info-dialog";
+import { EditBusinessProfileDialog } from "./business-info-subsection/edit-business-profile-dialog";
+import { ReviewSnapshotChart } from "../review-snapshot-chart";
 import type { BusinessReviewSnapshot } from "@/types/business-page";
 import type { UserId } from "@/types/shared";
 
@@ -50,13 +50,12 @@ import fallbackLight from "@/public/dashboard/fallback_business_avatar.png";
 import fallbackDark from "@/public/dashboard/fallback_business_avatar--dark.png";
 
 function formatPhone(phone: string | null) {
-  if (!phone) return "—";
-  return phone;
+  return orDash(phone);
 }
 
 export type ConnectCtaState = "ready" | "searching" | "connected" | "full";
 
-function tierFromBilling(
+function getTierNameFromBillingData(
   billing: BusinessBillingSidebarContext["businessBilling"],
 ): BillingTier {
   if (!billing) return TIER_STARTER;
@@ -213,7 +212,7 @@ export function BusinessLeftPanel({
   onConnectionMatchFound?: (payload: { slotsDelta: number }) => void;
 }) {
   const platformList = useAppSelector(platformsSelectors.selectData);
-  const ordered = sortPlatformsBySpec(platformList);
+  const ordered = platformList;
   const cover = business.cover_image_url;
 
   const { businessBilling, subscriptionPeriodEnd, slotsUsed } = billingContext;
@@ -223,14 +222,7 @@ export function BusinessLeftPanel({
   /** Bar fill = share of capacity still available (100% = all slots free). */
   const availableSlotsProgressPct =
     slotsTotal > 0 ? Math.min(100, (slotsAvailable / slotsTotal) * 100) : 0;
-  const nextRenewalLabel = subscriptionPeriodEnd
-    ? new Date(subscriptionPeriodEnd).toLocaleDateString(undefined, {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
-    : null;
-  const currentTier = tierFromBilling(businessBilling);
+  const currentTier = getTierNameFromBillingData(businessBilling);
   const atMaxTier = currentTier === TIER_MOMENTUM;
 
   const isFull = slotsAvailable <= 0;
@@ -375,9 +367,11 @@ export function BusinessLeftPanel({
               📍
             </span>
             <span>
-              {[business.address, business.city, business.state, business.zip_code]
-                .filter(Boolean)
-                .join(", ") || "—"}
+              {orDash(
+                [business.address, business.city, business.state, business.zip_code]
+                  .filter(Boolean)
+                  .join(", "),
+              )}
             </span>
           </p>
           <p className="flex items-center gap-2">
@@ -526,7 +520,7 @@ export function BusinessLeftPanel({
         businessId={business.id}
         businessName={business.business_name}
         currentTier={currentTier}
-        nextRenewalLabel={nextRenewalLabel}
+        subscriptionPeriodEnd={subscriptionPeriodEnd}
       />
       <EditBusinessProfileDialog
         open={editOpen}

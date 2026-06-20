@@ -11,7 +11,7 @@ import { ErrorUtils } from "@/utils/error";
 import { FieldNames } from "@/utils/my-business";
 
 import { Platform } from "@/components/shared/platform";
-import { Button } from "../ui/button";
+import { Button } from "../../../ui/button";
 import {
   Dialog,
   DialogClose,
@@ -20,9 +20,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
+} from "../../../ui/dialog";
+import { Input } from "../../../ui/input";
+import { Label } from "../../../ui/label";
 
 interface ManageBusinessDialogProps {
   open: boolean;
@@ -196,7 +196,7 @@ export function ManageBusinessDialog({
                 Platform Profiles
               </h2>
               <p className="text-xs md:text-sm text-gray-500 mb-4">
-                Provide the direct URL to your business's page on each platform
+                Provide the direct URL to your business&apos;s page on each platform
                 if available.
               </p>
 

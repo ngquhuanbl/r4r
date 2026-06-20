@@ -1,0 +1,29 @@
+---
+description: Keep *-server components under app/
+alwaysApply: true
+---
+
+# Server Component Placement
+
+Use this convention for server-only component files:
+
+- Files named `*-server.tsx` must live under `app/`.
+- Do not place `*-server.tsx` files under `components/`.
+- Client-presentational components remain in `components/` and should be imported by server wrappers in `app/`.
+
+## Preferred Pattern
+
+```tsx
+// ✅ app/(protected)/business-header-switcher-server.tsx
+import { BusinessHeaderSwitcherClient } from "@/components/shared/header/business-header-switcher-client";
+```
+
+```tsx
+// ❌ components/shared/header/business-header-switcher-server.tsx
+```
+
+When adding or moving a server wrapper:
+
+1. Create/move the `*-server.tsx` file into an appropriate `app/...` segment.
+2. Update all imports to the new `app/...` path.
+3. Keep non-server UI pieces in `components/...`.
