@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import { BusinessCapacitySkeleton } from "@/components/business/left-section/business-capacity-subsection/business-capacity-skeleton";
-import { BusinessInfoSubSectionClient } from "@/components/business/left-section/business-info-subsection/business-info-client";
+import { BusinessInfoSubSectionClient } from "@/components/business/left-section/business-info-subsection/business-info-sub-section-client";
 import { BusinessMetricsSkeleton } from "@/components/business/left-section/business-metrics-skeleton";
 import { getUser, getUserOrRedirect } from "@/lib/supabase/server";
 import type { Tables } from "@/types/database";
