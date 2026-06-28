@@ -54,7 +54,9 @@ export function classifyPlatformUrl(
 
 export function platformLabelForMessage(platformName: string): string {
   if (platformName === PlatformNames.Google) return "Google Maps";
-  return platformName;
+  if (platformName === PlatformNames.Yelp) return "Yelp";
+  if (platformName === PlatformNames.TripAdvisor) return "TripAdvisor";
+  return "Other";
 }
 
 /** Normalize URL for storage (add https if missing). */

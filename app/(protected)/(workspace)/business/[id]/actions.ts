@@ -7,8 +7,10 @@ import {
   fetchUserSubscriptionPeriodEnd,
 } from "@/app/(protected)/billing/actions";
 import {
+  getBusinessProfileTag,
   getBusinessSnapshotTag,
 } from "@/lib/business/business-page-cache-tags";
+import { mapBusinessRowWithPlatforms } from "@/app/(protected)/actions/business-actions/utils/data-processing";
 import { computeBusinessReviewSnapshot } from "@/lib/business/compute-business-review-snapshot";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -57,18 +59,76 @@ export async function getBusinessForUser(
   }
   if (!data) return null;
 
-  const { platforms, ...rest } = data;
-  const platform_urls: FetchedBusiness["platform_urls"] = {};
-  (platforms ?? []).forEach((row) => {
-    if (row.platform_url != null) {
-      platform_urls[row.platform_id] = row.platform_url;
-    }
-  });
+  return mapBusinessRowWithPlatforms(data);
+}
 
-  return {
-    ...rest,
-    platform_urls,
-  };
+/**
+ * Returns the business row only if it belongs to the given user. Cached.
+ * @param userId - The user id of the business owner.
+ * @param businessId - The id of the business to get.
+ * @returns The business row if it belongs to the given user, otherwise null.
+ */
+export async function getBusinessForUserCached(
+  userId: UserId,
+  businessId: Tables<"businesses">["id"],
+): Promise<FetchedBusiness | null> {
+  const cached = unstable_cache(
+    async (
+      cachedUserId: UserId,
+      cachedBusinessId: Tables<"businesses">["id"],
+    ) => {
+      const supabase = createServiceRoleClient();
+
+      // Service-role client bypasses Supabase RLS. Verify ownership explicitly before
+      // reading business data inside unstable_cache (no per-request session/cookies here).
+      const { data: owned } = await supabase
+        .from("businesses")
+        .select("id")
+        .eq("id", cachedBusinessId)
+        .eq("user_id", cachedUserId)
+        .maybeSingle();
+
+      if (!owned) {
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from("businesses")
+        .select(
+          `
+            id,
+            business_name,
+            phone,
+            address,
+            city,
+            state,
+            zip_code,
+            cover_image_url,
+            created_at,
+            updated_at,
+            platforms:business_platforms (
+              id,
+              platform_id,
+              platform_url
+            )
+          `,
+        )
+        .eq("id", cachedBusinessId)
+        .eq("user_id", cachedUserId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("getBusinessForUserCached", error);
+        return null;
+      }
+      if (!data) return null;
+
+      return mapBusinessRowWithPlatforms(data);
+    },
+    ["business-profile"],
+    { tags: [getBusinessProfileTag(businessId)] },
+  );
+  return cached(userId, businessId);
 }
 
 /**
@@ -88,7 +148,10 @@ export async function fetchBusinessReviewSnapshotCached(
   businessId: Tables<"businesses">["id"],
 ): Promise<APIResponse<BusinessReviewSnapshot>> {
   const cached = unstable_cache(
-    async (cachedUserId: UserId, cachedBusinessId: Tables<"businesses">["id"]) => {
+    async (
+      cachedUserId: UserId,
+      cachedBusinessId: Tables<"businesses">["id"],
+    ) => {
       const supabase = createServiceRoleClient();
       const { data: owned } = await supabase
         .from("businesses")
@@ -99,7 +162,11 @@ export async function fetchBusinessReviewSnapshotCached(
       if (!owned) {
         return { ok: false, error: "Business not found" } as const;
       }
-      return computeBusinessReviewSnapshot(supabase, cachedUserId, cachedBusinessId);
+      return computeBusinessReviewSnapshot(
+        supabase,
+        cachedUserId,
+        cachedBusinessId,
+      );
     },
     ["business-review-snapshot"],
     { tags: [getBusinessSnapshotTag(businessId)] },

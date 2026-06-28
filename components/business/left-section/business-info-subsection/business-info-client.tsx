@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, Pencil } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import { Platform } from "@/components/shared/platform";
 import { Paths } from "@/constants/paths";
@@ -27,7 +27,7 @@ interface BusinessInfoClientProps {
  * and provides a button to edit the business profile.
  */
 export function BusinessInfoSubSectionClient({
-  business: initialBusiness,
+  business,
 }: BusinessInfoClientProps) {
   //
   // PROPS
@@ -36,8 +36,6 @@ export function BusinessInfoSubSectionClient({
   //
   // STATE
   //
-  /** Local business snapshot for optimistic UI updates after profile edits. */
-  const [business, setBusiness] = useState(initialBusiness);
   /** Controls visibility of the edit profile dialog. */
   const [shouldOpenEditDialog, setShouldOpenEditDialog] = useState(false);
   const platforms = useAppSelector(platformsSelectors.selectData);
@@ -46,11 +44,6 @@ export function BusinessInfoSubSectionClient({
   //
   // EVENTS
   //
-  /** Handler for successful profile updates from the edit dialog. */
-  const handleBusinessUpdated = useCallback((updated: FetchedBusiness) => {
-    setBusiness(updated);
-    setShouldOpenEditDialog(false);
-  }, []);
 
   //
   // EFFECTS
@@ -147,7 +140,6 @@ export function BusinessInfoSubSectionClient({
         open={shouldOpenEditDialog}
         onOpenChange={setShouldOpenEditDialog}
         data={business}
-        onUpdatedData={handleBusinessUpdated}
       />
     </>
   );

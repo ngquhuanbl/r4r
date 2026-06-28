@@ -2,7 +2,7 @@
 
 import { ImagePlus, X } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useId, useRef } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,19 +14,32 @@ import {
 } from "@/lib/validation/business-cover-image";
 
 type BusinessImageFieldProps = {
+  existingPreviewUrl?: string | null;
   file: File | null;
-  previewUrl: string | null;
   onFileChange: (_file: File | null) => void;
 };
 
 /** Optional storefront image — uploaded with the business create form. */
 export function BusinessImageField({
+  existingPreviewUrl,
   file,
-  previewUrl,
   onFileChange,
 }: BusinessImageFieldProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file) {
+      setLocalPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setLocalPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  const previewUrl = file ? localPreviewUrl : (existingPreviewUrl ?? null);
 
   const onPick = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

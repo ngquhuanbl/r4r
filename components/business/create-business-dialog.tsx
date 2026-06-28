@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Loader2Icon } from "lucide-react";
 import {
   useCallback,
@@ -12,7 +13,6 @@ import { toast } from "sonner";
 
 import { createBusiness } from "@/app/(protected)/actions/business-actions";
 import { useAppSelector } from "@/lib/redux/hooks";
-import { authSelectors } from "@/lib/redux/slices/auth";
 import { platformsSelectors } from "@/lib/redux/slices/platform";
 import {
   formatUsPhoneMask,
@@ -22,15 +22,12 @@ import {
 import { cn } from "@/lib/utils";
 import {
   classifyPlatformUrl,
-  normalizePlatformUrlInput,
 } from "@/lib/validation/platform-urls";
-import { FetchedBusiness, PlatformURLs } from "@/types/dashboard";
+import { buildCreateBusinessFormData } from "@/app/(protected)/actions/business-actions/utils/data-processing";
 import { ErrorUtils } from "@/utils/error";
-import { FieldNames } from "@/utils/my-business";
 
 import {
   AddressFields,
-  type AddressFields as AddressFieldsValue,
 } from "./create-business/address-fields";
 import { BusinessImageField } from "./create-business/business-image-field";
 import { PlatformUrlRow } from "./create-business/platform-url-row";
@@ -47,33 +44,31 @@ import {
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Separator } from "../ui/separator";
+import { AddressValue } from "@/types/address";
 
 interface CreateBusinessDialogProps {
   open: boolean;
   onOpenChange: (_opened: boolean) => void;
-  onCreatedData?: (_data: FetchedBusiness) => void;
 }
 
-function emptyAddress(): AddressFieldsValue {
-  return { street: "", line2: "", city: "", state: "", zip: "" };
+function emptyAddress(): AddressValue {
+  return { line1: "", line2: "", city: "", state: "", zip: "" };
 }
 
 export function CreateBusinessDialog({
   open,
   onOpenChange,
-  onCreatedData,
 }: CreateBusinessDialogProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const platforms = useAppSelector(platformsSelectors.selectData);
-  const userId = useAppSelector(authSelectors.selectUserId);
 
   const [businessName, setBusinessName] = useState("");
   const [addressFields, setAddressFields] =
-    useState<AddressFieldsValue>(emptyAddress);
+    useState<AddressValue>(emptyAddress);
   const [phoneDigits, setPhoneDigits] = useState("");
   const [platformUrls, setPlatformUrls] = useState<Record<number, string>>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const sortedPlatforms = platforms;
 
@@ -89,27 +84,16 @@ export function CreateBusinessDialog({
   }, [platforms]);
 
   useEffect(() => {
-    if (!imageFile) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(imageFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [imageFile]);
-
-  useEffect(() => {
     if (!open) {
       setBusinessName("");
       setAddressFields(emptyAddress());
       setPhoneDigits("");
       setPlatformUrls({});
       setImageFile(null);
-      setPreviewUrl(null);
     }
   }, [open]);
 
-  const setField = useCallback((patch: Partial<AddressFieldsValue>) => {
+  const setField = useCallback((patch: Partial<AddressValue>) => {
     setAddressFields((prev) => ({ ...prev, ...patch }));
   }, []);
 
@@ -124,7 +108,7 @@ export function CreateBusinessDialog({
     const a = addressFields;
     return (
       businessName.trim().length > 0 &&
-      a.street.trim().length > 0 &&
+      a.line1.trim().length > 0 &&
       a.city.trim().length > 0 &&
       a.state.trim().length > 0 &&
       a.zip.trim().length > 0 &&
@@ -133,41 +117,21 @@ export function CreateBusinessDialog({
     );
   }, [businessName, addressFields, phoneDigits, hasValidPlatform]);
 
-  const buildFormData = useCallback((): FormData => {
-    const fd = new FormData();
-    fd.set(FieldNames.forBusinessName(), businessName.trim());
-    const line1 = addressFields.street.trim();
-    const addr = addressFields.line2.trim()
-      ? `${line1}, ${addressFields.line2.trim()}`
-      : line1;
-    fd.set(FieldNames.forAddress(), addr);
-    fd.set(FieldNames.forCity(), addressFields.city.trim());
-    fd.set(FieldNames.forState(), addressFields.state.trim().toUpperCase());
-    fd.set(FieldNames.forZipCode(), addressFields.zip.trim());
-    fd.set(FieldNames.forPhone(), formatUsPhoneMask(phoneDigits));
-
-    const urls: PlatformURLs = {};
-    for (const p of sortedPlatforms) {
-      const raw = (platformUrls[p.id] ?? "").trim();
-      if (classifyPlatformUrl(raw, p.name) === "valid") {
-        urls[p.id] = normalizePlatformUrlInput(raw);
-      }
-    }
-    fd.set(FieldNames.forPlatformUrls(), JSON.stringify(urls));
-    if (imageFile) {
-      fd.append(FieldNames.forBusinessPhoto(), imageFile);
-    }
-    return fd;
-  }, [businessName, addressFields, phoneDigits, platformUrls, sortedPlatforms, imageFile]);
-
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!canSubmit || isPending) return;
       startTransition(async () => {
         try {
-          const formData = buildFormData();
-          const result = await createBusiness(userId, formData);
+          const formData = buildCreateBusinessFormData({
+            addressFields,
+            businessName,
+            imageFile,
+            phoneDigits,
+            platformUrls,
+            platforms: sortedPlatforms,
+          });
+          const result = await createBusiness(formData);
           if (result.ok) {
             toast.success("Business profile created successfully");
             if (result.coverPhotoWarning) {
@@ -176,7 +140,7 @@ export function CreateBusinessDialog({
               });
             }
             onOpenChange(false);
-            onCreatedData?.(result.data);
+            router.refresh();
           } else {
             throw result.error;
           }
@@ -188,12 +152,16 @@ export function CreateBusinessDialog({
       });
     },
     [
-      buildFormData,
+      addressFields,
+      businessName,
       canSubmit,
+      imageFile,
       isPending,
-      userId,
       onOpenChange,
-      onCreatedData,
+      phoneDigits,
+      platformUrls,
+      sortedPlatforms,
+      router,
     ],
   );
 
@@ -296,7 +264,6 @@ export function CreateBusinessDialog({
 
             <BusinessImageField
               file={imageFile}
-              previewUrl={previewUrl}
               onFileChange={setImageFile}
             />
           </div>

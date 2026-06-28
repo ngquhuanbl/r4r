@@ -25,25 +25,20 @@ import { EmptyDashboardContent } from "./empty-dashboard-content";
 import { getAddress } from "@/utils/shared";
 
 type DashboardContentClientProps = {
-  initialBusinesses: FetchedBusiness[];
+  businesses: FetchedBusiness[];
 };
 
 export function DashboardContentClient({
-  initialBusinesses,
+  businesses,
 }: DashboardContentClientProps) {
   const dispatch = useAppDispatch();
   const userId = useAppSelector(authSelectors.selectUserId);
   const taskAndCapacityInfoByBusiness = useAppSelector(
     businessTaskCapacitySelectors.selectByBusinessId,
   );
-  const [businesses, setBusinesses] = useState<FetchedBusiness[]>(initialBusinesses);
   const [searchQuery, setSearchQuery] = useState("");
   const [shouldShowCreateProfileDialog, setShouldShowCreateProfileDialog] =
     useState(false);
-
-  useEffect(() => {
-    setBusinesses(initialBusinesses);
-  }, [initialBusinesses]);
 
   const businessIds = useMemo(() => businesses.map((business) => business.id), [
     businesses,
@@ -82,11 +77,6 @@ export function DashboardContentClient({
     if (!search) return items;
     return items.filter((item) => item.name.toLowerCase().includes(search));
   }, [searchQuery, items]);
-
-  const onCreatedBusiness = useCallback((data: FetchedBusiness) => {
-    setBusinesses((prev) => [...prev, data]);
-    setShouldShowCreateProfileDialog(false);
-  }, []);
 
   const openCreate = useCallback(() => setShouldShowCreateProfileDialog(true), []);
 
@@ -197,7 +187,6 @@ export function DashboardContentClient({
       <CreateBusinessDialog
         open={shouldShowCreateProfileDialog}
         onOpenChange={setShouldShowCreateProfileDialog}
-        onCreatedData={onCreatedBusiness}
       />
     </>
   );

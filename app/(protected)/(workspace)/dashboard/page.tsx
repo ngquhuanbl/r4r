@@ -24,7 +24,7 @@ export default async function Page() {
     <>
       <FinishProfileDialog user={user} />
       <section className="flex w-full min-w-0 flex-1 flex-col py-7 pb-16">
-        <DashboardContentClient initialBusinesses={businesses} />
+        <DashboardContentClient businesses={businesses} />
       </section>
     </>
   );

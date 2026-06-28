@@ -8,7 +8,7 @@ import { BusinessMetricsSkeleton } from "@/components/business/left-section/busi
 import { getUser, getUserOrRedirect } from "@/lib/supabase/server";
 import type { Tables } from "@/types/database";
 
-import { getBusinessForUser } from "./actions";
+import { getBusinessForUserCached } from "./actions";
 import { BusinessReviewsWorkspaceServer } from "./right-section/business-reviews-workspace-server";
 import { ConnectionCapacityServer } from "./left-section/connection-capacity-server";
 import { BusinessMetricsServer } from "./left-section/business-metrics-server";
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!user) {
     return { title: "Business | R4R" };
   }
-  const business = await getBusinessForUser(user.id, id);
+  const business = await getBusinessForUserCached(user.id, id);
   if (!business) {
     return { title: "Business | R4R" };
   }
@@ -46,7 +46,7 @@ export default async function BusinessPage({ params }: PageProps) {
   }
 
   const user = await getUserOrRedirect();
-  const business = await getBusinessForUser(user.id, id as Tables<"businesses">["id"]);
+  const business = await getBusinessForUserCached(user.id, id as Tables<"businesses">["id"]);
   if (!business) {
     notFound();
   }

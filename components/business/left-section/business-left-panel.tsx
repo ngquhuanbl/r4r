@@ -199,15 +199,12 @@ export function BusinessLeftPanel({
   business,
   snapshot,
   billingContext,
-  onBusinessUpdated,
   onConnectionMatchFound,
 }: {
   userId: UserId;
   business: FetchedBusiness;
   snapshot: BusinessReviewSnapshot;
   billingContext: BusinessBillingSidebarContext;
-  /** Local business metadata update after profile edits. */
-  onBusinessUpdated?: (updatedBusiness: FetchedBusiness) => void;
   /** After a successful connection match: apply post-match local updates. */
   onConnectionMatchFound?: (payload: { slotsDelta: number }) => void;
 }) {
@@ -526,10 +523,6 @@ export function BusinessLeftPanel({
         open={editOpen}
         onOpenChange={setEditOpen}
         data={business}
-        onUpdatedData={(updated) => {
-          onBusinessUpdated?.(updated);
-          setEditOpen(false);
-        }}
       />
 
       <div className="rounded-lg border border-border/60 bg-card/30 p-3">

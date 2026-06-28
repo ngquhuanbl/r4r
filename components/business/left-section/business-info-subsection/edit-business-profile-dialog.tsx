@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Loader2Icon } from "lucide-react";
 import {
   useCallback,
@@ -19,18 +20,12 @@ import {
   normalizeUsPhoneDigits,
 } from "@/lib/phone-us";
 import { cn } from "@/lib/utils";
-import {
-  classifyPlatformUrl,
-  normalizePlatformUrlInput,
-} from "@/lib/validation/platform-urls";
+import { classifyPlatformUrl } from "@/lib/validation/platform-urls";
 import { FetchedBusiness } from "@/types/dashboard";
+import { buildEditBusinessFormData } from "@/app/(protected)/actions/business-actions/utils/data-processing";
 import { ErrorUtils } from "@/utils/error";
-import { FieldNames } from "@/utils/my-business";
 
-import {
-  AddressFields,
-  type AddressFields as AddressFieldsValue,
-} from "@/components/business/create-business/address-fields";
+import { AddressFields } from "@/components/business/create-business/address-fields";
 import { BusinessImageField } from "@/components/business/create-business/business-image-field";
 import { PlatformUrlRow } from "@/components/business/create-business/platform-url-row";
 import { Button } from "@/components/ui/button";
@@ -46,12 +41,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { AddressValue } from "@/types/address";
 
 interface EditBusinessProfileDialogProps {
-  open: boolean;
-  onOpenChange: (_opened: boolean) => void;
   data: FetchedBusiness;
-  onUpdatedData?: (_data: FetchedBusiness) => void;
+  onOpenChange: (_opened: boolean) => void;
+  open: boolean;
 }
 
 /**
@@ -60,136 +55,86 @@ interface EditBusinessProfileDialogProps {
  * to `updateBusiness` + FieldNames used by the server action.
  */
 export function EditBusinessProfileDialog({
-  open,
-  onOpenChange,
   data,
-  onUpdatedData,
+  onOpenChange,
+  open,
 }: EditBusinessProfileDialogProps) {
-  const [isPending, startTransition] = useTransition();
+  //
+  // PROPS
+  //
+
+  /** Platform catalog used to render URL rows and validate entered links. */
   const platforms = useAppSelector(platformsSelectors.selectData);
 
+  //
+  // STATE
+  //
+
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  /** Business name edited in the dialog identity section. */
   const [businessName, setBusinessName] = useState("");
-  const [addressFields, setAddressFields] =
-    useState<AddressFieldsValue>({ street: "", line2: "", city: "", state: "", zip: "" });
+  /** Address fields edited manually or via Places search. */
+  const [addressFields, setAddressFields] = useState<AddressValue>({
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    zip: "",
+  });
+  /** US phone number as normalized digits-only input. */
   const [phoneDigits, setPhoneDigits] = useState("");
+  /** Platform IDs mapped to user-provided URLs. */
   const [platformUrls, setPlatformUrls] = useState<Record<number, string>>({});
+  /** Optional replacement storefront photo selected by user. */
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const sortedPlatforms = platforms;
-
-  useEffect(() => {
-    if (!platforms.length) return;
-    setPlatformUrls((prev) => {
-      const next = { ...prev };
-      for (const p of platforms) {
-        if (next[p.id] === undefined) next[p.id] = "";
-      }
-      return next;
-    });
-  }, [platforms]);
-
-  useEffect(() => {
-    if (!imageFile) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(imageFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [imageFile]);
-
-  useEffect(() => {
-    if (!open) return;
-    setBusinessName(data.business_name);
-    setAddressFields({
-      street: data.address ?? "",
-      line2: "",
-      city: data.city ?? "",
-      state: data.state ?? "",
-      zip: data.zip_code ?? "",
-    });
-    setPhoneDigits(normalizeUsPhoneDigits(data.phone ?? ""));
-    setImageFile(null);
-    setPreviewUrl(null);
-    const next: Record<number, string> = {};
-    for (const p of sortedPlatforms) {
-      next[p.id] = data.platform_urls[p.id] ?? "";
-    }
-    setPlatformUrls(next);
-  }, [open, data, sortedPlatforms]);
-
-  const setField = useCallback((patch: Partial<AddressFieldsValue>) => {
-    setAddressFields((prev) => ({ ...prev, ...patch }));
-  }, []);
-
+  /** Whether at least one platform URL is currently valid. */
   const hasValidPlatform = useMemo(() => {
-    return sortedPlatforms.some((p) => {
+    return platforms.some((p) => {
       const u = platformUrls[p.id] ?? "";
       return classifyPlatformUrl(u, p.name) === "valid";
     });
-  }, [sortedPlatforms, platformUrls]);
+  }, [platforms, platformUrls]);
 
-  const canSubmit = useMemo(() => {
+  /** Whether all required fields are valid for submit. */
+  const canSubmit = (() => {
     const a = addressFields;
     return (
       businessName.trim().length > 0 &&
-      a.street.trim().length > 0 &&
+      a.line1.trim().length > 0 &&
       a.city.trim().length > 0 &&
       a.state.trim().length > 0 &&
       a.zip.trim().length > 0 &&
       isCompleteUsPhone(phoneDigits) &&
       hasValidPlatform
     );
-  }, [businessName, addressFields, phoneDigits, hasValidPlatform]);
+  })();
 
-  const imagePreviewDisplay = imageFile ? previewUrl : data.cover_image_url;
+  //
+  // EVENTS
+  //
 
-  const buildFormData = useCallback((): FormData => {
-    const fd = new FormData();
-    fd.set(FieldNames.forBusinessName(), businessName.trim());
-    const line1 = addressFields.street.trim();
-    const addr = addressFields.line2.trim()
-      ? `${line1}, ${addressFields.line2.trim()}`
-      : line1;
-    fd.set(FieldNames.forAddress(), addr);
-    fd.set(FieldNames.forCity(), addressFields.city.trim());
-    fd.set(FieldNames.forState(), addressFields.state.trim().toUpperCase());
-    fd.set(FieldNames.forZipCode(), addressFields.zip.trim());
-    fd.set(FieldNames.forPhone(), formatUsPhoneMask(phoneDigits));
+  /** Handler for patch updates from nested address fields component. */
+  const setField = useCallback((patch: Partial<AddressValue>) => {
+    setAddressFields((prev) => ({ ...prev, ...patch }));
+  }, []);
 
-    for (const p of sortedPlatforms) {
-      const raw = (platformUrls[p.id] ?? "").trim();
-      if (raw && classifyPlatformUrl(raw, p.name) === "valid") {
-        fd.set(
-          FieldNames.forSinglePlatformURL(p.id),
-          normalizePlatformUrlInput(raw),
-        );
-      } else {
-        fd.set(FieldNames.forSinglePlatformURL(p.id), "");
-      }
-    }
-
-    if (imageFile) {
-      fd.append(FieldNames.forBusinessPhoto(), imageFile);
-    }
-    return fd;
-  }, [
-    businessName,
-    addressFields,
-    phoneDigits,
-    platformUrls,
-    sortedPlatforms,
-    imageFile,
-  ]);
-
+  /** Handler for form submit to persist business updates. */
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!canSubmit || isPending) return;
       startTransition(async () => {
         try {
-          const formData = buildFormData();
+          const formData = buildEditBusinessFormData({
+            addressFields,
+            businessName,
+            imageFile,
+            phoneDigits,
+            platformUrls,
+            platforms,
+          });
           const result = await updateBusiness(data.id, formData);
           if (result.ok) {
             toast.success("Business updated successfully");
@@ -199,7 +144,7 @@ export function EditBusinessProfileDialog({
               });
             }
             onOpenChange(false);
-            onUpdatedData?.(result.data);
+            router.refresh();
           } else {
             throw result.error;
           }
@@ -211,17 +156,50 @@ export function EditBusinessProfileDialog({
       });
     },
     [
-      buildFormData,
+      addressFields,
+      businessName,
       canSubmit,
+      imageFile,
       isPending,
       data.id,
       onOpenChange,
-      onUpdatedData,
+      phoneDigits,
+      platformUrls,
+      platforms,
+      router,
     ],
   );
 
+  //
+  // EFFECTS
+  //
+
+  /** Syncs dialog local state from the incoming business data when dialog opens. */
+  useEffect(() => {
+    if (!open) return;
+    setBusinessName(data.business_name);
+    setAddressFields({
+      line1: data.address ?? "",
+      line2: "",
+      city: data.city ?? "",
+      state: data.state ?? "",
+      zip: data.zip_code ?? "",
+    });
+    setPhoneDigits(normalizeUsPhoneDigits(data.phone ?? ""));
+    setImageFile(null);
+    const next: Record<number, string> = {};
+    for (const p of platforms) {
+      next[p.id] = data.platform_urls[p.id] ?? "";
+    }
+    setPlatformUrls(next);
+  }, [open, data, platforms]);
+
+  //
+  // RENDER
+  //
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="max-h-[min(90vh,840px)] w-full max-w-2xl overflow-y-auto sm:max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-0">
           <DialogHeader>
@@ -307,7 +285,7 @@ export function EditBusinessProfileDialog({
                 </p>
               </div>
               <div className="space-y-4">
-                {sortedPlatforms.map((p) => (
+                {platforms.map((p) => (
                   <PlatformUrlRow
                     key={p.id}
                     platform={p}
@@ -323,8 +301,8 @@ export function EditBusinessProfileDialog({
             <Separator />
 
             <BusinessImageField
+              existingPreviewUrl={data.cover_image_url}
               file={imageFile}
-              previewUrl={imagePreviewDisplay}
               onFileChange={setImageFile}
             />
           </div>
@@ -336,9 +314,9 @@ export function EditBusinessProfileDialog({
               </Button>
             </DialogClose>
             <Button
-              type="submit"
-              disabled={!canSubmit || isPending}
               className={cn("font-medium text-white")}
+              disabled={!canSubmit || isPending}
+              type="submit"
               variant="ocean"
             >
               {isPending && <Loader2Icon className="animate-spin" />}

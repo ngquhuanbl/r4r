@@ -4,7 +4,7 @@ import { BusinessReviewsWorkspaceClient } from "@/components/business/right-sect
 import type { Tables } from "@/types/database";
 import type { UserId } from "@/types/shared";
 
-import { getBusinessForUser } from "../actions";
+import { getBusinessForUserCached } from "../actions";
 
 type BusinessReviewsWorkspaceServerProps = {
   userId: UserId;
@@ -15,7 +15,7 @@ export async function BusinessReviewsWorkspaceServer({
   userId,
   businessId,
 }: BusinessReviewsWorkspaceServerProps) {
-  const business = await getBusinessForUser(userId, businessId);
+  const business = await getBusinessForUserCached(userId, businessId);
   if (!business) {
     notFound();
   }
